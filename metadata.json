@@ -1,0 +1,7 @@
+{
+  "name": "VOXARA",
+  "description": "A voice-first mental health and courage-building app designed to help users move from silence to strength through gradual expression and real-world connection.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
