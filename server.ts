@@ -24,6 +24,20 @@ async function startServer() {
           broadcastUserList();
         }
 
+        if (message.type === "chat_message") {
+          const client = clients.get(ws);
+          if (client && client.roomId) {
+            broadcast({
+              type: "chat_received",
+              roomId: client.roomId,
+              fromId: client.id,
+              fromName: message.alias || client.name,
+              text: message.text,
+              timestamp: Date.now()
+            });
+          }
+        }
+
         if (message.type === "join_circle") {
           const client = clients.get(ws);
           if (client) {

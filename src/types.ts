@@ -58,9 +58,10 @@ export interface User {
   groups?: string[]; // Group IDs
   courageHistory?: CourageHistoryEntry[];
   locationEnabled?: boolean;
+  completedChallenges?: string[];
 }
 
-export type AppState = 'landing' | 'auth' | 'dashboard' | 'whisper' | 'companion' | 'map' | 'circles' | 'presence' | 'bridge' | 'simulation' | 'echo' | 'live' | 'anchor' | 'exit' | 'emergency' | 'connections' | 'journal' | 'settings' | 'affirmations' | 'meditations';
+export type AppState = 'landing' | 'auth' | 'dashboard' | 'whisper' | 'companion' | 'map' | 'circles' | 'presence' | 'bridge' | 'simulation' | 'echo' | 'live' | 'anchor' | 'exit' | 'emergency' | 'connections' | 'journal' | 'settings' | 'affirmations' | 'meditations' | 'challenges';
 
 export interface VoiceNote {
   id: string;

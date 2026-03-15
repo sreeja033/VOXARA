@@ -99,7 +99,11 @@ export const ghostModePractice = async (message: string, persona: string) => {
         Your task:
         1. Simulate how the ${persona} might react (be realistic but not overly harsh).
         2. Analyze the user's message for clarity, emotional honesty, and boundaries.
-        3. Provide SPECIFIC, ACTIONABLE advice. Don't just say "be clearer"; say "try starting with 'I feel' instead of 'You always'".
+        3. Provide SPECIFIC, ACTIONABLE advice. 
+           - Each piece of advice MUST be directly related to the persona's likely reaction.
+           - If the persona reacts with confusion, suggest clarifying the core need.
+           - If the persona reacts with defensiveness, suggest using "I" statements or softening the opening.
+           - Don't just say "be clearer"; say "try starting with 'I feel' instead of 'You always'".
         4. Highlight what they did well to build their courage.
         5. Evaluate their confidence and readiness. If they are very clear, firm, and respectful, give a high confidence score.
         6. Map their likely internal fears based on the content of their message.
