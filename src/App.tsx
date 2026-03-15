@@ -2767,13 +2767,18 @@ const LiveSession = ({ onBack, user, setUser }: { onBack: () => void, user: User
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       audioContextRef.current = new AudioContext({ sampleRate: 16000 });
+      
+      if (audioContextRef.current.state === 'suspended') {
+        await audioContextRef.current.resume();
+      }
+
       const source = audioContextRef.current.createMediaStreamSource(stream);
       // NOTE: ScriptProcessorNode is deprecated. In a production environment, 
       // consider migrating to AudioWorkletNode for better performance and stability.
       processorRef.current = audioContextRef.current.createScriptProcessor(4096, 1, 1);
 
       processorRef.current.onaudioprocess = (e) => {
-        if (!sessionActiveRef.current) return;
+        if (!sessionActiveRef.current || !sessionRef.current || sessionRef.current.readyState !== 1) return;
         const inputData = e.inputBuffer.getChannelData(0);
         const pcmData = new Int16Array(inputData.length);
         for (let i = 0; i < inputData.length; i++) {
@@ -5089,6 +5094,7 @@ const Meditations = ({ onBack, safePlayPCM }: { onBack: () => void, safePlayPCM:
 export default function App() {
   const [view, setView] = useState<AppState>('landing');
   const [user, setUser] = useState<User | null>(null);
+  const [isUserLoading, setIsUserLoading] = useState(true);
   const currentAudioRef = useRef<{ stop: () => void } | null>(null);
 
   const stopAllAudio = () => {
@@ -5115,38 +5121,37 @@ export default function App() {
   useEffect(() => {
     const unsubscribe = subscribeToAuthChanges(async (firebaseUser) => {
       if (firebaseUser) {
-        // First set basic info
-        const basicUser: User = {
-          id: firebaseUser.uid,
-          name: firebaseUser.displayName || 'Seeker',
-          email: firebaseUser.email || '',
-          courageLevel: 15,
-          safeWord: 'Blue Spruce',
-          voiceNotes: [],
-          journalEntries: [],
-          liveHistory: [],
-          bio: '',
-          goals: [],
-          location: '',
-          emergencyContacts: [],
-          groups: [],
-          courageHistory: [
-            { timestamp: Date.now() - 86400000 * 4, level: 10, rejection: 20, conflict: 10, misunderstanding: 30, vulnerability: 5 },
-            { timestamp: Date.now() - 86400000 * 3, level: 12, rejection: 25, conflict: 15, misunderstanding: 25, vulnerability: 10 },
-            { timestamp: Date.now() - 86400000 * 2, level: 15, rejection: 22, conflict: 12, misunderstanding: 28, vulnerability: 15 },
-            { timestamp: Date.now() - 86400000 * 1, level: 18, rejection: 30, conflict: 20, misunderstanding: 20, vulnerability: 25 },
-            { timestamp: Date.now(), level: 20, rejection: 35, conflict: 25, misunderstanding: 15, vulnerability: 30 }
-          ],
-          locationEnabled: false
-        };
-        setUser(basicUser);
-
-        // Then try to fetch full data from Firestore
+        // Try to fetch full data from Firestore first
         const storedData = await getUserData(firebaseUser.uid);
+        
         if (storedData) {
           setUser(storedData);
         } else {
-          // If no data exists, save the initial basic data
+          // If no data exists, create the initial basic data
+          const basicUser: User = {
+            id: firebaseUser.uid,
+            name: firebaseUser.displayName || 'Seeker',
+            email: firebaseUser.email || '',
+            courageLevel: 15,
+            safeWord: 'Blue Spruce',
+            voiceNotes: [],
+            journalEntries: [],
+            liveHistory: [],
+            bio: '',
+            goals: [],
+            location: '',
+            emergencyContacts: [],
+            groups: [],
+            courageHistory: [
+              { timestamp: Date.now() - 86400000 * 4, level: 10, rejection: 20, conflict: 10, misunderstanding: 30, vulnerability: 5 },
+              { timestamp: Date.now() - 86400000 * 3, level: 12, rejection: 25, conflict: 15, misunderstanding: 25, vulnerability: 10 },
+              { timestamp: Date.now() - 86400000 * 2, level: 15, rejection: 22, conflict: 12, misunderstanding: 28, vulnerability: 15 },
+              { timestamp: Date.now() - 86400000 * 1, level: 18, rejection: 30, conflict: 20, misunderstanding: 20, vulnerability: 25 },
+              { timestamp: Date.now(), level: 20, rejection: 35, conflict: 25, misunderstanding: 15, vulnerability: 30 }
+            ],
+            locationEnabled: false
+          };
+          setUser(basicUser);
           await saveUserData(firebaseUser.uid, basicUser);
         }
 
@@ -5159,13 +5164,14 @@ export default function App() {
           setView('auth');
         }
       }
+      setIsUserLoading(false);
     });
     return () => unsubscribe();
   }, [view]);
 
   // Auto-save user data whenever it changes
   useEffect(() => {
-    if (user && user.id) {
+    if (user && user.id && !isUserLoading) {
       saveUserData(user.id, user);
       
       // Auto-exit if confidence reaches 100

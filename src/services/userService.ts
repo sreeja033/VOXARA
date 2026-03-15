@@ -12,13 +12,7 @@ export const getUserData = async (uid: string): Promise<User | null> => {
 
 export const saveUserData = async (uid: string, data: Partial<User>) => {
   const userRef = doc(db, "users", uid);
-  const userDoc = await getDoc(userRef);
-  
-  if (userDoc.exists()) {
-    await updateDoc(userRef, data);
-  } else {
-    await setDoc(userRef, data);
-  }
+  await setDoc(userRef, data, { merge: true });
 };
 
 export const subscribeToUserData = (uid: string, callback: (data: User) => void) => {
