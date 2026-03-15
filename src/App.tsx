@@ -725,7 +725,7 @@ const FearMapEvolution = ({ history }: { history: CourageHistoryEntry[] }) => {
 
   return (
     <div className="h-full w-full min-h-[240px]">
-      <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={240} debounce={100}>
+      <ResponsiveContainer width="99%" height={240} debounce={100}>
         <AreaChart data={data}>
           <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
           <XAxis dataKey="name" hide />
@@ -2606,7 +2606,7 @@ const LiveSession = ({ onBack, user, setUser }: { onBack: () => void, user: User
   const [micError, setMicError] = useState<string | null>(null);
   const sessionRef = useRef<any>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
-  const processorRef = useRef<ScriptProcessorNode | null>(null);
+  const processorRef = useRef<AudioNode | null>(null);
   const audioQueueRef = useRef<AudioBuffer[]>([]);
   const isPlayingRef = useRef(false);
 
@@ -2773,25 +2773,62 @@ const LiveSession = ({ onBack, user, setUser }: { onBack: () => void, user: User
       }
 
       const source = audioContextRef.current.createMediaStreamSource(stream);
-      // NOTE: ScriptProcessorNode is deprecated. In a production environment, 
-      // consider migrating to AudioWorkletNode for better performance and stability.
-      processorRef.current = audioContextRef.current.createScriptProcessor(4096, 1, 1);
-
-      processorRef.current.onaudioprocess = (e) => {
-        if (!sessionActiveRef.current || !sessionRef.current || sessionRef.current.readyState !== 1) return;
-        const inputData = e.inputBuffer.getChannelData(0);
-        const pcmData = new Int16Array(inputData.length);
-        for (let i = 0; i < inputData.length; i++) {
-          pcmData[i] = Math.max(-1, Math.min(1, inputData[i])) * 0x7FFF;
-        }
-        const base64Data = btoa(String.fromCharCode(...new Uint8Array(pcmData.buffer)));
-        session.sendRealtimeInput({
-          media: { data: base64Data, mimeType: 'audio/pcm;rate=16000' }
-        });
-      };
-
-      source.connect(processorRef.current);
-      processorRef.current.connect(audioContextRef.current.destination);
+      
+      // Use AudioWorklet if supported, fallback to ScriptProcessor
+      try {
+        const workletCode = `
+          class AudioProcessor extends AudioWorkletProcessor {
+            process(inputs, outputs, parameters) {
+              const input = inputs[0];
+              if (input.length > 0) {
+                const channelData = input[0];
+                this.port.postMessage(channelData);
+              }
+              return true;
+            }
+          }
+          registerProcessor('audio-processor', AudioProcessor);
+        `;
+        const blob = new Blob([workletCode], { type: 'application/javascript' });
+        const url = URL.createObjectURL(blob);
+        await audioContextRef.current.audioWorklet.addModule(url);
+        
+        const workletNode = new AudioWorkletNode(audioContextRef.current, 'audio-processor');
+        workletNode.port.onmessage = (event) => {
+          if (!sessionActiveRef.current || !sessionRef.current || sessionRef.current.readyState !== 1) return;
+          const inputData = event.data;
+          const pcmData = new Int16Array(inputData.length);
+          for (let i = 0; i < inputData.length; i++) {
+            pcmData[i] = Math.max(-1, Math.min(1, inputData[i])) * 0x7FFF;
+          }
+          const base64Data = btoa(String.fromCharCode(...new Uint8Array(pcmData.buffer)));
+          session.sendRealtimeInput({
+            media: { data: base64Data, mimeType: 'audio/pcm;rate=16000' }
+          });
+        };
+        
+        source.connect(workletNode);
+        workletNode.connect(audioContextRef.current.destination);
+        processorRef.current = workletNode;
+      } catch (workletErr) {
+        console.warn("AudioWorklet failed, falling back to ScriptProcessor:", workletErr);
+        const scriptProcessor = audioContextRef.current.createScriptProcessor(4096, 1, 1);
+        scriptProcessor.onaudioprocess = (e) => {
+          if (!sessionActiveRef.current || !sessionRef.current || sessionRef.current.readyState !== 1) return;
+          const inputData = e.inputBuffer.getChannelData(0);
+          const pcmData = new Int16Array(inputData.length);
+          for (let i = 0; i < inputData.length; i++) {
+            pcmData[i] = Math.max(-1, Math.min(1, inputData[i])) * 0x7FFF;
+          }
+          const base64Data = btoa(String.fromCharCode(...new Uint8Array(pcmData.buffer)));
+          session.sendRealtimeInput({
+            media: { data: base64Data, mimeType: 'audio/pcm;rate=16000' }
+          });
+        };
+        source.connect(scriptProcessor);
+        scriptProcessor.connect(audioContextRef.current.destination);
+        processorRef.current = scriptProcessor;
+      }
     } catch (err: any) {
       console.error("Mic access error:", err);
       setMicError(err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError' 
@@ -3448,7 +3485,7 @@ const FearStrengthMap = ({ user, onBack }: { user: User, onBack: () => void }) =
           <div className="glass-dark p-10 rounded-[3rem] border border-white/5">
             <h3 className="text-xl font-light tracking-widest uppercase mb-8 text-vox-paper/40">Evolution of Courage</h3>
             <div className="h-[300px] w-full min-h-[300px]">
-              <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={300} debounce={100}>
+              <ResponsiveContainer width="99%" height={300} debounce={100}>
                 <AreaChart data={chartData}>
                   <defs>
                     <linearGradient id="colorLevel" x1="0" y1="0" x2="0" y2="1">
@@ -5149,7 +5186,8 @@ export default function App() {
               { timestamp: Date.now() - 86400000 * 1, level: 18, rejection: 30, conflict: 20, misunderstanding: 20, vulnerability: 25 },
               { timestamp: Date.now(), level: 20, rejection: 35, conflict: 25, misunderstanding: 15, vulnerability: 30 }
             ],
-            locationEnabled: false
+            locationEnabled: false,
+            completedChallenges: []
           };
           setUser(basicUser);
           await saveUserData(firebaseUser.uid, basicUser);
