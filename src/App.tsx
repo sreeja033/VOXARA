@@ -308,7 +308,7 @@ const LandingPage = ({ onStart, isLoggedIn }: { onStart: () => void, isLoggedIn:
           transition={{ duration: 1.5, ease: "circOut" }}
           className="inline-block mb-6 px-4 py-1.5 rounded-full border border-vox-accent/30 bg-vox-accent/5 text-vox-accent text-xs font-bold uppercase tracking-[0.3em]"
         >
-          Aura of voice,Power of Rise
+          The Future of Emotional Courage
         </motion.div>
         
         <h1 className="text-8xl md:text-[12rem] mb-6 tracking-tighter leading-none font-serif">
@@ -2622,6 +2622,11 @@ const LiveSession = ({ onBack, user, setUser }: { onBack: () => void, user: User
   const processQueue = async () => {
     if (isPlayingRef.current || audioQueueRef.current.length === 0 || !audioContextRef.current) return;
     
+    // Ensure context is resumed
+    if (audioContextRef.current.state === 'suspended') {
+      await audioContextRef.current.resume();
+    }
+
     isPlayingRef.current = true;
     const buffer = audioQueueRef.current.shift()!;
     const source = audioContextRef.current.createBufferSource();

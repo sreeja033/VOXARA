@@ -3,9 +3,14 @@ export const playPCM = async (base64Audio: string, sampleRate: number = 24000, o
     const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
     
     // Ensure context is resumed (browsers often start it in 'suspended' state)
-    if (audioCtx.state === 'suspended') {
-      await audioCtx.resume();
-    }
+    // We also need to handle the case where resume() might need to be called multiple times
+    const resumeContext = async () => {
+      if (audioCtx.state === 'suspended') {
+        await audioCtx.resume();
+      }
+    };
+
+    await resumeContext();
 
     const binaryString = atob(base64Audio);
     const len = binaryString.length;
