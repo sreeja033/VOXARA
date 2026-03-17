@@ -986,7 +986,7 @@ const LandingPage = ({ onStart, isLoggedIn }: { onStart: () => void, isLoggedIn:
           transition={{ duration: 1.5, ease: "circOut" }}
           className="inline-block mb-6 px-4 py-1.5 rounded-full border border-vox-accent/30 bg-vox-accent/5 text-vox-accent text-xs font-bold uppercase tracking-[0.3em]"
         >
-          The Future of Emotional Courage
+          Aura of voice,Power of Rise
         </motion.div>
         
         <h1 className="text-8xl md:text-[12rem] mb-6 tracking-tighter leading-none font-serif">
