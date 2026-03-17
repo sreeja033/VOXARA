@@ -41,6 +41,19 @@ export interface CourageHistoryEntry {
   vulnerability: number;
 }
 
+export interface DailyRitual {
+  id: string;
+  text: string;
+  completed: boolean;
+  timestamp?: number;
+}
+
+export interface MoodEntry {
+  timestamp: number;
+  mood: 'great' | 'good' | 'neutral' | 'bad' | 'terrible';
+  note?: string;
+}
+
 export interface User {
   id: string;
   name: string;
@@ -58,10 +71,11 @@ export interface User {
   groups?: string[]; // Group IDs
   courageHistory?: CourageHistoryEntry[];
   locationEnabled?: boolean;
-  completedChallenges?: string[];
+  dailyRituals?: DailyRitual[];
+  moodHistory?: MoodEntry[];
 }
 
-export type AppState = 'landing' | 'auth' | 'dashboard' | 'whisper' | 'companion' | 'map' | 'circles' | 'presence' | 'bridge' | 'simulation' | 'echo' | 'live' | 'anchor' | 'exit' | 'emergency' | 'connections' | 'journal' | 'settings' | 'affirmations' | 'meditations' | 'challenges';
+export type AppState = 'landing' | 'auth' | 'dashboard' | 'whisper' | 'companion' | 'map' | 'circles' | 'presence' | 'bridge' | 'simulation' | 'echo' | 'live' | 'anchor' | 'exit' | 'emergency' | 'connections' | 'journal' | 'settings' | 'affirmations' | 'meditations' | 'rituals' | 'calm' | 'mood';
 
 export interface VoiceNote {
   id: string;

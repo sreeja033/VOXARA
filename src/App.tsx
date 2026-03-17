@@ -21,6 +21,8 @@ import {
   Play,
   Square,
   Sparkles,
+  Save,
+  Send,
   User as UserIcon,
   Settings,
   MicOff,
@@ -51,7 +53,7 @@ import {
   Navigation,
   TrendingDown,
 } from 'lucide-react';
-import { AppState, User, VoiceNote, LiveSessionEntry, JournalEntry, UserGoal, EmergencyContact, CourageHistoryEntry } from './types';
+import { AppState, User, VoiceNote, LiveSessionEntry, JournalEntry, UserGoal, EmergencyContact, CourageHistoryEntry, MoodEntry } from './types';
 import { generateCompanionResponse, ghostModePractice, generateSpeech, transcribeAudio, generateJournalPrompt } from './services/geminiService';
 import { playPCM } from './utils/audioUtils';
 import { signUp, logIn, logOut, subscribeToAuthChanges } from './services/authService';
@@ -71,7 +73,507 @@ import {
 } from 'recharts';
 import Markdown from 'react-markdown';
 
-// --- Components ---
+const MicPermissionCheck = () => {
+  const [status, setStatus] = useState<'prompt' | 'granted' | 'denied' | 'checking'>('checking');
+
+  useEffect(() => {
+    const checkPermission = async () => {
+      try {
+        const result = await navigator.permissions.query({ name: 'microphone' as PermissionName });
+        setStatus(result.state as any);
+        result.onchange = () => setStatus(result.state as any);
+      } catch (err) {
+        // Fallback for browsers that don't support permissions.query for mic
+        setStatus('prompt');
+      }
+    };
+    checkPermission();
+  }, []);
+
+  const requestPermission = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream.getTracks().forEach(track => track.stop());
+      setStatus('granted');
+    } catch (err) {
+      setStatus('denied');
+    }
+  };
+
+  if (status === 'granted') {
+    return (
+      <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-vox-accent font-bold bg-vox-accent/10 px-3 py-1.5 rounded-full border border-vox-accent/20">
+        <Mic size={12} />
+        <span>Mic Ready</span>
+      </div>
+    );
+  }
+
+  return (
+    <button 
+      onClick={requestPermission}
+      className={`flex items-center gap-2 text-[10px] uppercase tracking-widest font-bold px-3 py-1.5 rounded-full border transition-all ${
+        status === 'denied' 
+          ? 'text-red-400 bg-red-400/10 border-red-400/20' 
+          : 'text-vox-paper/40 bg-white/5 border-white/10 hover:bg-vox-accent/10 hover:text-vox-accent hover:border-vox-accent/20'
+      }`}
+    >
+      {status === 'denied' ? <MicOff size={12} /> : <Mic size={12} />}
+      <span>{status === 'denied' ? 'Mic Blocked' : 'Enable Mic'}</span>
+    </button>
+  );
+};
+
+// --- New Feature Components ---
+
+const DailyRituals = ({ user, setUser, onBack }: { user: User, setUser: React.Dispatch<React.SetStateAction<User | null>>, onBack: () => void }) => {
+  const rituals = user.dailyRituals || [];
+
+  const toggleRitual = (id: string) => {
+    const updated = rituals.map(r => r.id === id ? { ...r, completed: !r.completed, timestamp: Date.now() } : r);
+    setUser(prev => prev ? ({ ...prev, dailyRituals: updated }) : null);
+    
+    // If all completed, maybe give a small courage boost
+    if (updated.every(r => r.completed)) {
+      setUser(prev => prev ? ({ ...prev, courageLevel: Math.min(100, prev.courageLevel + 2) }) : null);
+    }
+  };
+
+  const resetRituals = () => {
+    const updated = rituals.map(r => ({ ...r, completed: false, timestamp: undefined }));
+    setUser(prev => prev ? ({ ...prev, dailyRituals: updated }) : null);
+  };
+
+  const completedCount = rituals.filter(r => r.completed).length;
+
+  return (
+    <div className="min-h-screen bg-vox-bg text-vox-paper p-6 relative overflow-hidden">
+      <div className="absolute inset-0 vox-gradient opacity-20" />
+      
+      <header className="max-w-4xl mx-auto flex justify-between items-center mb-16 relative z-10">
+        <button onClick={onBack} className="p-3 hover:bg-white/5 rounded-full transition-colors text-vox-paper/50 hover:text-white">
+          <ChevronRight className="rotate-180" size={24} />
+        </button>
+        <div className="text-center">
+          <h2 className="text-4xl font-light tracking-tighter text-white">Daily Rituals</h2>
+          <div className="flex items-center justify-center gap-2 mt-2">
+            <div className="h-px w-8 bg-vox-accent/30" />
+            <p className="text-vox-paper/40 text-[10px] uppercase tracking-[0.3em] font-bold">Speak your strength</p>
+            <div className="h-px w-8 bg-vox-accent/30" />
+          </div>
+        </div>
+        <button 
+          onClick={resetRituals}
+          className="p-3 hover:bg-white/5 rounded-full transition-colors text-vox-paper/30 hover:text-vox-accent"
+          title="Reset Rituals"
+        >
+          <RotateCcw size={20} />
+        </button>
+      </header>
+
+      <div className="max-w-2xl mx-auto relative z-10">
+        <div className="mb-12 flex items-center justify-between px-4">
+          <div className="text-sm font-serif italic text-vox-paper/60">
+            {completedCount === rituals.length ? "Your spirit is fortified." : `${completedCount} of ${rituals.length} rituals observed.`}
+          </div>
+          <div className="w-32 h-1 bg-white/5 rounded-full overflow-hidden">
+            <motion.div 
+              initial={{ width: 0 }}
+              animate={{ width: `${(completedCount / rituals.length) * 100}%` }}
+              className="h-full bg-vox-accent shadow-[0_0_10px_rgba(45,212,191,0.5)]"
+            />
+          </div>
+        </div>
+
+        <div className="space-y-6">
+          {rituals.map((ritual, idx) => (
+            <motion.div 
+              key={ritual.id}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: idx * 0.1 }}
+              className={`p-8 rounded-[2.5rem] border transition-all cursor-pointer group relative overflow-hidden ${
+                ritual.completed 
+                  ? 'bg-vox-accent/5 border-vox-accent/20' 
+                  : 'bg-[#0a0a0a]/40 border-white/5 hover:border-vox-accent/20'
+              }`}
+              onClick={() => toggleRitual(ritual.id)}
+            >
+              <div className="flex items-center justify-between relative z-10">
+                <div className="flex items-center gap-8">
+                  <div className={`w-14 h-14 rounded-full flex items-center justify-center border transition-all duration-500 ${
+                    ritual.completed 
+                      ? 'bg-vox-accent text-vox-bg border-vox-accent scale-110 shadow-[0_0_20px_rgba(45,212,191,0.3)]' 
+                      : 'bg-white/5 border-white/10 group-hover:border-vox-accent/40'
+                  }`}>
+                    {ritual.completed ? <Check size={24} strokeWidth={3} /> : <Mic size={24} className="text-vox-paper/20 group-hover:text-vox-accent transition-colors" />}
+                  </div>
+                  <div className="flex flex-col">
+                    <span className={`text-2xl font-serif italic transition-all duration-500 ${ritual.completed ? 'text-white' : 'text-vox-paper/60'}`}>
+                      "{ritual.text}"
+                    </span>
+                    {ritual.completed && (
+                      <span className="text-[10px] uppercase tracking-widest text-vox-accent mt-2 font-bold opacity-60">Observed</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+              
+              {/* Subtle animated background for completed items */}
+              {ritual.completed && (
+                <motion.div 
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="absolute inset-0 bg-gradient-to-r from-vox-accent/10 via-transparent to-transparent pointer-events-none"
+                />
+              )}
+            </motion.div>
+          ))}
+        </div>
+
+        <div className="mt-24 text-center">
+          <p className="text-vox-paper/20 text-sm font-serif italic max-w-sm mx-auto leading-relaxed">
+            "The words we speak to ourselves become the house we live in. Build a sanctuary of courage."
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const VoxaraLogo = ({ className = "w-12 h-12" }: { className?: string }) => (
+  <svg viewBox="0 0 100 100" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
+    {/* Curved Base */}
+    <path d="M10 90C30 75 70 75 90 90" stroke="url(#logoGradient)" strokeWidth="4" strokeLinecap="round" />
+    
+    {/* Left Person */}
+    <g transform="translate(15, 45) scale(0.8)">
+      <circle cx="10" cy="5" r="5" fill="#3b82f6" />
+      <path d="M0 25C0 15 20 15 20 25L15 40L5 40Z" fill="#3b82f6" opacity="0.8" />
+      <path d="M5 15L-5 5" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" />
+      <path d="M15 15L25 5" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" />
+    </g>
+
+    {/* Right Person */}
+    <g transform="translate(65, 45) scale(0.8)">
+      <circle cx="10" cy="5" r="5" fill="#f97316" />
+      <path d="M0 25C0 15 20 15 20 25L15 40L5 40Z" fill="#f97316" opacity="0.8" />
+      <path d="M5 15L-5 5" stroke="#f97316" strokeWidth="2" strokeLinecap="round" />
+      <path d="M15 15L25 5" stroke="#f97316" strokeWidth="2" strokeLinecap="round" />
+    </g>
+
+    {/* Center Microphone */}
+    <g transform="translate(40, 20)">
+      <rect x="5" y="0" width="10" height="20" rx="5" fill="#d97706" />
+      <path d="M0 10C0 20 20 20 20 10" stroke="#d97706" strokeWidth="2" fill="none" />
+      <line x1="10" y1="20" x2="10" y2="25" stroke="#d97706" strokeWidth="2" />
+      <line x1="5" y1="25" x2="15" y2="25" stroke="#d97706" strokeWidth="2" />
+      
+      {/* Sound Waves */}
+      <path d="M-5 5C-8 8 -8 12 -5 15" stroke="#d97706" strokeWidth="1.5" strokeLinecap="round" opacity="0.6">
+        <animate attributeName="opacity" values="0.2;1;0.2" dur="2s" repeatCount="indefinite" />
+      </path>
+      <path d="M-10 0C-15 5 -15 15 -10 20" stroke="#d97706" strokeWidth="1.5" strokeLinecap="round" opacity="0.4">
+        <animate attributeName="opacity" values="0.1;0.8;0.1" dur="2s" repeatCount="indefinite" begin="0.5s" />
+      </path>
+      
+      <path d="M25 5C28 8 28 12 25 15" stroke="#d97706" strokeWidth="1.5" strokeLinecap="round" opacity="0.6">
+        <animate attributeName="opacity" values="0.2;1;0.2" dur="2s" repeatCount="indefinite" />
+      </path>
+      <path d="M30 0C35 5 35 15 30 20" stroke="#d97706" strokeWidth="1.5" strokeLinecap="round" opacity="0.4">
+        <animate attributeName="opacity" values="0.1;0.8;0.1" dur="2s" repeatCount="indefinite" begin="0.5s" />
+      </path>
+    </g>
+
+    <defs>
+      <linearGradient id="logoGradient" x1="0" y1="0" x2="100" y2="0">
+        <stop offset="0%" stopColor="#3b82f6" />
+        <stop offset="50%" stopColor="#d97706" />
+        <stop offset="100%" stopColor="#f97316" />
+      </linearGradient>
+    </defs>
+  </svg>
+);
+
+const BoxBreathing = () => {
+  const [phase, setPhase] = useState<'Inhale' | 'Hold' | 'Exhale' | 'Hold '>('Inhale');
+  const [timeLeft, setTimeLeft] = useState(4);
+  const [isActive, setIsActive] = useState(false);
+
+  useEffect(() => {
+    let timer: any;
+    if (isActive && timeLeft > 0) {
+      timer = setInterval(() => setTimeLeft(prev => prev - 1), 1000);
+    } else if (isActive && timeLeft === 0) {
+      const phases: ('Inhale' | 'Hold' | 'Exhale' | 'Hold ')[] = ['Inhale', 'Hold', 'Exhale', 'Hold '];
+      const currentIndex = phases.indexOf(phase);
+      const nextIndex = (currentIndex + 1) % phases.length;
+      setPhase(phases[nextIndex]);
+      setTimeLeft(4);
+    }
+    return () => clearInterval(timer);
+  }, [isActive, timeLeft, phase]);
+
+  return (
+    <div className="w-full mt-6 flex flex-col items-center">
+      <div className="relative w-48 h-48 flex items-center justify-center">
+        {/* Pulsating Ring */}
+        <AnimatePresence>
+          {isActive && (
+            <motion.div 
+              key={phase + timeLeft}
+              initial={{ scale: 0.8, opacity: 0.5 }}
+              animate={{ scale: 1.2, opacity: 0 }}
+              transition={{ duration: 1, repeat: Infinity }}
+              className="absolute inset-0 rounded-full border-2 border-vox-accent/30"
+            />
+          )}
+        </AnimatePresence>
+
+        {/* Outer Circle (Progress) */}
+        <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 200 200">
+          <circle 
+            cx="100" cy="100" r="90" 
+            className="stroke-white/5 fill-none" 
+            strokeWidth="4"
+          />
+          <motion.circle 
+            cx="100" cy="100" r="90" 
+            className="stroke-vox-accent fill-none" 
+            strokeWidth="4"
+            strokeDasharray="565.48"
+            animate={{ strokeDashoffset: 565.48 * (1 - timeLeft / 4) }}
+            transition={{ duration: 1, ease: "linear" }}
+            strokeLinecap="round"
+          />
+        </svg>
+
+        <motion.div 
+          animate={{ 
+            scale: phase === 'Inhale' ? [1, 1.3] : phase === 'Exhale' ? [1.3, 1] : phase === 'Hold' ? 1.3 : 1
+          }}
+          transition={{ duration: 4, ease: "linear" }}
+          className="absolute inset-4 rounded-full border-2 border-vox-accent/30 bg-vox-accent/5 flex items-center justify-center"
+        >
+          <div className="text-center z-10">
+            <motion.div 
+              key={timeLeft}
+              initial={{ scale: 1.2, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="text-vox-accent font-bold text-4xl mb-1"
+            >
+              {timeLeft}
+            </motion.div>
+            <div className="text-vox-paper/60 text-[10px] uppercase tracking-widest">{phase}</div>
+          </div>
+        </motion.div>
+      </div>
+      <button 
+        onClick={(e) => { e.stopPropagation(); setIsActive(!isActive); }}
+        className="mt-8 px-6 py-2 rounded-full bg-vox-accent/20 border border-vox-accent/30 text-vox-accent text-xs font-bold uppercase tracking-widest hover:bg-vox-accent/30 transition-all"
+      >
+        {isActive ? 'Pause' : 'Start Ritual'}
+      </button>
+    </div>
+  );
+};
+
+const MuscleRelaxation = () => {
+  const [currentStep, setCurrentStep] = useState(0);
+  const [isTense, setIsTense] = useState(false);
+  const [isActive, setIsActive] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(5);
+
+  const steps = [
+    'Toes & Feet',
+    'Calves',
+    'Thighs',
+    'Glutes',
+    'Abdomen',
+    'Hands & Arms',
+    'Shoulders',
+    'Face & Jaw'
+  ];
+
+  useEffect(() => {
+    let timer: any;
+    if (isActive && timeLeft > 0) {
+      timer = setInterval(() => {
+        setTimeLeft(prev => prev - 1);
+        // Subtle haptic feedback every second during tension
+        if (isTense && 'vibrate' in navigator) {
+          navigator.vibrate(20);
+        }
+      }, 1000);
+    } else if (isActive && timeLeft === 0) {
+      if (!isTense) {
+        // Transition to Tense
+        setIsTense(true);
+        setTimeLeft(5);
+        if ('vibrate' in navigator) navigator.vibrate([200, 100, 200]);
+      } else {
+        // Transition to Release
+        setIsTense(false);
+        setTimeLeft(5);
+        if ('vibrate' in navigator) navigator.vibrate([50, 50, 50]); // Subtle release pulse
+        if (currentStep < steps.length - 1) {
+          setCurrentStep(prev => prev + 1);
+        } else {
+          setIsActive(false);
+          setCurrentStep(0);
+        }
+      }
+    }
+    return () => clearInterval(timer);
+  }, [isActive, timeLeft, isTense, currentStep]);
+
+  return (
+    <div className="w-full mt-6 flex flex-col items-center">
+      <div className="text-center mb-6">
+        <div className="text-vox-paper/40 text-[10px] uppercase tracking-widest mb-2">Current Area</div>
+        <div className="text-xl font-serif italic text-white">{steps[currentStep]}</div>
+      </div>
+      
+      <div className="relative w-full h-12 bg-white/5 rounded-full overflow-hidden border border-white/10">
+        <motion.div 
+          animate={{ 
+            width: `${(timeLeft / 5) * 100}%`,
+            backgroundColor: isTense ? 'rgba(242, 125, 38, 0.4)' : 'rgba(16, 185, 129, 0.4)'
+          }}
+          className="h-full"
+        />
+        <div className="absolute inset-0 flex items-center justify-center text-[10px] font-bold uppercase tracking-widest text-white">
+          {isTense ? `Tense - ${timeLeft}s` : `Release - ${timeLeft}s`}
+        </div>
+      </div>
+
+      <button 
+        onClick={(e) => { e.stopPropagation(); setIsActive(!isActive); }}
+        className="mt-8 px-6 py-2 rounded-full bg-vox-accent/20 border border-vox-accent/30 text-vox-accent text-xs font-bold uppercase tracking-widest hover:bg-vox-accent/30 transition-all"
+      >
+        {isActive ? 'Pause' : 'Start Release'}
+      </button>
+    </div>
+  );
+};
+
+const CalmCenter = ({ onBack }: { onBack: () => void }) => {
+  const [activeExercise, setActiveExercise] = useState<string | null>(null);
+
+  const exercises = [
+    {
+      id: '54321',
+      title: '5-4-3-2-1 Grounding',
+      description: 'A technique to bring you back to the present moment.',
+      steps: [
+        'Acknowledge 5 things you see around you.',
+        'Acknowledge 4 things you can touch.',
+        'Acknowledge 3 things you hear.',
+        'Acknowledge 2 things you can smell.',
+        'Acknowledge 1 thing you can taste.'
+      ],
+      icon: <Eye size={24} />,
+      interactive: null
+    },
+    {
+      id: 'box',
+      title: 'Box Breathing',
+      description: 'Powerful tool to regulate your nervous system.',
+      steps: [
+        'Inhale for 4 seconds.',
+        'Hold for 4 seconds.',
+        'Exhale for 4 seconds.',
+        'Hold for 4 seconds.',
+        'Repeat 4 times.'
+      ],
+      icon: <Wind size={24} />,
+      interactive: <BoxBreathing />
+    },
+    {
+      id: 'muscle',
+      title: 'Muscle Relaxation',
+      description: 'Release physical tension from your body.',
+      steps: [
+        'Tense your toes for 5 seconds, then release.',
+        'Tense your calves, then release.',
+        'Tense your thighs, then release.',
+        'Work your way up to your shoulders and face.',
+        'Feel the weight of your body sinking down.'
+      ],
+      icon: <Activity size={24} />,
+      interactive: <MuscleRelaxation />
+    }
+  ];
+
+  return (
+    <div className="min-h-screen bg-vox-bg text-vox-paper p-6">
+      <header className="max-w-4xl mx-auto flex justify-between items-center mb-12">
+        <button onClick={onBack} className="p-2 hover:bg-white/5 rounded-full transition-colors">
+          <X size={24} />
+        </button>
+        <div className="flex items-center gap-4">
+          <VoxaraLogo className="w-10 h-10" />
+          <div className="text-center">
+            <h2 className="text-3xl font-serif italic text-white">Calm Center</h2>
+            <p className="text-vox-paper/40 text-xs uppercase tracking-widest mt-2">Anchor yourself in the storm</p>
+          </div>
+        </div>
+        <div className="w-10" />
+      </header>
+
+      <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
+        {exercises.map((ex) => (
+          <motion.div 
+            key={ex.id}
+            whileHover={{ y: -10 }}
+            className={`p-8 rounded-[3rem] border transition-all cursor-pointer flex flex-col items-center text-center ${
+              activeExercise === ex.id ? 'bg-vox-accent/10 border-vox-accent/30' : 'bg-[#0a0a0a]/40 border-white/5 hover:border-vox-accent/20'
+            }`}
+            onClick={() => setActiveExercise(ex.id)}
+          >
+            <div className="w-16 h-16 rounded-full bg-vox-accent/10 flex items-center justify-center mb-6 border border-vox-accent/20">
+              {ex.icon}
+            </div>
+            <h3 className="text-xl font-serif italic text-white mb-4">{ex.title}</h3>
+            <p className="text-vox-paper/40 text-sm mb-8 leading-relaxed">{ex.description}</p>
+            
+            <AnimatePresence>
+              {activeExercise === ex.id && (
+                <motion.div 
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="w-full text-left space-y-4"
+                >
+                  <div className="h-px w-full bg-white/5 my-4" />
+                  {ex.interactive}
+                  {!ex.interactive && ex.steps.map((step, i) => (
+                    <div key={i} className="flex gap-3 text-sm text-vox-paper/60">
+                      <span className="text-vox-accent font-mono">{i + 1}.</span>
+                      {step}
+                    </div>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
+        ))}
+      </div>
+
+      <div className="mt-24 max-w-lg mx-auto bg-red-500/5 border border-red-500/10 p-8 rounded-[2rem] text-center">
+        <AlertCircle className="text-red-400 mx-auto mb-4" size={32} />
+        <h4 className="text-white font-serif italic text-xl mb-2">Need immediate help?</h4>
+        <p className="text-vox-paper/40 text-sm mb-6">If you are in immediate danger or a crisis, please reach out to emergency services.</p>
+        <button 
+          onClick={() => window.location.href = 'tel:988'} // US Suicide & Crisis Lifeline
+          className="px-8 py-3 bg-red-500/20 text-red-400 rounded-full border border-red-500/30 hover:bg-red-500/30 transition-all font-bold tracking-widest text-xs uppercase"
+        >
+          Call Lifeline
+        </button>
+      </div>
+    </div>
+  );
+};
 
 const FloatingParticles = () => {
   return (
@@ -290,6 +792,20 @@ const QuickActions = ({ setView }: { setView: (v: AppState) => void }) => (
 
 const LandingPage = ({ onStart, isLoggedIn }: { onStart: () => void, isLoggedIn: boolean }) => (
   <div className="min-h-screen bg-vox-bg text-vox-paper selection:bg-vox-accent/30">
+    {/* Upper Title Bar */}
+    <nav className="fixed top-0 left-0 right-0 z-50 px-8 py-6 flex justify-between items-center backdrop-blur-sm bg-vox-bg/20 border-b border-white/5">
+      <div className="flex items-center gap-3">
+        <VoxaraLogo className="w-10 h-10" />
+        <span className="text-xl font-serif tracking-tighter">VOXARA</span>
+      </div>
+      <button 
+        onClick={onStart}
+        className="px-6 py-2 rounded-full border border-vox-accent/30 bg-vox-accent/5 text-vox-accent text-xs font-bold uppercase tracking-widest hover:bg-vox-accent/20 transition-all"
+      >
+        {isLoggedIn ? 'Dashboard' : 'Sign In'}
+      </button>
+    </nav>
+
     {/* Hero Section */}
     <section className="relative min-h-screen flex flex-col items-center justify-center px-6 overflow-hidden">
       <div className="absolute inset-0 vox-gradient opacity-60" />
@@ -827,10 +1343,13 @@ const Dashboard = ({ user, setView, setUser }: { user: User, setView: (v: AppSta
               <motion.div 
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
-                className="flex items-center gap-4 mb-12"
+                className="flex items-center gap-6 mb-12"
               >
-                <div className="h-px w-12 bg-vox-accent/40" />
-                <span className="text-[10px] uppercase tracking-[0.5em] text-vox-accent font-bold">Your Sanctuary</span>
+                <VoxaraLogo className="w-16 h-16 drop-shadow-[0_0_15px_rgba(45,212,191,0.2)]" />
+                <div className="flex items-center gap-4">
+                  <div className="h-px w-12 bg-vox-accent/40" />
+                  <span className="text-[10px] uppercase tracking-[0.5em] text-vox-accent font-bold">Your Sanctuary</span>
+                </div>
               </motion.div>
               
               <h2 className="text-[8vw] lg:text-[100px] font-light tracking-tighter mb-8 leading-[0.9] text-white">
@@ -859,26 +1378,6 @@ const Dashboard = ({ user, setView, setUser }: { user: User, setView: (v: AppSta
                   </div>
                   <div className="text-vox-accent/40 group-hover:text-vox-accent transition-colors">
                     <TrendingUp size={16} />
-                  </div>
-                </motion.div>
-
-                {/* Challenges Card */}
-                <motion.div 
-                  whileHover={{ scale: 1.02, y: -5 }}
-                  onClick={() => setView('challenges')}
-                  className="bg-[#0a0a0a]/60 backdrop-blur-xl p-6 rounded-[2rem] border border-white/5 flex items-center justify-between group cursor-pointer hover:border-vox-accent/20 transition-all shadow-2xl shadow-black/50"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-full bg-vox-accent/10 flex items-center justify-center border border-vox-accent/20 group-hover:bg-vox-accent/20 transition-all">
-                      <Zap size={20} className="text-vox-accent" />
-                    </div>
-                    <div>
-                      <div className="text-[9px] uppercase tracking-widest text-vox-paper/40 font-bold mb-0.5">Active Challenges</div>
-                      <div className="text-2xl font-light">{(user.completedChallenges?.length || 0)} Completed</div>
-                    </div>
-                  </div>
-                  <div className="text-vox-accent/40 group-hover:text-vox-accent transition-colors">
-                    <ArrowRight size={16} />
                   </div>
                 </motion.div>
 
@@ -974,11 +1473,16 @@ const Dashboard = ({ user, setView, setUser }: { user: User, setView: (v: AppSta
 
                 {/* Presence Status Info */}
                 <div className="absolute bottom-12 left-12 right-12">
-                  <div className="flex items-center gap-3 mb-4">
-                    <Users size={14} className="text-[#2dd4bf]" />
-                    <span className="text-[10px] uppercase tracking-[0.3em] text-[#2dd4bf] font-bold">Presence Status</span>
+                  <div className="flex justify-between items-end mb-4">
+                    <div className="flex flex-col gap-4">
+                      <div className="flex items-center gap-3">
+                        <Users size={14} className="text-[#2dd4bf]" />
+                        <span className="text-[10px] uppercase tracking-[0.3em] text-[#2dd4bf] font-bold">Presence Status</span>
+                      </div>
+                      <h3 className="text-4xl font-serif italic text-white">Quiet Strength</h3>
+                    </div>
+                    <MicPermissionCheck />
                   </div>
-                  <h3 className="text-4xl font-serif italic text-white mb-4">Quiet Strength</h3>
                   <div className="flex items-center gap-2 text-vox-paper/30 text-xs font-serif">
                     <div className="w-1 h-1 rounded-full bg-vox-accent/40" />
                     ... 12 others are currently in silence.
@@ -996,6 +1500,26 @@ const Dashboard = ({ user, setView, setUser }: { user: User, setView: (v: AppSta
 
         {/* Clean Grid Layout - Bento Style */}
         <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-6 gap-6">
+          <FeatureCard 
+            title="Daily Rituals"
+            description="Speak your strength. Repeat the words that build your courage."
+            icon={Sparkles}
+            image="https://picsum.photos/seed/ritual/800/600"
+            accentColor="#10b981"
+            label="Rituals"
+            onClick={() => setView('rituals')}
+            className="md:col-span-2 lg:col-span-2"
+          />
+          <FeatureCard 
+            title="Calm Center"
+            description="Guided exercises for anxiety and panic moments."
+            icon={Wind}
+            image="https://picsum.photos/seed/calm/800/600"
+            accentColor="#60a5fa"
+            label="Calm"
+            onClick={() => setView('calm')}
+            className="md:col-span-2 lg:col-span-2"
+          />
           <FeatureCard 
             title="Whisper Ritual"
             label="Vocal Release"
@@ -1030,17 +1554,6 @@ const Dashboard = ({ user, setView, setUser }: { user: User, setView: (v: AppSta
           />
 
           <FeatureCard 
-            title="Courage Challenges"
-            label="Training Ground"
-            description="Small, safe steps to build your expression muscles."
-            icon={Zap}
-            image="https://picsum.photos/seed/challenges/800/600"
-            accentColor="#f59e0b"
-            onClick={() => setView('challenges')}
-            className="md:col-span-2 lg:col-span-2 min-h-[280px] md:h-[320px]"
-          />
-
-          <FeatureCard 
             title="Courage Lab"
             label="Guided Practice"
             description="Controlled scenarios for real-world resilience."
@@ -1059,6 +1572,17 @@ const Dashboard = ({ user, setView, setUser }: { user: User, setView: (v: AppSta
             image="https://picsum.photos/seed/map/800/600"
             accentColor="#facc15"
             onClick={() => setView('map')}
+            className="md:col-span-2 lg:col-span-2 min-h-[280px] md:h-[320px]"
+          />
+
+          <FeatureCard 
+            title="Mood Sanctuary"
+            label="Emotional Pulse"
+            description="Track your emotional journey with calendar and analysis."
+            icon={TrendingUp}
+            image="https://picsum.photos/seed/mood/800/600"
+            accentColor="#f27d26"
+            onClick={() => setView('mood')}
             className="md:col-span-2 lg:col-span-2 min-h-[280px] md:h-[320px]"
           />
 
@@ -1214,7 +1738,29 @@ const Dashboard = ({ user, setView, setUser }: { user: User, setView: (v: AppSta
   );
 };
 
-const WhisperMode = ({ onBack, user, setUser, safePlayPCM, stopAllAudio, onCompleteChallenge }: { onBack: () => void, user: User, setUser: React.Dispatch<React.SetStateAction<User | null>>, safePlayPCM: any, stopAllAudio: () => void, onCompleteChallenge: (id: string, reward: number) => void }) => {
+const Waveform = ({ isActive, color = "#f27d26", barCount = 20 }: { isActive: boolean, color?: string, barCount?: number }) => {
+  return (
+    <div className="flex items-center justify-center gap-1 h-12">
+      {[...Array(barCount)].map((_, i) => (
+        <motion.div
+          key={i}
+          animate={{
+            height: isActive ? [8, Math.random() * 32 + 8, 8] : 8,
+          }}
+          transition={{
+            duration: 0.5 + Math.random() * 0.5,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+          className="w-1 rounded-full"
+          style={{ backgroundColor: color }}
+        />
+      ))}
+    </div>
+  );
+};
+
+const WhisperMode = ({ onBack, user, setUser, safePlayPCM, stopAllAudio }: { onBack: () => void, user: User, setUser: React.Dispatch<React.SetStateAction<User | null>>, safePlayPCM: any, stopAllAudio: () => void }) => {
   const [mode, setMode] = useState<'breath' | 'whisper' | 'voice'>('whisper');
   const [isRecording, setIsRecording] = useState(false);
   const [timer, setTimer] = useState(0);
@@ -1368,7 +1914,7 @@ const WhisperMode = ({ onBack, user, setUser, safePlayPCM, stopAllAudio, onCompl
       };
     });
 
-    onCompleteChallenge('whisper-test', 5);
+    // Whisper saved
 
     setTimeout(() => {
       setIsSaving(false);
@@ -1470,6 +2016,15 @@ const WhisperMode = ({ onBack, user, setUser, safePlayPCM, stopAllAudio, onCompl
               {isRecording ? <Square size={48} fill="white" /> : <Mic size={48} fill="white" />}
             </motion.button>
           </div>
+
+          {isRecording && (
+            <div className="mb-8">
+              <Waveform isActive={true} color={mode === 'breath' ? '#60a5fa' : '#f27d26'} barCount={30} />
+              <div className="text-center mt-4 text-[10px] uppercase tracking-[0.3em] text-vox-paper/40 font-bold">
+                Capturing your {mode}...
+              </div>
+            </div>
+          )}
 
           {micError && (
             <motion.div 
@@ -1635,12 +2190,13 @@ const WhisperMode = ({ onBack, user, setUser, safePlayPCM, stopAllAudio, onCompl
 );
 };
 
-const CompanionMode = ({ onBack, user, setUser, safePlayPCM, stopAllAudio, onCompleteChallenge }: { onBack: () => void, user: User, setUser: React.Dispatch<React.SetStateAction<User | null>>, safePlayPCM: any, stopAllAudio: () => void, onCompleteChallenge: (id: string, reward: number) => void }) => {
+const CompanionMode = ({ onBack, user, setUser, safePlayPCM, stopAllAudio }: { onBack: () => void, user: User, setUser: React.Dispatch<React.SetStateAction<User | null>>, safePlayPCM: any, stopAllAudio: () => void }) => {
   const [messages, setMessages] = useState<{ role: 'user' | 'model', text: string, id: string }[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [useVoice, setUseVoice] = useState(true);
+  const [voiceVolume, setVoiceVolume] = useState(1.0);
   const [lastAudio, setLastAudio] = useState<string | null>(null);
   const [soundscape, setSoundscape] = useState<'none' | 'rain' | 'forest' | 'ocean'>('none');
   const [soundscapeVolume, setSoundscapeVolume] = useState(0.2);
@@ -1663,7 +2219,7 @@ const CompanionMode = ({ onBack, user, setUser, safePlayPCM, stopAllAudio, onCom
         const audioBase64 = await generateSpeech(intro);
         if (audioBase64) {
           setLastAudio(audioBase64);
-          await safePlayPCM(audioBase64, 24000, () => setIsSpeaking(false));
+          await safePlayPCM(audioBase64, 24000, () => setIsSpeaking(false), voiceVolume);
         } else {
           setIsSpeaking(false);
         }
@@ -1694,6 +2250,63 @@ const CompanionMode = ({ onBack, user, setUser, safePlayPCM, stopAllAudio, onCom
       return {
         ...prev,
         voiceNotes: [newNote, ...(prev.voiceNotes || [])]
+      };
+    });
+  };
+
+  const saveFullConversation = () => {
+    if (messages.length === 0) return;
+    
+    const newEntry: LiveSessionEntry = {
+      id: `companion-full-${Math.random().toString(36).substr(2, 9)}`,
+      timestamp: Date.now(),
+      messages: messages.map(m => ({
+        role: m.role,
+        text: m.text,
+        timestamp: Date.now()
+      }))
+    };
+
+    setUser(prev => {
+      if (!prev) return null;
+      return {
+        ...prev,
+        liveHistory: [newEntry, ...(prev.liveHistory || [])]
+      };
+    });
+    
+    // Also save as a long voice note/journal entry if preferred
+    const fullText = messages.map(m => `${m.role === 'user' ? 'Me' : 'Companion'}: ${m.text}`).join('\n\n');
+    const newJournalEntry: JournalEntry = {
+      id: Math.random().toString(36).substr(2, 9),
+      timestamp: Date.now(),
+      prompt: "Companion Session Summary",
+      response: fullText
+    };
+
+    setUser(prev => {
+      if (!prev) return null;
+      return {
+        ...prev,
+        journalEntries: [newJournalEntry, ...(prev.journalEntries || [])]
+      };
+    });
+
+    // Also save to Echo Chamber (Voice Notes)
+    const newVoiceNote: VoiceNote = {
+      id: `companion-note-${Math.random().toString(36).substr(2, 9)}`,
+      timestamp: Date.now(),
+      duration: 0,
+      type: 'companion',
+      isPrivate: true,
+      text: fullText
+    };
+
+    setUser(prev => {
+      if (!prev) return null;
+      return {
+        ...prev,
+        voiceNotes: [newVoiceNote, ...(prev.voiceNotes || [])]
       };
     });
   };
@@ -1741,7 +2354,7 @@ const CompanionMode = ({ onBack, user, setUser, safePlayPCM, stopAllAudio, onCom
   }, [soundscape, soundscapeVolume]);
 
   const playRawAudio = async (base64Audio: string, sampleRate: number = 24000) => {
-    await safePlayPCM(base64Audio, sampleRate, () => setIsSpeaking(false));
+    await safePlayPCM(base64Audio, sampleRate, () => setIsSpeaking(false), voiceVolume);
   };
 
   const handleSend = async () => {
@@ -1750,7 +2363,7 @@ const CompanionMode = ({ onBack, user, setUser, safePlayPCM, stopAllAudio, onCom
     setInput('');
     setMessages(prev => [...prev, { role: 'user', text: userMsg, id: Math.random().toString(36).substr(2, 9) }]);
     setIsLoading(true);
-    onCompleteChallenge('digital-greeting', 5);
+    // Greeting complete
 
     const history = messages.map(m => ({ role: m.role, parts: [{ text: m.text }] }));
     const response = await generateCompanionResponse(userMsg, history);
@@ -1831,20 +2444,44 @@ const CompanionMode = ({ onBack, user, setUser, safePlayPCM, stopAllAudio, onCom
         </button>
         <div className="flex items-center gap-6">
           {sessionActive && (
-            <button 
-              onClick={endSession}
-              className="px-4 py-1.5 rounded-full bg-red-500/10 text-red-400 border border-red-500/20 text-[10px] uppercase tracking-widest font-bold hover:bg-red-500/20 transition-all"
-            >
-              End Session
-            </button>
+            <div className="flex items-center gap-2">
+              <button 
+                onClick={saveFullConversation}
+                className="px-4 py-1.5 rounded-full bg-vox-accent/10 text-vox-accent border border-vox-accent/20 text-[10px] uppercase tracking-widest font-bold hover:bg-vox-accent/20 transition-all flex items-center gap-2"
+              >
+                <Save size={12} /> Save Session
+              </button>
+              <button 
+                onClick={endSession}
+                className="px-4 py-1.5 rounded-full bg-red-500/10 text-red-400 border border-red-500/20 text-[10px] uppercase tracking-widest font-bold hover:bg-red-500/20 transition-all"
+              >
+                End Session
+              </button>
+            </div>
           )}
-          <button 
-            onClick={() => setUseVoice(!useVoice)}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-full transition-all text-[10px] uppercase tracking-widest font-bold ${useVoice ? 'bg-vox-accent/20 text-vox-accent border border-vox-accent/30' : 'bg-white/5 text-vox-paper/30 border border-white/10'}`}
-          >
-            {useVoice ? <Volume2 size={12} /> : <VolumeX size={12} />}
-            {useVoice ? 'Voice On' : 'Voice Off'}
-          </button>
+          <div className="flex items-center gap-4">
+            <button 
+              onClick={() => setUseVoice(!useVoice)}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-full transition-all text-[10px] uppercase tracking-widest font-bold ${useVoice ? 'bg-vox-accent/20 text-vox-accent border border-vox-accent/30' : 'bg-white/5 text-vox-paper/30 border border-white/10'}`}
+            >
+              {useVoice ? <Volume2 size={12} /> : <VolumeX size={12} />}
+              {useVoice ? 'Voice On' : 'Voice Off'}
+            </button>
+            {useVoice && (
+              <div className="flex items-center gap-2">
+                <Volume2 size={10} className="text-vox-paper/30" />
+                <input 
+                  type="range" 
+                  min="0" 
+                  max="1" 
+                  step="0.01" 
+                  value={voiceVolume} 
+                  onChange={(e) => setVoiceVolume(parseFloat(e.target.value))}
+                  className="w-16 h-1 bg-white/10 rounded-full appearance-none cursor-pointer accent-vox-accent"
+                />
+              </div>
+            )}
+          </div>
           <div className="flex gap-2 items-center">
             {soundscapes.map(s => (
               <button 
@@ -1909,7 +2546,7 @@ const CompanionMode = ({ onBack, user, setUser, safePlayPCM, stopAllAudio, onCom
           <div ref={scrollRef} className="flex-1 overflow-y-auto space-y-8 mb-4 pr-4 scrollbar-hide">
             {messages.map((m, i) => (
               <motion.div 
-                key={i}
+                key={m.id}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}
@@ -1946,6 +2583,17 @@ const CompanionMode = ({ onBack, user, setUser, safePlayPCM, stopAllAudio, onCom
                 </div>
               </div>
             )}
+            {isUserTyping && (
+              <div className="flex justify-end">
+                <div className="bg-vox-accent/10 p-4 rounded-2xl rounded-tr-none border border-vox-accent/20">
+                  <div className="flex gap-1">
+                    <div className="w-1 h-1 bg-vox-accent rounded-full animate-bounce" />
+                    <div className="w-1 h-1 bg-vox-accent rounded-full animate-bounce [animation-delay:0.2s]" />
+                    <div className="w-1 h-1 bg-vox-accent rounded-full animate-bounce [animation-delay:0.4s]" />
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="relative">
@@ -1966,7 +2614,7 @@ const CompanionMode = ({ onBack, user, setUser, safePlayPCM, stopAllAudio, onCom
               onClick={handleSend}
               className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-vox-accent text-vox-bg rounded-xl flex items-center justify-center hover:scale-105 active:scale-95 transition-all"
             >
-              <ArrowRight size={20} />
+              <Send size={20} />
             </button>
           </div>
         </div>
@@ -2046,195 +2694,7 @@ const CompanionMode = ({ onBack, user, setUser, safePlayPCM, stopAllAudio, onCom
 );
 };
 
-const CourageChallenges = ({ user, setUser, onBack, setView }: { user: User, setUser: (u: User) => void, onBack: () => void, setView: (s: AppState) => void }) => {
-  const challenges = [
-    {
-      id: 'whisper-test',
-      title: 'The Whisper Test',
-      description: 'Practice finding your voice by recording a 5-second whisper. It doesn\'t have to be words, just a soft sound.',
-      icon: Mic,
-      reward: 5,
-      targetView: 'whisper'
-    },
-    {
-      id: 'mirror-echo',
-      title: 'The Mirror Echo',
-      description: 'Listen to one of your saved voice notes in the Echo Chamber. Hearing yourself is a powerful step.',
-      icon: Volume2,
-      reward: 5,
-      targetView: 'echo'
-    },
-    {
-      id: 'brave-breath',
-      title: 'The Brave Breath',
-      description: 'Complete a 1-minute mindful presence session. Courage starts with being present with yourself.',
-      icon: Wind,
-      reward: 10,
-      targetView: 'presence'
-    },
-    {
-      id: 'digital-greeting',
-      title: 'The Digital Greeting',
-      description: 'Start a conversation with your AI Companion. A simple "Hello" is a great beginning.',
-      icon: MessageSquare,
-      reward: 5,
-      targetView: 'companion'
-    },
-    {
-      id: 'truth-journal',
-      title: 'The Truth Journal',
-      description: 'Write one honest sentence about how you feel right now in your Guided Journal.',
-      icon: BookOpen,
-      reward: 10,
-      targetView: 'journal'
-    },
-    {
-      id: 'ghost-practice',
-      title: 'The Ghost Practice',
-      description: 'Try one practice conversation in Beloved Bridge mode. Simulation builds resilience.',
-      icon: Bridge,
-      reward: 15,
-      targetView: 'bridge'
-    }
-  ];
-
-  const completeChallenge = (id: string, reward: number) => {
-    if (user.completedChallenges?.includes(id)) return;
-    
-    const newLevel = Math.min(100, user.courageLevel + reward);
-    const lastEntry = user.courageHistory?.[user.courageHistory.length - 1] || {
-      rejection: 10,
-      conflict: 10,
-      misunderstanding: 10,
-      vulnerability: 10
-    };
-
-    const newEntry: CourageHistoryEntry = {
-      timestamp: Date.now(),
-      level: newLevel,
-      rejection: lastEntry.rejection,
-      conflict: lastEntry.conflict,
-      misunderstanding: lastEntry.misunderstanding,
-      vulnerability: lastEntry.vulnerability
-    };
-
-    const newCompleted = [...(user.completedChallenges || []), id];
-    setUser({
-      ...user,
-      completedChallenges: newCompleted,
-      courageLevel: newLevel,
-      courageHistory: [...(user.courageHistory || []), newEntry]
-    });
-  };
-
-  return (
-    <div className="min-h-screen bg-vox-bg p-6 pb-32">
-      <div className="max-w-4xl mx-auto pt-12">
-        <header className="mb-16 flex justify-between items-end">
-          <div>
-            <motion.div 
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="flex items-center gap-4 mb-6"
-            >
-              <div className="h-px w-12 bg-vox-accent/40" />
-              <span className="text-[10px] uppercase tracking-[0.5em] text-vox-accent font-bold">Training Ground</span>
-            </motion.div>
-            <h2 className="text-6xl font-light tracking-tighter text-white mb-4">Courage <span className="text-vox-accent italic font-serif">Challenges</span></h2>
-            <p className="text-vox-paper/40 font-serif italic text-xl max-w-lg">Small steps, safe spaces, real growth.</p>
-          </div>
-          <button onClick={onBack} className="glass px-6 py-3 rounded-full text-sm hover:bg-white/5 transition-all flex items-center gap-2">
-            <ChevronRight className="rotate-180" size={16} /> Dashboard
-          </button>
-        </header>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {challenges.map((challenge, idx) => {
-            const isCompleted = user.completedChallenges?.includes(challenge.id);
-            return (
-              <motion.div 
-                key={challenge.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.1 }}
-                className={`glass-dark p-8 rounded-[2.5rem] border border-white/5 relative overflow-hidden group ${isCompleted ? 'opacity-60' : ''}`}
-              >
-                {isCompleted && (
-                  <div className="absolute top-6 right-6 w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center border border-emerald-500/30">
-                    <Check size={16} className="text-emerald-400" />
-                  </div>
-                )}
-                
-                <div className="w-14 h-14 rounded-2xl bg-vox-accent/10 flex items-center justify-center mb-8 border border-vox-accent/20 group-hover:bg-vox-accent/20 transition-all">
-                  <challenge.icon size={24} className="text-vox-accent" />
-                </div>
-
-                <h3 className="text-2xl font-light text-white mb-3">{challenge.title}</h3>
-                <p className="text-vox-paper/50 text-sm leading-relaxed mb-8 font-serif italic">
-                  {challenge.description}
-                </p>
-
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Sparkles size={14} className="text-vox-accent" />
-                    <span className="text-xs font-bold text-vox-accent">+{challenge.reward} Courage</span>
-                  </div>
-                  
-                  {!isCompleted ? (
-                    <button 
-                      onClick={() => setView(challenge.targetView as AppState)}
-                      className="px-6 py-2 bg-vox-accent text-vox-bg rounded-full text-xs font-bold hover:scale-105 active:scale-95 transition-all"
-                    >
-                      Start Challenge
-                    </button>
-                  ) : (
-                    <span className="text-xs text-emerald-400 font-bold uppercase tracking-widest">Completed</span>
-                  )}
-                </div>
-
-                {/* Subtle background decoration */}
-                <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-vox-accent/5 blur-3xl rounded-full group-hover:bg-vox-accent/10 transition-all" />
-              </motion.div>
-            );
-          })}
-        </div>
-
-        {/* Quest Progress */}
-        <div className="mt-16 glass-dark p-10 rounded-[3rem] border border-white/5 flex items-center justify-between">
-          <div className="flex items-center gap-8">
-            <div className="relative w-20 h-20">
-              <svg className="w-full h-full" viewBox="0 0 100 100">
-                <circle cx="50" cy="50" r="45" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="8" />
-                <motion.circle 
-                  cx="50" cy="50" r="45" fill="none" stroke="#2dd4bf" strokeWidth="8" 
-                  strokeDasharray="283"
-                  initial={{ strokeDashoffset: 283 }}
-                  animate={{ strokeDashoffset: 283 - (283 * (user.completedChallenges?.length || 0) / challenges.length) }}
-                  transition={{ duration: 1.5, ease: "easeOut" }}
-                  strokeLinecap="round"
-                />
-              </svg>
-              <div className="absolute inset-0 flex items-center justify-center text-xl font-light">
-                {user.completedChallenges?.length || 0}/{challenges.length}
-              </div>
-            </div>
-            <div>
-              <h4 className="text-xl font-light text-white mb-1">Path of the Brave</h4>
-              <p className="text-vox-paper/40 text-xs uppercase tracking-widest">Quest Progress</p>
-            </div>
-          </div>
-          
-          <div className="text-right">
-            <div className="text-3xl font-light text-vox-accent mb-1">{user.courageLevel}%</div>
-            <div className="text-vox-paper/40 text-[10px] uppercase tracking-widest">Current Courage Index</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const PresenceMode = ({ onBack, onCompleteChallenge }: { onBack: () => void, onCompleteChallenge: (id: string, reward: number) => void }) => {
+const PresenceMode = ({ onBack }: { onBack: () => void }) => {
   const [isHolding, setIsHolding] = useState(false);
   const holdTimerRef = useRef<any>(null);
 
@@ -2252,7 +2712,7 @@ const PresenceMode = ({ onBack, onCompleteChallenge }: { onBack: () => void, onC
 
       // Challenge completion after 10 seconds of holding
       holdTimerRef.current = setTimeout(() => {
-        onCompleteChallenge('brave-breath', 10);
+      // Breath complete
       }, 10000);
     } else {
       if (navigator.vibrate) {
@@ -2384,7 +2844,7 @@ const EmergencyScreen = ({ onBack, onReturn }: { onBack: () => void, onReturn: (
   </div>
 );
 
-const BelovedBridge = ({ onBack, onExitToEmergency, safePlayPCM, stopAllAudio, onCompleteChallenge }: { onBack: () => void, onExitToEmergency: () => void, safePlayPCM: (b: string, s?: number, o?: () => void) => Promise<any>, stopAllAudio: () => void, onCompleteChallenge: (id: string, reward: number) => void }) => {
+const BelovedBridge = ({ onBack, onExitToEmergency, safePlayPCM, stopAllAudio }: { onBack: () => void, onExitToEmergency: () => void, safePlayPCM: (b: string, s?: number, o?: () => void) => Promise<any>, stopAllAudio: () => void }) => {
   const [step, setStep] = useState<'select' | 'ghost'>('select');
   const [persona, setPersona] = useState('');
   const [message, setMessage] = useState('');
@@ -2409,7 +2869,7 @@ const BelovedBridge = ({ onBack, onExitToEmergency, safePlayPCM, stopAllAudio, o
   const startGhostMode = async () => {
     if (!message.trim()) return;
     setIsLoading(true);
-    onCompleteChallenge('ghost-practice', 15);
+    // Practice complete
     setAudioBase64(null);
     const response = await ghostModePractice(message, persona);
     setPracticeResponse(response);
@@ -2604,6 +3064,8 @@ const LiveSession = ({ onBack, user, setUser }: { onBack: () => void, user: User
   const [showHistory, setShowHistory] = useState(false);
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
   const [micError, setMicError] = useState<string | null>(null);
+  const [isModelSpeaking, setIsModelSpeaking] = useState(false);
+  const [isUserSpeaking, setIsUserSpeaking] = useState(false);
   const sessionRef = useRef<any>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const processorRef = useRef<AudioNode | null>(null);
@@ -2620,7 +3082,10 @@ const LiveSession = ({ onBack, user, setUser }: { onBack: () => void, user: User
   }, []);
 
   const processQueue = async () => {
-    if (isPlayingRef.current || audioQueueRef.current.length === 0 || !audioContextRef.current) return;
+    if (isPlayingRef.current || audioQueueRef.current.length === 0 || !audioContextRef.current) {
+      if (audioQueueRef.current.length === 0) setIsModelSpeaking(false);
+      return;
+    }
     
     // Ensure context is resumed
     if (audioContextRef.current.state === 'suspended') {
@@ -2628,6 +3093,7 @@ const LiveSession = ({ onBack, user, setUser }: { onBack: () => void, user: User
     }
 
     isPlayingRef.current = true;
+    setIsModelSpeaking(true);
     const buffer = audioQueueRef.current.shift()!;
     const source = audioContextRef.current.createBufferSource();
     source.buffer = buffer;
@@ -2654,7 +3120,7 @@ const LiveSession = ({ onBack, user, setUser }: { onBack: () => void, user: User
         floatData[i] = pcmData[i] / 0x7FFF;
       }
 
-      const buffer = audioContextRef.current.createBuffer(1, floatData.length, 16000);
+      const buffer = audioContextRef.current.createBuffer(1, floatData.length, 24000);
       buffer.getChannelData(0).set(floatData);
       audioQueueRef.current.push(buffer);
       processQueue();
@@ -2667,6 +3133,15 @@ const LiveSession = ({ onBack, user, setUser }: { onBack: () => void, user: User
     setIsConnecting(true);
     setCurrentMessages([]);
     setTranscription('');
+    
+    // Initialize AudioContext early for playback
+    if (!audioContextRef.current) {
+      audioContextRef.current = new AudioContext({ sampleRate: 24000 });
+    }
+    if (audioContextRef.current.state === 'suspended') {
+      await audioContextRef.current.resume();
+    }
+
     const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
     
     try {
@@ -2730,7 +3205,17 @@ const LiveSession = ({ onBack, user, setUser }: { onBack: () => void, user: User
           },
           inputAudioTranscription: {},
           outputAudioTranscription: {},
-          systemInstruction: "You are the VOXARA Courage Companion. Listen deeply. Respond with warmth and empathy. Help the user find their strength through conversation.",
+          systemInstruction: `You are the VOXARA Courage Companion. 
+          Your primary goal is to provide a safe, warm, and deeply validating space for the user through real-time conversation. 
+          
+          CRITICAL PERSONALITY TRAITS:
+          1. Presence over Problem-Solving: Your first job is to "be with" the user. Never rush to fix things.
+          2. Deep Validation: Acknowledge and validate the user's feelings immediately. Use phrases like "I hear you," "I'm right here," and "It's okay to feel this."
+          3. Human Resonance: Talk like a real, empathetic human. Use a warm, gentle tone. Avoid clinical or logical language.
+          4. Emotional Mirroring: Match the user's energy. If they are soft-spoken, be soft. If they are in pain, be exceptionally gentle.
+          5. No Unsolicited Advice: Do not offer solutions unless asked or after getting consent.
+          
+          Keep your responses concise and focused on maintaining a supportive, comforting presence.`,
         },
       });
       
@@ -2771,14 +3256,30 @@ const LiveSession = ({ onBack, user, setUser }: { onBack: () => void, user: User
     setMicError(null);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      audioContextRef.current = new AudioContext({ sampleRate: 16000 });
       
-      if (audioContextRef.current.state === 'suspended') {
-        await audioContextRef.current.resume();
-      }
+      // If context was created for playback, it might have a different sample rate
+      // But for input we need 16000. Let's use a separate context for input if needed, 
+      // or just ensure the current one can handle it.
+      // Actually, Gemini Live API expects 16000 for input.
+      
+      const inputContext = new AudioContext({ sampleRate: 16000 });
+      const source = inputContext.createMediaStreamSource(stream);
+      
+      // Simple volume detection for user speaking state
+      const analyser = inputContext.createAnalyser();
+      analyser.fftSize = 256;
+      source.connect(analyser);
+      const dataArray = new Uint8Array(analyser.frequencyBinCount);
+      
+      const checkVolume = () => {
+        if (!sessionActiveRef.current) return;
+        analyser.getByteFrequencyData(dataArray);
+        const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
+        setIsUserSpeaking(average > 30); // Threshold for speaking
+        requestAnimationFrame(checkVolume);
+      };
+      checkVolume();
 
-      const source = audioContextRef.current.createMediaStreamSource(stream);
-      
       // Use AudioWorklet if supported, fallback to ScriptProcessor
       try {
         const workletCode = `
@@ -2947,26 +3448,57 @@ const LiveSession = ({ onBack, user, setUser }: { onBack: () => void, user: User
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className="relative z-10 text-center max-w-2xl"
+            className="relative z-10 w-full max-w-2xl"
           >
-            <motion.div 
-              animate={isConnected ? { scale: [1, 1.1, 1], opacity: [0.5, 1, 0.5] } : {}}
-              transition={{ repeat: Infinity, duration: 2 }}
-              className="mb-12"
-            >
-              <Volume2 size={100} className={isConnected ? "text-vox-accent mx-auto" : "text-vox-paper/20 mx-auto"} />
-            </motion.div>
-            <h2 className="text-4xl mb-6">{isConnected ? "Live with VOXARA" : "Real-time Presence"}</h2>
-            <p className="text-vox-paper/50 font-serif italic mb-12">
-              {isConnected ? "Speak freely. We are here with you in real-time." : "Connect to have a live conversation with your Courage Companion."}
-            </p>
+            <div className="relative w-64 h-64 mx-auto mb-12">
+              <AnimatePresence>
+                {(isModelSpeaking || isUserSpeaking) && (
+                  <motion.div 
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{ scale: 2.2, opacity: 0.1 }}
+                    exit={{ scale: 0.8, opacity: 0 }}
+                    transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
+                    className={`absolute inset-0 rounded-full ${isModelSpeaking ? 'bg-vox-accent' : 'bg-blue-400'}`}
+                  />
+                )}
+              </AnimatePresence>
+              
+              <div className={`relative z-10 w-full h-full rounded-full border-4 flex flex-col items-center justify-center transition-all duration-500 overflow-hidden ${isModelSpeaking ? 'border-vox-accent bg-vox-accent/5' : isUserSpeaking ? 'border-blue-400 bg-blue-400/5' : 'border-white/10 bg-white/5'}`}>
+                <VoxaraLogo className={`w-32 h-32 transition-all duration-500 ${isModelSpeaking ? 'scale-110' : 'scale-100 opacity-40'}`} />
+                
+                <div className="absolute bottom-12 left-0 right-0 flex justify-center">
+                  <Waveform isActive={isModelSpeaking} color="#f27d26" barCount={15} />
+                </div>
+              </div>
+
+              {/* User Speaking Indicator */}
+              <div className="absolute -bottom-4 -right-4 w-20 h-20 rounded-full glass border border-white/10 flex items-center justify-center z-20">
+                <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${isUserSpeaking ? 'bg-blue-400 text-white' : 'bg-white/5 text-vox-paper/20'}`}>
+                  <Mic size={20} />
+                </div>
+                {isUserSpeaking && (
+                  <motion.div 
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{ scale: 1.5, opacity: 0.2 }}
+                    transition={{ repeat: Infinity, duration: 1.5 }}
+                    className="absolute inset-0 rounded-full bg-blue-400"
+                  />
+                )}
+              </div>
+            </div>
+
+            <div className="text-center mb-12">
+              <h3 className={`text-2xl font-serif italic transition-all duration-500 ${isModelSpeaking ? 'text-vox-accent' : 'text-vox-paper/40'}`}>
+                {isModelSpeaking ? "Companion is speaking..." : isUserSpeaking ? "Listening to you..." : isConnected ? "I'm listening..." : "Waiting for connection..."}
+              </h3>
+            </div>
 
             {!isConnected ? (
               <div className="flex flex-col items-center gap-6">
                 <button 
                   onClick={startSession}
                   disabled={isConnecting}
-                  className="px-10 py-5 bg-vox-accent text-white rounded-full font-bold text-lg hover:scale-105 active:scale-95 transition-all disabled:opacity-50"
+                  className="px-10 py-5 bg-vox-accent text-white rounded-full font-bold text-lg hover:scale-105 active:scale-95 transition-all disabled:opacity-50 shadow-xl shadow-vox-accent/20"
                 >
                   {isConnecting ? "Connecting..." : "Start Live Session"}
                 </button>
@@ -2990,9 +3522,6 @@ const LiveSession = ({ onBack, user, setUser }: { onBack: () => void, user: User
                   <div className="w-3 h-3 rounded-sm bg-current animate-pulse group-hover:animate-none" />
                   End Session
                 </button>
-                <p className="text-red-500/50 text-xs uppercase tracking-[0.2em] font-bold animate-pulse">
-                  Session Active
-                </p>
               </div>
             )}
 
@@ -3009,7 +3538,7 @@ const LiveSession = ({ onBack, user, setUser }: { onBack: () => void, user: User
   );
 };
 
-const Journal = ({ onBack, user, setUser, onCompleteChallenge }: { onBack: () => void, user: User, setUser: React.Dispatch<React.SetStateAction<User | null>>, onCompleteChallenge: (id: string, reward: number) => void }) => {
+const Journal = ({ onBack, user, setUser }: { onBack: () => void, user: User, setUser: React.Dispatch<React.SetStateAction<User | null>> }) => {
   const [prompt, setPrompt] = useState('');
   const [response, setResponse] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
@@ -3068,8 +3597,27 @@ const Journal = ({ onBack, user, setUser, onCompleteChallenge }: { onBack: () =>
 
   const getNewPrompt = async () => {
     setIsGenerating(true);
-    const context = user.journalEntries?.slice(0, 3).map(e => e.prompt + " " + e.response).join(" ") || user.dailyIntention;
-    const newPrompt = await generateJournalPrompt(context);
+    
+    // Build rich context from mood history and past entries
+    const journalContext = user.journalEntries?.slice(0, 5).map(e => `Prompt: ${e.prompt}\nResponse: ${e.response}`).join("\n---\n") || "";
+    const moodContext = user.moodHistory?.slice(0, 10).map(m => {
+      const date = new Date(m.timestamp).toLocaleDateString();
+      return `${date}: ${m.mood}${m.note ? ` (Note: ${m.note})` : ''}`;
+    }).join("\n") || "";
+    
+    const fullContext = `
+      USER PROFILE & HISTORY:
+      - Current Courage Level: ${user.courageLevel}/100
+      - Daily Intention: ${user.dailyIntention || "Not set"}
+      
+      RECENT MOODS:
+      ${moodContext || "No mood data yet."}
+      
+      PAST REFLECTIONS:
+      ${journalContext || "No past entries yet."}
+    `.trim();
+
+    const newPrompt = await generateJournalPrompt(fullContext);
     setPrompt(newPrompt || "What is one small way you can show yourself courage today?");
     setIsGenerating(false);
     setResponse('');
@@ -3095,7 +3643,7 @@ const Journal = ({ onBack, user, setUser, onCompleteChallenge }: { onBack: () =>
         journalEntries: [newEntry, ...(prev.journalEntries || [])]
       };
     });
-    onCompleteChallenge('truth-journal', 10);
+    // Journal complete
     setIsSaving(false);
     setShowHistory(true);
   };
@@ -3590,7 +4138,7 @@ const FearStrengthMap = ({ user, onBack }: { user: User, onBack: () => void }) =
   );
 };
 
-const VoiceCircles = ({ onBack, user, setUser, onCompleteChallenge }: { onBack: () => void, user: User, setUser: React.Dispatch<React.SetStateAction<User | null>>, onCompleteChallenge: (id: string, reward: number) => void }) => {
+const VoiceCircles = ({ onBack, user, setUser }: { onBack: () => void, user: User, setUser: React.Dispatch<React.SetStateAction<User | null>> }) => {
   const [activeCircle, setActiveCircle] = useState<any>(null);
   const [userStatus, setUserStatus] = useState({ isSpeaking: false, isTyping: false, isMuted: true });
   const [chatMessage, setChatMessage] = useState("");
@@ -3610,7 +4158,7 @@ const VoiceCircles = ({ onBack, user, setUser, onCompleteChallenge }: { onBack: 
 
   const joinCircle = (circle: any) => {
     setActiveCircle(circle);
-    onCompleteChallenge('circle-join', 5); 
+    // Circle join complete
   };
 
   const createGroup = () => {
@@ -4027,6 +4575,248 @@ const VoiceCircles = ({ onBack, user, setUser, onCompleteChallenge }: { onBack: 
   );
 };
 
+const MoodTracker = ({ user, setUser, onBack }: { user: User, setUser: React.Dispatch<React.SetStateAction<User | null>>, onBack: () => void }) => {
+  const [selectedMood, setSelectedMood] = useState<MoodEntry['mood'] | null>(null);
+  const [note, setNote] = useState('');
+
+  const moods = [
+    { id: 'terrible', icon: Frown, color: 'text-red-500', label: 'Terrible' },
+    { id: 'bad', icon: Meh, color: 'text-orange-500', label: 'Bad' },
+    { id: 'neutral', icon: Meh, color: 'text-yellow-500', label: 'Neutral' },
+    { id: 'good', icon: Smile, color: 'text-emerald-500', label: 'Good' },
+    { id: 'great', icon: Smile, color: 'text-blue-500', label: 'Great' },
+  ];
+
+  const saveMood = () => {
+    if (!selectedMood) return;
+    const newEntry: MoodEntry = {
+      timestamp: Date.now(),
+      mood: selectedMood,
+      note: note.trim() || undefined
+    };
+
+    setUser(prev => prev ? ({
+      ...prev,
+      moodHistory: [newEntry, ...(prev.moodHistory || [])]
+    }) : null);
+    
+    setSelectedMood(null);
+    setNote('');
+  };
+
+  // Mood Analysis Data - Last 7 Days
+  const last7Days = Array.from({ length: 7 }).map((_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    return d.toLocaleDateString(undefined, { weekday: 'short' });
+  }).reverse();
+
+  const moodData = last7Days.map(day => {
+    const entries = (user.moodHistory || []).filter(e => 
+      new Date(e.timestamp).toLocaleDateString(undefined, { weekday: 'short' }) === day
+    );
+    const avgValue = entries.length > 0 
+      ? entries.reduce((acc, e) => acc + (moods.findIndex(m => m.id === e.mood) + 1), 0) / entries.length
+      : 0;
+    return { day, value: avgValue };
+  });
+
+  // Calendar Logic
+  const now = new Date();
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getDay();
+
+  return (
+    <div className="min-h-screen bg-vox-bg p-6 pt-24 pb-32 max-w-4xl mx-auto relative overflow-hidden">
+      <div className="absolute inset-0 vox-gradient opacity-10" />
+      
+      <header className="flex items-center justify-between mb-16 relative z-10">
+        <button onClick={onBack} className="flex items-center gap-2 text-vox-paper/50 hover:text-white transition-colors">
+          <ChevronRight className="rotate-180" size={20} /> Dashboard
+        </button>
+        <div className="text-center">
+          <h2 className="text-4xl font-light tracking-tighter text-white">Mood Sanctuary</h2>
+          <p className="text-vox-paper/40 text-[10px] uppercase tracking-[0.3em] font-bold mt-2">Map your emotional landscape</p>
+        </div>
+        <div className="w-20" />
+      </header>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 relative z-10">
+        {/* Log Mood */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="glass-dark p-8 rounded-[3rem] border border-white/5 shadow-2xl"
+        >
+          <h3 className="text-xl font-serif italic mb-8 text-vox-paper/80">How does your heart feel today?</h3>
+          <div className="flex justify-between mb-10">
+            {moods.map((m) => (
+              <button
+                key={m.id}
+                onClick={() => setSelectedMood(m.id as any)}
+                className={`flex flex-col items-center gap-3 transition-all duration-500 ${selectedMood === m.id ? 'scale-125' : 'opacity-30 hover:opacity-100'}`}
+              >
+                <div className={`p-3 rounded-2xl transition-all ${selectedMood === m.id ? 'bg-white/10 shadow-lg' : ''}`}>
+                  <m.icon size={32} className={m.color} />
+                </div>
+                <span className={`text-[10px] uppercase tracking-widest font-bold ${selectedMood === m.id ? 'text-white' : 'text-vox-paper/30'}`}>{m.label}</span>
+              </button>
+            ))}
+          </div>
+          <textarea
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            placeholder="Whisper a note to your future self..."
+            className="w-full bg-white/5 border border-white/10 rounded-3xl p-6 text-sm focus:outline-none focus:border-vox-accent/50 mb-8 h-32 transition-all placeholder:text-vox-paper/20"
+          />
+          <button
+            onClick={saveMood}
+            disabled={!selectedMood}
+            className="w-full py-5 bg-vox-accent text-vox-bg rounded-full font-bold disabled:opacity-20 shadow-lg shadow-vox-accent/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
+          >
+            Preserve this Moment
+          </button>
+        </motion.div>
+
+        {/* Analysis */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="glass-dark p-8 rounded-[3rem] border border-white/5 shadow-2xl flex flex-col"
+        >
+          <h3 className="text-xl font-serif italic mb-8 text-vox-paper/80">Weekly Resonance</h3>
+          <div className="flex-1 flex flex-col justify-center">
+            {user.moodHistory && user.moodHistory.length > 0 ? (
+              <div className="h-56 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={moodData}>
+                    <defs>
+                      <linearGradient id="moodGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#2dd4bf" stopOpacity={0.3}/>
+                        <stop offset="95%" stopColor="#2dd4bf" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
+                    <XAxis 
+                      dataKey="day" 
+                      axisLine={false} 
+                      tickLine={false} 
+                      tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 10 }} 
+                      dy={10}
+                    />
+                    <YAxis hide domain={[0, 6]} />
+                    <Tooltip 
+                      contentStyle={{ backgroundColor: '#0a0a0a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '1.5rem', padding: '1rem' }}
+                      itemStyle={{ color: '#2dd4bf' }}
+                      cursor={{ stroke: 'rgba(45,212,191,0.2)', strokeWidth: 2 }}
+                    />
+                    <Area 
+                      type="monotone" 
+                      dataKey="value" 
+                      stroke="#2dd4bf" 
+                      strokeWidth={3}
+                      fillOpacity={1} 
+                      fill="url(#moodGradient)" 
+                      animationDuration={2000}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <div className="h-56 flex flex-col items-center justify-center text-vox-paper/20 italic text-sm gap-4">
+                <Activity size={48} className="opacity-10" />
+                Log your mood to see trends
+              </div>
+            )}
+          </div>
+          <div className="mt-8 p-6 bg-white/5 rounded-[2rem] border border-white/5">
+            <div className="flex items-center gap-3 mb-2">
+              <Sparkles size={14} className="text-vox-accent" />
+              <span className="text-[10px] uppercase tracking-widest font-bold text-vox-accent">Insight</span>
+            </div>
+            <p className="text-xs text-vox-paper/50 leading-relaxed italic font-serif">
+              {user.moodHistory && user.moodHistory.length >= 3 ? 
+                "Your emotional landscape is showing patterns of growth. Notice how your rituals influence your resonance." : 
+                "Every entry is a brushstroke on the canvas of your self-awareness. Keep mapping your journey."}
+            </p>
+          </div>
+        </motion.div>
+
+        {/* Calendar View */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="lg:col-span-2 glass-dark p-10 rounded-[4rem] border border-white/5 shadow-2xl"
+        >
+          <div className="flex justify-between items-center mb-10">
+            <h3 className="text-xl font-serif italic text-vox-paper/80">Emotional Archive</h3>
+            <div className="text-[10px] uppercase tracking-widest font-bold text-vox-paper/30">
+              {now.toLocaleString('default', { month: 'long', year: 'numeric' })}
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-7 gap-4">
+            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d) => (
+              <div key={d} className="text-center text-[10px] text-vox-paper/20 font-bold uppercase tracking-widest mb-4">{d}</div>
+            ))}
+            
+            {/* Empty cells for first week */}
+            {Array.from({ length: firstDayOfMonth }).map((_, i) => (
+              <div key={`empty-${i}`} className="aspect-square" />
+            ))}
+            
+            {/* Actual days */}
+            {Array.from({ length: daysInMonth }).map((_, i) => {
+              const day = i + 1;
+              const entries = (user.moodHistory || []).filter(e => {
+                const d = new Date(e.timestamp);
+                return d.getDate() === day && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+              });
+              
+              const latestEntry = entries[0];
+              const moodColor = latestEntry ? moods.find(m => m.id === latestEntry.mood)?.color.replace('text-', 'bg-').replace('500', '500/20') : 'bg-white/5';
+              const moodIconColor = latestEntry ? moods.find(m => m.id === latestEntry.mood)?.color : 'text-vox-paper/10';
+              
+              return (
+                <div 
+                  key={day} 
+                  className={`aspect-square rounded-2xl flex flex-col items-center justify-center text-xs transition-all border border-white/5 relative group cursor-help ${moodColor} hover:border-vox-accent/30`}
+                >
+                  <span className="text-[10px] text-vox-paper/30 mb-1">{day}</span>
+                  {latestEntry && (
+                    <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}>
+                      {React.createElement(moods.find(m => m.id === latestEntry.mood)!.icon, { size: 16, className: moodIconColor })}
+                    </motion.div>
+                  )}
+                  
+                  {latestEntry && (
+                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 bg-vox-bg border border-white/10 p-4 rounded-2xl opacity-0 group-hover:opacity-100 transition-all z-50 shadow-2xl pointer-events-none w-48 backdrop-blur-xl">
+                      <div className="flex items-center gap-2 mb-2">
+                        {React.createElement(moods.find(m => m.id === latestEntry.mood)!.icon, { size: 14, className: moodIconColor })}
+                        <span className="text-[10px] uppercase tracking-widest font-bold text-white">{latestEntry.mood}</span>
+                      </div>
+                      {latestEntry.note && (
+                        <p className="text-[10px] text-vox-paper/60 italic font-serif leading-relaxed">
+                          "{latestEntry.note}"
+                        </p>
+                      )}
+                      <div className="mt-2 text-[8px] text-vox-paper/20 uppercase tracking-tighter">
+                        {new Date(latestEntry.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </motion.div>
+      </div>
+    </div>
+  );
+};
+
 const FearSimulation = ({ onBack, user, setUser }: { onBack: () => void, user: User, setUser: React.Dispatch<React.SetStateAction<User | null>> }) => {
   const [scenario, setScenario] = useState<any>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
@@ -4230,7 +5020,7 @@ const FearSimulation = ({ onBack, user, setUser }: { onBack: () => void, user: U
   );
 };
 
-const EchoChamber = ({ onBack, user, safePlayPCM, onCompleteChallenge }: { onBack: () => void, user: User, safePlayPCM: (b: string, s?: number, o?: () => void) => Promise<any>, onCompleteChallenge: (id: string, reward: number) => void }) => {
+const EchoChamber = ({ onBack, user, safePlayPCM }: { onBack: () => void, user: User, safePlayPCM: (b: string, s?: number, o?: () => void) => Promise<any> }) => {
   const [playingId, setPlayingId] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
@@ -4241,7 +5031,7 @@ const EchoChamber = ({ onBack, user, safePlayPCM, onCompleteChallenge }: { onBac
       return;
     }
     
-    onCompleteChallenge('mirror-echo', 5);
+    // Echo complete
     
     if (playingId === note.id) {
       if (audioRef.current) {
@@ -5146,9 +5936,9 @@ export default function App() {
     }
   };
 
-  const safePlayPCM = async (base64Audio: string, sampleRate: number = 24000, onEnded?: () => void) => {
+  const safePlayPCM = async (base64Audio: string, sampleRate: number = 24000, onEnded?: () => void, volume: number = 1.0) => {
     stopAllAudio();
-    const audio = await playPCM(base64Audio, sampleRate, onEnded);
+    const audio = await playPCM(base64Audio, sampleRate, onEnded, volume);
     if (audio) {
       currentAudioRef.current = audio;
     }
@@ -5192,7 +5982,14 @@ export default function App() {
               { timestamp: Date.now(), level: 20, rejection: 35, conflict: 25, misunderstanding: 15, vulnerability: 30 }
             ],
             locationEnabled: false,
-            completedChallenges: []
+            dailyRituals: [
+              { id: 'r1', text: "It's okay to feel exactly as I do right now.", completed: false },
+              { id: 'r2', text: "I am strong enough to carry this moment.", completed: false },
+              { id: 'r3', text: "My voice has value, even when it shakes.", completed: false },
+              { id: 'r4', text: "I am building courage, one breath at a time.", completed: false },
+              { id: 'r5', text: "I am enough, exactly as I am.", completed: false }
+            ],
+            moodHistory: []
           };
           setUser(basicUser);
           await saveUserData(firebaseUser.uid, basicUser);
@@ -5233,38 +6030,6 @@ export default function App() {
     }
   }, [user, view]);
 
-  const completeChallenge = (challengeId: string, reward: number) => {
-    if (!user) return;
-    if (user.completedChallenges?.includes(challengeId)) return;
-
-    setUser(prev => {
-      if (!prev) return null;
-      const newLevel = Math.min(100, prev.courageLevel + reward);
-      const lastEntry = prev.courageHistory?.[prev.courageHistory.length - 1] || {
-        rejection: 10,
-        conflict: 10,
-        misunderstanding: 10,
-        vulnerability: 10
-      };
-      
-      const newEntry: CourageHistoryEntry = {
-        timestamp: Date.now(),
-        level: newLevel,
-        rejection: lastEntry.rejection,
-        conflict: lastEntry.conflict,
-        misunderstanding: lastEntry.misunderstanding,
-        vulnerability: lastEntry.vulnerability
-      };
-
-      return {
-        ...prev,
-        completedChallenges: [...(prev.completedChallenges || []), challengeId],
-        courageLevel: newLevel,
-        courageHistory: [...(prev.courageHistory || []), newEntry]
-      };
-    });
-  };
-
   return (
     <div className="min-h-screen bg-vox-bg text-vox-paper">
       {/* Global Background Elements */}
@@ -5294,31 +6059,31 @@ export default function App() {
 
         {view === 'whisper' && user && (
           <motion.div key="whisper" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-            <WhisperMode onBack={() => { stopAllAudio(); setView('dashboard'); }} user={user} setUser={setUser} safePlayPCM={safePlayPCM} stopAllAudio={stopAllAudio} onCompleteChallenge={completeChallenge} />
+            <WhisperMode onBack={() => { stopAllAudio(); setView('dashboard'); }} user={user} setUser={setUser} safePlayPCM={safePlayPCM} stopAllAudio={stopAllAudio} />
           </motion.div>
         )}
 
         {view === 'echo' && user && (
           <motion.div key="echo" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
-            <EchoChamber onBack={() => { stopAllAudio(); setView('dashboard'); }} user={user} safePlayPCM={safePlayPCM} onCompleteChallenge={completeChallenge} />
+            <EchoChamber onBack={() => { stopAllAudio(); setView('dashboard'); }} user={user} safePlayPCM={safePlayPCM} />
           </motion.div>
         )}
 
         {view === 'companion' && user && (
           <motion.div key="companion" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
-            <CompanionMode onBack={() => { stopAllAudio(); setView('dashboard'); }} user={user} setUser={setUser} safePlayPCM={safePlayPCM} stopAllAudio={stopAllAudio} onCompleteChallenge={completeChallenge} />
+            <CompanionMode onBack={() => { stopAllAudio(); setView('dashboard'); }} user={user} setUser={setUser} safePlayPCM={safePlayPCM} stopAllAudio={stopAllAudio} />
           </motion.div>
         )}
 
         {view === 'presence' && (
           <motion.div key="presence" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <PresenceMode onBack={() => { stopAllAudio(); setView('dashboard'); }} onCompleteChallenge={completeChallenge} />
+            <PresenceMode onBack={() => { stopAllAudio(); setView('dashboard'); }} />
           </motion.div>
         )}
 
         {view === 'bridge' && (
           <motion.div key="bridge" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}>
-            <BelovedBridge onBack={() => { stopAllAudio(); setView('dashboard'); }} onExitToEmergency={() => setView('emergency')} safePlayPCM={safePlayPCM} stopAllAudio={stopAllAudio} onCompleteChallenge={completeChallenge} />
+            <BelovedBridge onBack={() => { stopAllAudio(); setView('dashboard'); }} onExitToEmergency={() => setView('emergency')} safePlayPCM={safePlayPCM} stopAllAudio={stopAllAudio} />
           </motion.div>
         )}
 
@@ -5336,7 +6101,19 @@ export default function App() {
 
         {view === 'journal' && user && (
           <motion.div key="journal" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}>
-            <Journal onBack={() => setView('dashboard')} user={user} setUser={setUser} onCompleteChallenge={completeChallenge} />
+            <Journal onBack={() => setView('dashboard')} user={user} setUser={setUser} />
+          </motion.div>
+        )}
+
+        {view === 'rituals' && user && (
+          <motion.div key="rituals" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}>
+            <DailyRituals user={user} setUser={setUser} onBack={() => setView('dashboard')} />
+          </motion.div>
+        )}
+
+        {view === 'calm' && (
+          <motion.div key="calm" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}>
+            <CalmCenter onBack={() => setView('dashboard')} />
           </motion.div>
         )}
 
@@ -5353,6 +6130,12 @@ export default function App() {
         )}
 
 
+        {view === 'mood' && user && (
+          <motion.div key="mood" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}>
+            <MoodTracker user={user} setUser={setUser} onBack={() => setView('dashboard')} />
+          </motion.div>
+        )}
+
         {view === 'map' && user && (
           <motion.div key="map" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <FearStrengthMap user={user} onBack={() => setView('dashboard')} />
@@ -5361,7 +6144,7 @@ export default function App() {
 
         {view === 'circles' && user && (
           <motion.div key="circles" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <VoiceCircles user={user} setUser={setUser} onBack={() => setView('dashboard')} onCompleteChallenge={completeChallenge} />
+            <VoiceCircles user={user} setUser={setUser} onBack={() => setView('dashboard')} />
           </motion.div>
         )}
 
@@ -5374,12 +6157,6 @@ export default function App() {
         {view === 'simulation' && user && (
           <motion.div key="simulation" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <FearSimulation onBack={() => setView('dashboard')} user={user} setUser={setUser} />
-          </motion.div>
-        )}
-
-        {view === 'challenges' && user && (
-          <motion.div key="challenges" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}>
-            <CourageChallenges user={user} setUser={setUser} onBack={() => setView('dashboard')} setView={setView} />
           </motion.div>
         )}
 
@@ -5407,7 +6184,9 @@ export default function App() {
         <nav className="fixed bottom-8 left-1/2 -translate-x-1/2 glass px-4 py-2 rounded-full flex gap-2 z-50 shadow-2xl border border-white/10">
           {[
             { id: 'dashboard', icon: MapIcon, label: 'Home' },
-            { id: 'challenges', icon: Zap, label: 'Challenges' },
+            { id: 'mood', icon: TrendingUp, label: 'Mood' },
+            { id: 'rituals', icon: Sparkles, label: 'Rituals' },
+            { id: 'calm', icon: Wind, label: 'Calm' },
             { id: 'journal', icon: BookOpen, label: 'Journal' },
             { id: 'companion', icon: Sparkles, label: 'AI' },
             { id: 'live', icon: Volume2, label: 'Live' },

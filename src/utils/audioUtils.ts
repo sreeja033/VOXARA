@@ -1,4 +1,4 @@
-export const playPCM = async (base64Audio: string, sampleRate: number = 24000, onEnded?: () => void) => {
+export const playPCM = async (base64Audio: string, sampleRate: number = 24000, onEnded?: () => void, volume: number = 1.0) => {
   try {
     const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
     
@@ -28,7 +28,12 @@ export const playPCM = async (base64Audio: string, sampleRate: number = 24000, o
     buffer.getChannelData(0).set(floatData);
     const source = audioCtx.createBufferSource();
     source.buffer = buffer;
-    source.connect(audioCtx.destination);
+    
+    const gainNode = audioCtx.createGain();
+    gainNode.gain.value = volume;
+    
+    source.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
     source.start();
     
     source.onended = () => {

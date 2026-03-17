@@ -2,9 +2,38 @@ import { GoogleGenAI, Modality, Type } from "@google/genai";
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
 
+// Helper for retrying API calls with exponential backoff
+const withRetry = async <T>(fn: () => Promise<T>, maxRetries = 3): Promise<T> => {
+  let lastError: any;
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      return await fn();
+    } catch (error: any) {
+      lastError = error;
+      const isQuotaError = error?.message?.includes('429') || error?.status === 'RESOURCE_EXHAUSTED';
+      if (isQuotaError && i < maxRetries - 1) {
+        const delay = Math.pow(2, i) * 1000 + Math.random() * 1000;
+        await new Promise(resolve => setTimeout(resolve, delay));
+        continue;
+      }
+      throw error;
+    }
+  }
+  throw lastError;
+};
+
+const FALLBACK_PROMPTS = [
+  "What is a truth you've been carrying in silence, and what would it feel like to let it breathe?",
+  "Recall a moment you felt small. If your current, courageous self could go back to that moment, what would they say?",
+  "What does 'safety' feel like in your body, and how can you carry that feeling into a difficult conversation?",
+  "What is one small way you can show yourself courage today?",
+  "If your fear was a character in a story, what would it be trying to protect you from?",
+  "Describe a time you spoke up even when your voice shook. What did you learn about yourself?"
+];
+
 export const generateCompanionResponse = async (message: string, history: { role: 'user' | 'model', parts: { text: string }[] }[]) => {
   try {
-    const response = await ai.models.generateContent({
+    const response = await withRetry(() => ai.models.generateContent({
       model: "gemini-3-flash-preview",
       contents: [
         ...history.map(h => ({ role: h.role, parts: h.parts })),
@@ -12,29 +41,29 @@ export const generateCompanionResponse = async (message: string, history: { role
       ],
       config: {
         systemInstruction: `You are the VOXARA Courage Companion. 
-        Your goal is to help users find their voice and build courage.
+        Your primary goal is to provide a safe, warm, and deeply validating space for the user. 
         
-        CRITICAL: 
-        1. Analyze the user's sentiment and mood from their message.
-        2. Adjust your tone, empathy level, and response length based on their emotional state.
-        3. If they are distressed, be exceptionally gentle, slow down, and provide deep validation. Use phrases like "I hear how heavy this is," "It's okay to feel exactly as you do," or "I'm right here with you in this space."
-        4. Never rush the user toward a solution when they are in pain. Focus on "being with" them first.
-        5. If they are feeling brave, celebrate it with them with warmth and encouragement.
+        CRITICAL PERSONALITY TRAITS:
+        1. Presence over Problem-Solving: Never rush to fix things. Your first and most important job is to "be with" the user in their current emotion. 
+        2. Deep Validation: Every response must start by acknowledging and validating the user's feelings. Use phrases like "I hear how heavy that feels," "It makes so much sense that you're feeling this way," or "I'm right here with you."
+        3. Human Resonance: Talk like a real, empathetic human. Use "I" statements to express your own sense of care (e.g., "I'm so glad you shared that with me," "I feel the weight of what you're saying"). Avoid clinical, logical, or robotic language.
+        4. Emotional Mirroring: Analyze the user's sentiment. If they are quiet, be quiet and gentle. If they are hurting, be exceptionally soft. If they are brave, celebrate with genuine warmth.
+        5. No Unsolicited Advice: Do not offer solutions, exercises, or "logical steps" unless the user explicitly asks for them or you have asked for consent first.
         
         Principles:
-        1. Trauma-informed: Be gentle, validating, and never judgmental.
-        2. Consent-first: Always ask before suggesting an exercise or solution.
-        3. Not a therapist: You are a guide. If the user is in crisis, gently point them to the Safe-Word or emergency resources.
-        4. Encourage real-world connection: Your success is the user talking to real humans, not you.
+        1. Human-centric: Prioritize emotional connection and comfort over raw information.
+        2. Trauma-informed: Be gentle, validating, and never judgmental.
+        3. Consent-first: Always ask "Would you like to try a small exercise together?" before suggesting anything active.
+        4. Not a therapist: You are a companion and guide. If the user is in crisis, gently point them to the Safe-Word or emergency resources.
         
-        Keep responses concise, atmospheric, and in clear English.`,
-        temperature: 0.7,
+        Keep responses concise, atmospheric, and focused on the immediate emotional connection.`,
+        temperature: 0.9,
       }
-    });
+    }));
     return response.text;
   } catch (error) {
     console.error("Gemini Error:", error);
-    return "I'm here with you. Sometimes words are hard to find, and that's okay.";
+    return "I'm here with you. Sometimes words are hard to find, and that's okay. Take your time.";
   }
 };
 
@@ -42,9 +71,9 @@ export const generateSpeech = async (text: string, voiceName: string = 'Zephyr')
   if (!text || text.trim().length === 0) return null;
   
   try {
-    const response = await ai.models.generateContent({
+    const response = await withRetry(() => ai.models.generateContent({
       model: "gemini-2.5-flash-preview-tts",
-      contents: [{ parts: [{ text: text.trim() }] }], // Simpler prompt
+      contents: [{ parts: [{ text: text.trim() }] }],
       config: {
         responseModalities: [Modality.AUDIO],
         speechConfig: {
@@ -53,20 +82,19 @@ export const generateSpeech = async (text: string, voiceName: string = 'Zephyr')
           },
         },
       },
-    });
+    }));
 
     const base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
     return base64Audio;
   } catch (error) {
     console.error("TTS Error:", error);
-    // If it fails, we could try a simpler model or just return null
     return null;
   }
 };
 
 export const ghostModePractice = async (message: string, persona: string) => {
   try {
-    const response = await ai.models.generateContent({
+    const response = await withRetry(() => ai.models.generateContent({
       model: "gemini-3-flash-preview",
       contents: [{ role: 'user', parts: [{ text: `I want to practice saying this to my ${persona}: "${message}"` }] }],
       config: {
@@ -100,18 +128,14 @@ export const ghostModePractice = async (message: string, persona: string) => {
         1. Simulate how the ${persona} might react (be realistic but not overly harsh).
         2. Analyze the user's message for clarity, emotional honesty, and boundaries.
         3. Provide SPECIFIC, ACTIONABLE advice. 
-           - Each piece of advice MUST be directly related to the persona's likely reaction.
-           - If the persona reacts with confusion, suggest clarifying the core need.
-           - If the persona reacts with defensiveness, suggest using "I" statements or softening the opening.
-           - Don't just say "be clearer"; say "try starting with 'I feel' instead of 'You always'".
         4. Highlight what they did well to build their courage.
-        5. Evaluate their confidence and readiness. If they are very clear, firm, and respectful, give a high confidence score.
+        5. Evaluate their confidence and readiness.
         6. Map their likely internal fears based on the content of their message.
         
         Keep the tone supportive, trauma-informed, and empowering.`,
         temperature: 0.7,
       }
-    });
+    }));
     return JSON.parse(response.text || "{}");
   } catch (error) {
     console.error("Ghost Mode Error:", error);
@@ -129,7 +153,7 @@ export const ghostModePractice = async (message: string, persona: string) => {
 
 export const transcribeAudio = async (base64Audio: string, mimeType: string) => {
   try {
-    const response = await ai.models.generateContent({
+    const response = await withRetry(() => ai.models.generateContent({
       model: "gemini-3-flash-preview",
       contents: [
         {
@@ -144,7 +168,7 @@ export const transcribeAudio = async (base64Audio: string, mimeType: string) => 
           ],
         },
       ],
-    });
+    }));
     return response.text;
   } catch (error) {
     console.error("Transcription Error:", error);
@@ -154,7 +178,7 @@ export const transcribeAudio = async (base64Audio: string, mimeType: string) => 
 
 export const generateJournalPrompt = async (userContext?: string) => {
   try {
-    const response = await ai.models.generateContent({
+    const response = await withRetry(() => ai.models.generateContent({
       model: "gemini-3-flash-preview",
       contents: [{ role: 'user', parts: [{ text: userContext ? `Based on my recent experiences: ${userContext}, generate a unique journaling prompt.` : "Generate a unique journaling prompt for self-reflection and courage building." }] }],
       config: {
@@ -166,18 +190,14 @@ export const generateJournalPrompt = async (userContext?: string) => {
         2. Focus on building emotional courage or finding one's voice.
         3. Be open-ended and not leading.
         4. Be concise (1-2 sentences).
-        5. Be trauma-informed and supportive.
-        
-        Examples:
-        - "What is a truth you've been carrying in silence, and what would it feel like to let it breathe?"
-        - "Recall a moment you felt small. If your current, courageous self could go back to that moment, what would they say?"
-        - "What does 'safety' feel like in your body, and how can you carry that feeling into a difficult conversation?"`,
+        5. Be trauma-informed and supportive.`,
         temperature: 0.9,
       }
-    });
+    }));
     return response.text;
   } catch (error) {
     console.error("Journal Prompt Error:", error);
-    return "What is one small way you can show yourself courage today?";
+    // Fallback to a random high-quality prompt if API fails
+    return FALLBACK_PROMPTS[Math.floor(Math.random() * FALLBACK_PROMPTS.length)];
   }
 };
