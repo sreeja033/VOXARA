@@ -73,9 +73,10 @@ export interface User {
   locationEnabled?: boolean;
   dailyRituals?: DailyRitual[];
   moodHistory?: MoodEntry[];
+  hasCompletedSafetyOnboarding?: boolean;
 }
 
-export type AppState = 'landing' | 'auth' | 'dashboard' | 'whisper' | 'companion' | 'map' | 'circles' | 'presence' | 'bridge' | 'simulation' | 'echo' | 'live' | 'anchor' | 'exit' | 'emergency' | 'connections' | 'journal' | 'settings' | 'affirmations' | 'meditations' | 'rituals' | 'calm' | 'mood';
+export type AppState = 'landing' | 'auth' | 'dashboard' | 'whisper' | 'companion' | 'map' | 'circles' | 'presence' | 'bridge' | 'simulation' | 'echo' | 'live' | 'anchor' | 'exit' | 'emergency' | 'connections' | 'journal' | 'settings' | 'affirmations' | 'meditations' | 'rituals' | 'calm' | 'mood' | 'safety-onboarding';
 
 export interface VoiceNote {
   id: string;

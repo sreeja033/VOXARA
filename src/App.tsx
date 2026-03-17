@@ -241,6 +241,168 @@ const DailyRituals = ({ user, setUser, onBack }: { user: User, setUser: React.Di
   );
 };
 
+const SafetyOnboarding = ({ user, setUser, onComplete }: { user: User, setUser: React.Dispatch<React.SetStateAction<User | null>>, onComplete: () => void }) => {
+  const [step, setStep] = useState(0);
+  const [safeWord, setSafeWord] = useState(user.safeWord || '');
+  const [contacts, setContacts] = useState<EmergencyContact[]>(user.emergencyContacts || []);
+  const [newContactName, setNewContactName] = useState('');
+  const [newContactPhone, setNewContactPhone] = useState('');
+
+  const handleAddContact = () => {
+    if (newContactName && newContactPhone) {
+      const newContact: EmergencyContact = {
+        id: Math.random().toString(36).substr(2, 9),
+        name: newContactName,
+        phone: newContactPhone
+      };
+      setContacts([...contacts, newContact]);
+      setNewContactName('');
+      setNewContactPhone('');
+    }
+  };
+
+  const handleRemoveContact = (id: string) => {
+    setContacts(contacts.filter(c => c.id !== id));
+  };
+
+  const handleFinish = () => {
+    setUser(prev => prev ? ({
+      ...prev,
+      safeWord,
+      emergencyContacts: contacts,
+      hasCompletedSafetyOnboarding: true
+    }) : null);
+    onComplete();
+  };
+
+  const steps = [
+    {
+      title: "Your Safety Sanctuary",
+      description: "Voxara is a space for courage, but safety is our foundation. Let's set up your protection protocols.",
+      icon: Shield,
+      color: "text-vox-accent"
+    },
+    {
+      title: "The Safe Word",
+      description: "Choose a word or phrase that, when spoken, immediately activates 'Anchor Mode'—a high-security, grounding state.",
+      icon: Lock,
+      color: "text-emerald-400"
+    },
+    {
+      title: "Emergency Circle",
+      description: "If your courage levels drop critically, we can discreetly notify your trusted circle. Add at least one contact.",
+      icon: Users,
+      color: "text-blue-400"
+    }
+  ];
+
+  return (
+    <div className="min-h-screen bg-vox-bg text-vox-paper flex items-center justify-center p-6 relative overflow-hidden">
+      <div className="absolute inset-0 vox-gradient opacity-30" />
+      
+      <AnimatePresence mode="wait">
+        <motion.div 
+          key={step}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -20 }}
+          className="max-w-xl w-full glass-dark p-12 rounded-[3rem] border border-white/10 relative z-10 shadow-2xl"
+        >
+          <div className="flex flex-col items-center text-center">
+            <div className={`w-20 h-20 rounded-3xl bg-white/5 flex items-center justify-center mb-8 border border-white/10 ${steps[step].color}`}>
+              {React.createElement(steps[step].icon, { size: 40 })}
+            </div>
+            
+            <h2 className="text-4xl font-light tracking-tighter mb-4 text-white">{steps[step].title}</h2>
+            <p className="text-vox-paper/60 font-serif italic text-lg mb-10 leading-relaxed">
+              {steps[step].description}
+            </p>
+
+            {step === 1 && (
+              <div className="w-full space-y-4 mb-10">
+                <label className="block text-[10px] uppercase tracking-widest text-vox-paper/40 text-left ml-4">Your Safe Word</label>
+                <input 
+                  type="text"
+                  value={safeWord}
+                  onChange={(e) => setSafeWord(e.target.value)}
+                  placeholder="e.g. Blue Spruce"
+                  className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-xl focus:outline-none focus:border-vox-accent transition-colors text-center"
+                />
+              </div>
+            )}
+
+            {step === 2 && (
+              <div className="w-full space-y-6 mb-10">
+                <div className="space-y-3">
+                  {contacts.map(contact => (
+                    <div key={contact.id} className="flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/10">
+                      <div className="text-left">
+                        <p className="text-sm font-medium">{contact.name}</p>
+                        <p className="text-xs text-vox-paper/40">{contact.phone}</p>
+                      </div>
+                      <button onClick={() => handleRemoveContact(contact.id)} className="text-vox-paper/20 hover:text-red-400 transition-colors">
+                        <X size={18} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <input 
+                    type="text"
+                    placeholder="Name"
+                    value={newContactName}
+                    onChange={(e) => setNewContactName(e.target.value)}
+                    className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-vox-accent"
+                  />
+                  <input 
+                    type="text"
+                    placeholder="Phone"
+                    value={newContactPhone}
+                    onChange={(e) => setNewContactPhone(e.target.value)}
+                    className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-vox-accent"
+                  />
+                </div>
+                <button 
+                  onClick={handleAddContact}
+                  disabled={!newContactName || !newContactPhone}
+                  className="w-full py-3 bg-white/5 border border-white/10 rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-white/10 transition-all disabled:opacity-30"
+                >
+                  Add Contact
+                </button>
+              </div>
+            )}
+
+            <div className="flex gap-4 w-full">
+              {step > 0 && (
+                <button 
+                  onClick={() => setStep(step - 1)}
+                  className="flex-1 py-4 border border-white/10 rounded-2xl font-bold text-xs uppercase tracking-widest hover:bg-white/5 transition-all"
+                >
+                  Back
+                </button>
+              )}
+              <button 
+                onClick={() => step < steps.length - 1 ? setStep(step + 1) : handleFinish()}
+                disabled={step === 1 && !safeWord}
+                className="flex-[2] py-4 bg-vox-accent text-white rounded-2xl font-bold text-xs uppercase tracking-widest hover:scale-[1.02] transition-all shadow-xl shadow-vox-accent/20"
+              >
+                {step === steps.length - 1 ? "Complete Setup" : "Continue"}
+              </button>
+            </div>
+          </div>
+        </motion.div>
+      </AnimatePresence>
+
+      <div className="absolute bottom-12 flex gap-2">
+        {steps.map((_, i) => (
+          <div key={i} className={`w-2 h-2 rounded-full transition-all duration-500 ${i === step ? 'w-8 bg-vox-accent' : 'bg-white/10'}`} />
+        ))}
+      </div>
+    </div>
+  );
+};
+
 const VoxaraLogo = ({ className = "w-12 h-12" }: { className?: string }) => (
   <svg viewBox="0 0 100 100" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
     {/* Curved Base */}
@@ -838,7 +1000,7 @@ const LandingPage = ({ onStart, isLoggedIn }: { onStart: () => void, isLoggedIn:
         <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
           <button 
             onClick={onStart}
-            className="group relative px-10 py-5 bg-vox-accent text-white rounded-full font-bold text-lg overflow-hidden transition-all hover:scale-105 active:scale-95 shadow-[0_0_40px_rgba(255,78,0,0.3)]"
+            className="group relative px-10 py-5 bg-vox-accent text-vox-bg rounded-full font-bold text-lg overflow-hidden transition-all hover:scale-105 active:scale-95 shadow-[0_0_40px_rgba(45,212,191,0.3)]"
           >
             <span className="relative z-10 flex items-center gap-3">
               {isLoggedIn ? 'Enter Your Sanctuary' : 'Begin Your Journey'} <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
@@ -1285,7 +1447,7 @@ const ThoughtOfTheDay = () => {
       className="w-full pt-20 pb-12 px-6 text-center border-b border-white/5 bg-gradient-to-b from-vox-accent/5 to-transparent relative overflow-hidden"
     >
       <div className="absolute inset-0 pointer-events-none opacity-20">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full bg-[radial-gradient(circle_at_center,rgba(255,78,0,0.1)_0%,transparent_70%)]" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full bg-[radial-gradient(circle_at_center,rgba(14,165,233,0.1)_0%,transparent_70%)]" />
       </div>
       <div className="max-w-3xl mx-auto relative z-10">
         <Quote className="text-vox-accent/20 mx-auto mb-6" size={48} />
@@ -1738,7 +1900,7 @@ const Dashboard = ({ user, setView, setUser }: { user: User, setView: (v: AppSta
   );
 };
 
-const Waveform = ({ isActive, color = "#f27d26", barCount = 20 }: { isActive: boolean, color?: string, barCount?: number }) => {
+const Waveform = ({ isActive, color = "#0EA5E9", barCount = 20 }: { isActive: boolean, color?: string, barCount?: number }) => {
   return (
     <div className="flex items-center justify-center gap-1 h-12">
       {[...Array(barCount)].map((_, i) => (
@@ -4042,8 +4204,8 @@ const FearStrengthMap = ({ user, onBack }: { user: User, onBack: () => void }) =
                 <AreaChart data={chartData}>
                   <defs>
                     <linearGradient id="colorLevel" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#F27D26" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="#F27D26" stopOpacity={0}/>
+                      <stop offset="5%" stopColor="#0EA5E9" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="#0EA5E9" stopOpacity={0}/>
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
@@ -4072,7 +4234,7 @@ const FearStrengthMap = ({ user, onBack }: { user: User, onBack: () => void }) =
                   <Area 
                     type="monotone" 
                     dataKey="level" 
-                    stroke="#F27D26" 
+                    stroke="#0EA5E9" 
                     fillOpacity={1} 
                     fill="url(#colorLevel)" 
                     strokeWidth={2}
@@ -5956,6 +6118,8 @@ export default function App() {
         // Try to fetch full data from Firestore first
         const storedData = await getUserData(firebaseUser.uid);
         
+        let currentUserData = storedData;
+        
         if (storedData) {
           setUser(storedData);
         } else {
@@ -5982,6 +6146,7 @@ export default function App() {
               { timestamp: Date.now(), level: 20, rejection: 35, conflict: 25, misunderstanding: 15, vulnerability: 30 }
             ],
             locationEnabled: false,
+            hasCompletedSafetyOnboarding: false,
             dailyRituals: [
               { id: 'r1', text: "It's okay to feel exactly as I do right now.", completed: false },
               { id: 'r2', text: "I am strong enough to carry this moment.", completed: false },
@@ -5993,10 +6158,15 @@ export default function App() {
           };
           setUser(basicUser);
           await saveUserData(firebaseUser.uid, basicUser);
+          currentUserData = basicUser;
         }
 
         if (view === 'auth') {
-          setView('dashboard');
+          if (!currentUserData?.hasCompletedSafetyOnboarding) {
+            setView('safety-onboarding');
+          } else {
+            setView('dashboard');
+          }
         }
       } else {
         setUser(null);
@@ -6048,6 +6218,12 @@ export default function App() {
         {view === 'auth' && (
           <motion.div key="auth" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <AuthPage />
+          </motion.div>
+        )}
+
+        {view === 'safety-onboarding' && user && (
+          <motion.div key="safety-onboarding" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <SafetyOnboarding user={user} setUser={setUser} onComplete={() => setView('dashboard')} />
           </motion.div>
         )}
 
