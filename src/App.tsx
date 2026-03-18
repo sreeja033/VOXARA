@@ -279,18 +279,21 @@ const SafetyOnboarding = ({ user, setUser, onComplete }: { user: User, setUser: 
     {
       title: "Your Safety Sanctuary",
       description: "Voxara is a space for courage, but safety is our foundation. Let's set up your protection protocols.",
+      why: "Establishing a safety net allows you to explore your voice with full confidence, knowing support is always within reach.",
       icon: Shield,
       color: "text-vox-accent"
     },
     {
       title: "The Safe Word",
       description: "Choose a word or phrase that, when spoken, immediately activates 'Anchor Mode'—a high-security, grounding state.",
+      why: "In moments of overwhelm, a simple word can trigger immediate grounding exercises and discreetly alert your support system.",
       icon: Lock,
       color: "text-emerald-400"
     },
     {
       title: "Emergency Circle",
       description: "If your courage levels drop critically, we can discreetly notify your trusted circle. Add at least one contact.",
+      why: "Your journey isn't meant to be walked alone. Having a trusted circle ensures you're never truly isolated in difficult moments.",
       icon: Users,
       color: "text-blue-400"
     }
@@ -303,20 +306,36 @@ const SafetyOnboarding = ({ user, setUser, onComplete }: { user: User, setUser: 
       <AnimatePresence mode="wait">
         <motion.div 
           key={step}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -20 }}
+          initial={{ opacity: 0, y: 20, scale: 0.95 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: -20, scale: 0.95 }}
+          transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
           className="max-w-xl w-full glass-dark p-12 rounded-[3rem] border border-white/10 relative z-10 shadow-2xl"
         >
           <div className="flex flex-col items-center text-center">
-            <div className={`w-20 h-20 rounded-3xl bg-white/5 flex items-center justify-center mb-8 border border-white/10 ${steps[step].color}`}>
+            <motion.div 
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: 0.2 }}
+              className={`w-20 h-20 rounded-3xl bg-white/5 flex items-center justify-center mb-8 border border-white/10 ${steps[step].color}`}
+            >
               {React.createElement(steps[step].icon, { size: 40 })}
-            </div>
+            </motion.div>
             
             <h2 className="text-4xl font-light tracking-tighter mb-4 text-white">{steps[step].title}</h2>
-            <p className="text-vox-paper/60 font-serif italic text-lg mb-10 leading-relaxed">
+            <p className="text-vox-paper/60 font-serif italic text-lg mb-6 leading-relaxed">
               {steps[step].description}
             </p>
+
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.4 }}
+              className="bg-white/5 rounded-2xl p-4 mb-10 border border-white/5"
+            >
+              <p className="text-[10px] uppercase tracking-widest text-vox-accent font-bold mb-1">Why this matters</p>
+              <p className="text-xs text-vox-paper/40 leading-relaxed italic">"{steps[step].why}"</p>
+            </motion.div>
 
             {step === 1 && (
               <div className="w-full space-y-4 mb-10">
@@ -817,7 +836,7 @@ const FeatureCard = ({
       onMouseLeave={handleMouseLeave}
       whileHover={{ y: -12, scale: 1.02 }}
       onClick={onClick}
-      className={`group relative rounded-[4rem] overflow-hidden border border-white/5 flex flex-col justify-end p-12 text-left transition-all duration-500 hover:shadow-[0_40px_80px_-20px_rgba(0,0,0,0.5)] bg-vox-bg/40 backdrop-blur-sm ${className}`}
+      className={`group relative rounded-[3rem] overflow-hidden border border-white/5 flex flex-col justify-end p-8 md:p-10 text-left transition-all duration-500 hover:shadow-[0_40px_80px_-20px_rgba(0,0,0,0.5)] bg-vox-bg/40 backdrop-blur-sm ${className}`}
     >
       {/* Background Image with Parallax-like feel */}
       <motion.div 
@@ -955,17 +974,22 @@ const QuickActions = ({ setView }: { setView: (v: AppState) => void }) => (
 const LandingPage = ({ onStart, isLoggedIn }: { onStart: () => void, isLoggedIn: boolean }) => (
   <div className="min-h-screen bg-vox-bg text-vox-paper selection:bg-vox-accent/30">
     {/* Upper Title Bar */}
-    <nav className="fixed top-0 left-0 right-0 z-50 px-8 py-6 flex justify-between items-center backdrop-blur-sm bg-vox-bg/20 border-b border-white/5">
-      <div className="flex items-center gap-3">
+    <nav className="fixed top-0 left-0 right-0 z-50 px-8 py-4 flex justify-between items-center backdrop-blur-md bg-vox-bg/40 border-b border-white/5">
+      <div className="flex items-center gap-4">
         <VoxaraLogo className="w-10 h-10" />
-        <span className="text-xl font-serif tracking-tighter">VOXARA</span>
+        <div className="flex flex-col">
+          <span className="text-lg font-serif tracking-tighter leading-none">VOXARA</span>
+          <span className="text-[8px] uppercase tracking-[0.4em] text-vox-accent font-bold mt-1">Courage Companion</span>
+        </div>
       </div>
-      <button 
+      <motion.button 
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
         onClick={onStart}
         className="px-6 py-2 rounded-full border border-vox-accent/30 bg-vox-accent/5 text-vox-accent text-xs font-bold uppercase tracking-widest hover:bg-vox-accent/20 transition-all"
       >
         {isLoggedIn ? 'Dashboard' : 'Sign In'}
-      </button>
+      </motion.button>
     </nav>
 
     {/* Hero Section */}
@@ -986,7 +1010,7 @@ const LandingPage = ({ onStart, isLoggedIn }: { onStart: () => void, isLoggedIn:
           transition={{ duration: 1.5, ease: "circOut" }}
           className="inline-block mb-6 px-4 py-1.5 rounded-full border border-vox-accent/30 bg-vox-accent/5 text-vox-accent text-xs font-bold uppercase tracking-[0.3em]"
         >
-          Aura of voice,Power of Rise
+          The Future of Emotional Courage
         </motion.div>
         
         <h1 className="text-8xl md:text-[12rem] mb-6 tracking-tighter leading-none font-serif">
@@ -1007,9 +1031,13 @@ const LandingPage = ({ onStart, isLoggedIn }: { onStart: () => void, isLoggedIn:
             </span>
           </button>
           
-          <button className="px-10 py-5 rounded-full border border-white/10 bg-white/5 font-bold text-lg hover:bg-white/10 transition-all">
+          <motion.button 
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="px-10 py-5 rounded-full border border-white/10 bg-white/5 font-bold text-lg hover:bg-white/10 transition-all"
+          >
             Watch the Story
-          </button>
+          </motion.button>
         </div>
       </motion.div>
 
@@ -1188,11 +1216,12 @@ const AuthPage = () => {
           {!isLogin && (
             <div>
               <label className="block text-xs uppercase tracking-widest text-vox-paper/50 mb-2">Full Name</label>
-              <input 
+              <motion.input 
+                whileFocus={{ scale: 1.01, borderColor: "rgba(45, 212, 191, 0.5)" }}
                 type="text" 
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-vox-accent transition-colors"
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-vox-accent transition-all"
                 placeholder="How should we call you?"
                 required={!isLogin}
               />
@@ -1200,32 +1229,36 @@ const AuthPage = () => {
           )}
           <div>
             <label className="block text-xs uppercase tracking-widest text-vox-paper/50 mb-2">Email Address</label>
-            <input 
+            <motion.input 
+              whileFocus={{ scale: 1.01, borderColor: "rgba(45, 212, 191, 0.5)" }}
               type="email" 
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-vox-accent transition-colors"
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-vox-accent transition-all"
               placeholder="your@email.com"
               required
             />
           </div>
           <div>
             <label className="block text-xs uppercase tracking-widest text-vox-paper/50 mb-2">Password</label>
-            <input 
+            <motion.input 
+              whileFocus={{ scale: 1.01, borderColor: "rgba(45, 212, 191, 0.5)" }}
               type="password" 
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-vox-accent transition-colors"
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-vox-accent transition-all"
               placeholder="••••••••"
               required
             />
           </div>
-          <button 
+          <motion.button 
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
             disabled={loading}
-            className="w-full py-4 bg-vox-accent text-white rounded-xl font-semibold hover:bg-vox-accent/90 transition-colors disabled:opacity-50"
+            className="w-full py-4 bg-vox-accent text-white rounded-xl font-semibold hover:bg-vox-accent/90 transition-colors disabled:opacity-50 shadow-lg shadow-vox-accent/20"
           >
             {loading ? 'Processing...' : (isLogin ? 'Sign In' : 'Create Account')}
-          </button>
+          </motion.button>
         </form>
         <p className="mt-8 text-center text-vox-paper/40 text-sm">
           {isLogin ? "Don't have an account?" : "Already have an account?"}{' '}
@@ -1496,21 +1529,32 @@ const Dashboard = ({ user, setView, setUser }: { user: User, setView: (v: AppSta
       
       <ThoughtOfTheDay />
       
-      <div className="relative z-10 p-6 max-w-6xl mx-auto pt-12 pb-48">
+      <div className="relative z-10 p-6 max-w-7xl mx-auto pt-12 pb-48">
         {/* Immersive Hero Section */}
-        <header className="mb-32">
+        <header className="mb-24">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-start">
             {/* Left Content */}
             <div className="lg:col-span-7 flex flex-col pt-8">
               <motion.div 
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
-                className="flex items-center gap-6 mb-12"
+                className="flex items-center gap-6 mb-8"
               >
-                <VoxaraLogo className="w-16 h-16 drop-shadow-[0_0_15px_rgba(45,212,191,0.2)]" />
+                <motion.div
+                  animate={{ 
+                    scale: [1, 1.05, 1],
+                    filter: ["drop-shadow(0 0 15px rgba(45,212,191,0.2))", "drop-shadow(0 0 25px rgba(45,212,191,0.4))", "drop-shadow(0 0 15px rgba(45,212,191,0.2))"]
+                  }}
+                  transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                >
+                  <VoxaraLogo className="w-14 h-14" />
+                </motion.div>
                 <div className="flex items-center gap-4">
-                  <div className="h-px w-12 bg-vox-accent/40" />
-                  <span className="text-[10px] uppercase tracking-[0.5em] text-vox-accent font-bold">Your Sanctuary</span>
+                  <div className="h-px w-10 bg-vox-accent/40" />
+                  <div className="flex flex-col">
+                    <span className="text-[10px] uppercase tracking-[0.5em] text-vox-accent font-bold">VOXARA</span>
+                    <span className="text-[8px] uppercase tracking-[0.3em] text-vox-paper/40 font-bold">Courage Companion</span>
+                  </div>
                 </div>
               </motion.div>
               
@@ -1526,7 +1570,7 @@ const Dashboard = ({ user, setView, setUser }: { user: User, setView: (v: AppSta
               <div className="flex flex-col gap-6 max-w-sm">
                 {/* Courage Index Card */}
                 <motion.div 
-                  whileHover={{ scale: 1.02, y: -5 }}
+                  whileHover={{ scale: 1.02, y: -5, boxShadow: "0 20px 40px rgba(0,0,0,0.4)" }}
                   className="bg-[#0a0a0a]/60 backdrop-blur-xl p-6 rounded-[2rem] border border-white/5 flex items-center justify-between group cursor-pointer hover:border-vox-accent/20 transition-all shadow-2xl shadow-black/50"
                 >
                   <div className="flex items-center gap-4">
@@ -1545,7 +1589,7 @@ const Dashboard = ({ user, setView, setUser }: { user: User, setView: (v: AppSta
 
                 {/* Daily Intention Card */}
                 <motion.div 
-                  whileHover={{ scale: 1.02, y: -5 }}
+                  whileHover={{ scale: 1.02, y: -5, boxShadow: "0 20px 40px rgba(0,0,0,0.4)" }}
                   className="bg-[#0a0a0a]/60 backdrop-blur-xl p-8 rounded-[2.5rem] border border-white/5 flex flex-col gap-4 relative overflow-hidden group shadow-2xl shadow-black/50"
                 >
                   <div className="flex justify-between items-center">
@@ -1661,7 +1705,7 @@ const Dashboard = ({ user, setView, setUser }: { user: User, setView: (v: AppSta
         </header>
 
         {/* Clean Grid Layout - Bento Style */}
-        <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-6 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-8">
           <FeatureCard 
             title="Daily Rituals"
             description="Speak your strength. Repeat the words that build your courage."
@@ -1922,7 +1966,7 @@ const Waveform = ({ isActive, color = "#0EA5E9", barCount = 20 }: { isActive: bo
   );
 };
 
-const WhisperMode = ({ onBack, user, setUser, safePlayPCM, stopAllAudio }: { onBack: () => void, user: User, setUser: React.Dispatch<React.SetStateAction<User | null>>, safePlayPCM: any, stopAllAudio: () => void }) => {
+const WhisperMode = ({ onBack, user, setUser, safePlayPCM, stopAllAudio, setView }: { onBack: () => void, user: User, setUser: React.Dispatch<React.SetStateAction<User | null>>, safePlayPCM: any, stopAllAudio: () => void, setView: (view: AppState) => void }) => {
   const [mode, setMode] = useState<'breath' | 'whisper' | 'voice'>('whisper');
   const [isRecording, setIsRecording] = useState(false);
   const [timer, setTimer] = useState(0);
@@ -1962,12 +2006,15 @@ const WhisperMode = ({ onBack, user, setUser, safePlayPCM, stopAllAudio }: { onB
     setMicError(null);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      mediaRecorderRef.current = new MediaRecorder(stream);
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') 
+        ? 'audio/webm;codecs=opus' 
+        : 'audio/webm';
+      mediaRecorderRef.current = new MediaRecorder(stream, { mimeType });
       audioChunksRef.current = [];
 
       mediaRecorderRef.current.ondataavailable = (e) => audioChunksRef.current.push(e.data);
       mediaRecorderRef.current.onstop = async () => {
-      const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+      const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
       const reader = new FileReader();
       reader.readAsDataURL(audioBlob);
       reader.onloadend = async () => {
@@ -1984,7 +2031,7 @@ const WhisperMode = ({ onBack, user, setUser, safePlayPCM, stopAllAudio }: { onB
               model: "gemini-3-flash-preview",
               contents: [{
                 parts: [
-                  { inlineData: { data: base64Audio, mimeType: 'audio/webm' } },
+                  { inlineData: { data: base64Audio, mimeType } },
                   { text: `The user is practicing in ${mode} mode. The target word/sound is: "${practiceWord}". 
                   Analyze the audio for:
                   1. Sentiment (emotional tone)
@@ -2002,16 +2049,22 @@ const WhisperMode = ({ onBack, user, setUser, safePlayPCM, stopAllAudio }: { onB
             });
             setPracticeFeedback(response.text);
           } else {
-            const text = await transcribeAudio(base64Audio, 'audio/webm');
+            const text = await transcribeAudio(base64Audio, mimeType);
             setTranscription(text);
             
+            // Check for safe word
+            if (user.safeWord && text.toLowerCase().includes(user.safeWord.toLowerCase())) {
+              setView('anchor');
+              return;
+            }
+
             // Get AI Insight for standard recording
             const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
             const response = await ai.models.generateContent({
               model: "gemini-3-flash-preview",
               contents: [{
                 parts: [
-                  { inlineData: { data: base64Audio, mimeType: 'audio/webm' } },
+                  { inlineData: { data: base64Audio, mimeType } },
                   { text: `The user just recorded a ${mode} note: "${text}". 
                   Provide a very brief (1-2 sentences) supportive insight or validation based on their voice and what they said. 
                   Keep it atmospheric and trauma-informed.` }
@@ -2033,9 +2086,15 @@ const WhisperMode = ({ onBack, user, setUser, safePlayPCM, stopAllAudio }: { onB
       setIsRecording(true);
     } catch (err: any) {
       console.error("Mic access error:", err);
-      setMicError(err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError' 
-        ? "No microphone found. Please connect a device and try again." 
-        : "Microphone access denied. Please check your browser permissions.");
+      let errorMessage = "Microphone access denied. Please check your browser permissions.";
+      if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+        errorMessage = "No microphone found. Please connect a device and try again.";
+      } else if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+        errorMessage = "Microphone access blocked. Please enable permissions in your browser settings to use voice features.";
+      } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
+        errorMessage = "Your microphone is currently in use by another application. Please close it and try again.";
+      }
+      setMicError(errorMessage);
     }
   };
 
@@ -3498,11 +3557,18 @@ const LiveSession = ({ onBack, user, setUser }: { onBack: () => void, user: User
         processorRef.current = scriptProcessor;
       }
     } catch (err: any) {
-      console.error("Mic access error:", err);
-      setMicError(err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError' 
-        ? "No microphone found. Please connect a device and try again." 
-        : "Microphone access denied. Please check your browser permissions.");
-      stopSession();
+      console.error("Mic access error in LiveSession:", err);
+      let errorMessage = "Microphone access denied. Please check your browser permissions.";
+      if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+        errorMessage = "No microphone found. Please connect a device and try again.";
+      } else if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+        errorMessage = "Microphone access blocked. Please enable permissions in your browser settings to use voice features.";
+      } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
+        errorMessage = "Your microphone is currently in use by another application. Please close it and try again.";
+      }
+      setMicError(errorMessage);
+      setIsConnecting(false);
+      setIsConnected(false);
     }
   };
 
@@ -3559,8 +3625,10 @@ const LiveSession = ({ onBack, user, setUser }: { onBack: () => void, user: User
                 </div>
               ) : (
                 user.liveHistory.map((session) => (
-                  <div 
+                  <motion.div 
                     key={session.id} 
+                    whileHover={{ scale: 1.01, backgroundColor: "rgba(255, 255, 255, 0.08)" }}
+                    whileTap={{ scale: 0.99 }}
                     className={`bg-white/5 rounded-3xl p-8 border transition-all cursor-pointer ${selectedSessionId === session.id ? 'border-vox-accent/50 bg-vox-accent/5' : 'border-white/5 hover:border-white/10'}`}
                     onClick={() => setSelectedSessionId(selectedSessionId === session.id ? null : session.id)}
                   >
@@ -3599,7 +3667,7 @@ const LiveSession = ({ onBack, user, setUser }: { onBack: () => void, user: User
                         <div className="text-[10px] text-vox-paper/20 italic pl-12">... click to expand {session.messages.length - 2} more messages</div>
                       )}
                     </div>
-                  </div>
+                  </motion.div>
                 ))
               )}
             </div>
@@ -3631,6 +3699,26 @@ const LiveSession = ({ onBack, user, setUser }: { onBack: () => void, user: User
                 <div className="absolute bottom-12 left-0 right-0 flex justify-center">
                   <Waveform isActive={isModelSpeaking} color="#f27d26" barCount={15} />
                 </div>
+
+                {micError && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="absolute inset-0 bg-black/80 backdrop-blur-md flex flex-col items-center justify-center p-8 text-center"
+                  >
+                    <div className="w-16 h-16 rounded-full bg-red-500/20 flex items-center justify-center mb-6">
+                      <MicOff size={32} className="text-red-500" />
+                    </div>
+                    <h3 className="text-xl font-bold mb-2 text-white">Microphone Issue</h3>
+                    <p className="text-sm text-vox-paper/60 mb-8 leading-relaxed">{micError}</p>
+                    <button 
+                      onClick={startSession}
+                      className="px-8 py-3 bg-vox-accent text-vox-bg rounded-full font-bold text-xs uppercase tracking-widest hover:scale-105 transition-all"
+                    >
+                      Try Again
+                    </button>
+                  </motion.div>
+                )}
               </div>
 
               {/* User Speaking Indicator */}
@@ -4024,15 +4112,23 @@ const AnchorMode = ({ onBack, user, setUser }: { onBack: () => void, user: User,
         Focus on your breath. Feel the ground beneath you. You are safe.
       </p>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-md mb-8">
-        <button className="p-4 glass-dark rounded-2xl flex flex-col items-center gap-2 border border-white/5">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-md mb-8">
+        <motion.button 
+          whileHover={{ scale: 1.05, backgroundColor: "rgba(255, 255, 255, 0.1)" }}
+          whileTap={{ scale: 0.95 }}
+          className="p-4 glass-dark rounded-2xl flex flex-col items-center gap-2 border border-white/5"
+        >
           <Activity className="text-vox-accent" size={20} />
           <span className="text-xs uppercase tracking-widest font-bold">Binaural Grounding</span>
-        </button>
-        <button className="p-4 glass-dark rounded-2xl flex flex-col items-center gap-2 border border-white/5">
+        </motion.button>
+        <motion.button 
+          whileHover={{ scale: 1.05, backgroundColor: "rgba(255, 255, 255, 0.1)" }}
+          whileTap={{ scale: 0.95 }}
+          className="p-4 glass-dark rounded-2xl flex flex-col items-center gap-2 border border-white/5"
+        >
           <Heart className="text-red-400" size={20} />
           <span className="text-xs uppercase tracking-widest font-bold">Haptic Pulse</span>
-        </button>
+        </motion.button>
       </div>
 
       <div className="w-full max-w-md mb-8">
@@ -4114,8 +4210,21 @@ const AnchorMode = ({ onBack, user, setUser }: { onBack: () => void, user: User,
       </div>
 
       <div className="space-y-4 w-full max-w-md">
-        <button className="w-full py-4 bg-red-600 text-white rounded-xl font-bold uppercase tracking-widest text-xs shadow-lg shadow-red-600/20">Call SOS</button>
-        <button className="w-full py-4 bg-white/10 rounded-xl font-bold uppercase tracking-widest text-xs" onClick={onBack}>I'm Feeling Better</button>
+        <motion.button 
+          whileHover={{ scale: 1.02, backgroundColor: "rgb(220, 38, 38)" }}
+          whileTap={{ scale: 0.98 }}
+          className="w-full py-4 bg-red-600 text-white rounded-xl font-bold uppercase tracking-widest text-xs shadow-lg shadow-red-600/20"
+        >
+          Call SOS
+        </motion.button>
+        <motion.button 
+          whileHover={{ scale: 1.02, backgroundColor: "rgba(255, 255, 255, 0.15)" }}
+          whileTap={{ scale: 0.98 }}
+          className="w-full py-4 bg-white/10 rounded-xl font-bold uppercase tracking-widest text-xs" 
+          onClick={onBack}
+        >
+          I'm Feeling Better
+        </motion.button>
       </div>
     </div>
   );
@@ -4447,12 +4556,14 @@ const VoiceCircles = ({ onBack, user, setUser }: { onBack: () => void, user: Use
                 <ChevronRight className="rotate-180" size={20} /> Dashboard
               </button>
               <div className="flex items-center gap-6">
-                <button 
+                <motion.button 
+                  whileHover={{ scale: 1.05, backgroundColor: "rgba(45, 212, 191, 0.2)" }}
+                  whileTap={{ scale: 0.95 }}
                   onClick={() => setShowCreateGroup(true)}
-                  className="px-6 py-2 bg-vox-accent/10 border border-vox-accent/30 text-vox-accent rounded-full text-xs font-bold uppercase tracking-widest hover:bg-vox-accent hover:text-vox-bg transition-all flex items-center gap-2"
+                  className="px-6 py-2 bg-vox-accent/10 border border-vox-accent/30 text-vox-accent rounded-full text-xs font-bold uppercase tracking-widest transition-all flex items-center gap-2"
                 >
                   <Plus size={14} /> Create Group
-                </button>
+                </motion.button>
                 <div className="text-right">
                   <h2 className="text-4xl font-light tracking-tighter">Voice Circles</h2>
                   <p className="text-vox-paper/40 text-sm font-serif italic">Anonymous shared presence</p>
@@ -4482,18 +4593,22 @@ const VoiceCircles = ({ onBack, user, setUser }: { onBack: () => void, user: Use
                     className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-sm focus:outline-none focus:border-vox-accent h-24 resize-none"
                   />
                   <div className="flex gap-4">
-                    <button 
+                    <motion.button 
+                      whileHover={{ scale: 1.02, backgroundColor: "rgba(45, 212, 191, 0.9)" }}
+                      whileTap={{ scale: 0.98 }}
                       onClick={createGroup}
                       className="flex-1 py-4 bg-vox-accent text-vox-bg rounded-2xl font-bold text-xs uppercase tracking-widest"
                     >
                       Establish Circle
-                    </button>
-                    <button 
+                    </motion.button>
+                    <motion.button 
+                      whileHover={{ scale: 1.02, backgroundColor: "rgba(255, 255, 255, 0.1)" }}
+                      whileTap={{ scale: 0.98 }}
                       onClick={() => setShowCreateGroup(false)}
                       className="flex-1 py-4 bg-white/5 rounded-2xl font-bold text-xs uppercase tracking-widest"
                     >
                       Cancel
-                    </button>
+                    </motion.button>
                   </div>
                 </div>
               </motion.div>
@@ -4757,10 +4872,18 @@ const MoodTracker = ({ user, setUser, onBack }: { user: User, setUser: React.Dis
       note: note.trim() || undefined
     };
 
-    setUser(prev => prev ? ({
-      ...prev,
-      moodHistory: [newEntry, ...(prev.moodHistory || [])]
-    }) : null);
+    setUser(prev => {
+      const updatedUser = prev ? ({
+        ...prev,
+        moodHistory: [newEntry, ...(prev.moodHistory || [])]
+      }) : null;
+      
+      if (updatedUser && updatedUser.id) {
+        saveUserData(updatedUser.id, updatedUser);
+      }
+      
+      return updatedUser;
+    });
     
     setSelectedMood(null);
     setNote('');
@@ -4785,16 +4908,46 @@ const MoodTracker = ({ user, setUser, onBack }: { user: User, setUser: React.Dis
 
   // Calendar Logic
   const now = new Date();
-  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-  const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getDay();
+  const [currentMonth, setCurrentMonth] = useState(new Date(now.getFullYear(), now.getMonth(), 1));
+  
+  const daysInMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate();
+  const firstDayOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).getDay();
+
+  const changeMonth = (offset: number) => {
+    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + offset, 1));
+  };
+
+  // Heatmap Data (Last 30 days)
+  const heatmapData = Array.from({ length: 30 }).map((_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const dayStr = d.toLocaleDateString();
+    const entries = (user.moodHistory || []).filter(e => new Date(e.timestamp).toLocaleDateString() === dayStr);
+    const avgValue = entries.length > 0 
+      ? entries.reduce((acc, e) => acc + (moods.findIndex(m => m.id === e.mood) + 1), 0) / entries.length
+      : 0;
+    return { date: d, value: avgValue };
+  }).reverse();
+
+  const getHeatmapColor = (value: number) => {
+    if (value === 0) return 'bg-white/5';
+    if (value <= 1.5) return 'bg-red-500/40';
+    if (value <= 2.5) return 'bg-orange-500/40';
+    if (value <= 3.5) return 'bg-yellow-500/40';
+    if (value <= 4.5) return 'bg-emerald-500/40';
+    return 'bg-blue-500/40';
+  };
 
   return (
-    <div className="min-h-screen bg-vox-bg p-6 pt-24 pb-32 max-w-4xl mx-auto relative overflow-hidden">
+    <div className="min-h-screen bg-vox-bg p-6 pt-24 pb-32 max-w-5xl mx-auto relative overflow-hidden">
       <div className="absolute inset-0 vox-gradient opacity-10" />
       
       <header className="flex items-center justify-between mb-16 relative z-10">
-        <button onClick={onBack} className="flex items-center gap-2 text-vox-paper/50 hover:text-white transition-colors">
-          <ChevronRight className="rotate-180" size={20} /> Dashboard
+        <button onClick={onBack} className="flex items-center gap-2 text-vox-paper/50 hover:text-white transition-colors group">
+          <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-vox-accent/20 transition-all">
+            <ChevronRight className="rotate-180" size={20} />
+          </div>
+          <span className="text-sm font-medium">Dashboard</span>
         </button>
         <div className="text-center">
           <h2 className="text-4xl font-light tracking-tighter text-white">Mood Sanctuary</h2>
@@ -4803,18 +4956,20 @@ const MoodTracker = ({ user, setUser, onBack }: { user: User, setUser: React.Dis
         <div className="w-20" />
       </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 relative z-10">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 relative z-10">
         {/* Log Mood */}
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="glass-dark p-8 rounded-[3rem] border border-white/5 shadow-2xl"
+          className="lg:col-span-5 glass-dark p-8 rounded-[3rem] border border-white/5 shadow-2xl h-fit"
         >
           <h3 className="text-xl font-serif italic mb-8 text-vox-paper/80">How does your heart feel today?</h3>
           <div className="flex justify-between mb-10">
             {moods.map((m) => (
-              <button
+              <motion.button
                 key={m.id}
+                whileHover={{ scale: 1.15, y: -5 }}
+                whileTap={{ scale: 0.9 }}
                 onClick={() => setSelectedMood(m.id as any)}
                 className={`flex flex-col items-center gap-3 transition-all duration-500 ${selectedMood === m.id ? 'scale-125' : 'opacity-30 hover:opacity-100'}`}
               >
@@ -4822,35 +4977,44 @@ const MoodTracker = ({ user, setUser, onBack }: { user: User, setUser: React.Dis
                   <m.icon size={32} className={m.color} />
                 </div>
                 <span className={`text-[10px] uppercase tracking-widest font-bold ${selectedMood === m.id ? 'text-white' : 'text-vox-paper/30'}`}>{m.label}</span>
-              </button>
+              </motion.button>
             ))}
           </div>
           <textarea
             value={note}
             onChange={(e) => setNote(e.target.value)}
             placeholder="Whisper a note to your future self..."
-            className="w-full bg-white/5 border border-white/10 rounded-3xl p-6 text-sm focus:outline-none focus:border-vox-accent/50 mb-8 h-32 transition-all placeholder:text-vox-paper/20"
+            className="w-full bg-white/5 border border-white/10 rounded-3xl p-6 text-sm focus:outline-none focus:border-vox-accent/50 mb-8 h-32 transition-all placeholder:text-vox-paper/20 resize-none"
           />
-          <button
+          <motion.button
+            whileHover={{ scale: 1.02, backgroundColor: "rgba(45, 212, 191, 0.9)" }}
+            whileTap={{ scale: 0.98 }}
             onClick={saveMood}
             disabled={!selectedMood}
-            className="w-full py-5 bg-vox-accent text-vox-bg rounded-full font-bold disabled:opacity-20 shadow-lg shadow-vox-accent/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
+            className="w-full py-5 bg-vox-accent text-vox-bg rounded-full font-bold disabled:opacity-20 shadow-lg shadow-vox-accent/20 transition-all"
           >
             Preserve this Moment
-          </button>
+          </motion.button>
         </motion.div>
 
-        {/* Analysis */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="glass-dark p-8 rounded-[3rem] border border-white/5 shadow-2xl flex flex-col"
-        >
-          <h3 className="text-xl font-serif italic mb-8 text-vox-paper/80">Weekly Resonance</h3>
-          <div className="flex-1 flex flex-col justify-center">
-            {user.moodHistory && user.moodHistory.length > 0 ? (
-              <div className="h-56 w-full">
+        {/* Analysis & Heatmap */}
+        <div className="lg:col-span-7 space-y-8">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="glass-dark p-8 rounded-[3rem] border border-white/5 shadow-2xl"
+          >
+            <div className="flex justify-between items-center mb-8">
+              <h3 className="text-xl font-serif italic text-vox-paper/80">Emotional Resonance</h3>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-vox-accent animate-pulse" />
+                <span className="text-[10px] uppercase tracking-widest text-vox-paper/40 font-bold">Live Analysis</span>
+              </div>
+            </div>
+            
+            <div className="h-56 w-full mb-8">
+              {user.moodHistory && user.moodHistory.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={moodData}>
                     <defs>
@@ -4884,96 +5048,116 @@ const MoodTracker = ({ user, setUser, onBack }: { user: User, setUser: React.Dis
                     />
                   </AreaChart>
                 </ResponsiveContainer>
-              </div>
-            ) : (
-              <div className="h-56 flex flex-col items-center justify-center text-vox-paper/20 italic text-sm gap-4">
-                <Activity size={48} className="opacity-10" />
-                Log your mood to see trends
-              </div>
-            )}
-          </div>
-          <div className="mt-8 p-6 bg-white/5 rounded-[2rem] border border-white/5">
-            <div className="flex items-center gap-3 mb-2">
-              <Sparkles size={14} className="text-vox-accent" />
-              <span className="text-[10px] uppercase tracking-widest font-bold text-vox-accent">Insight</span>
-            </div>
-            <p className="text-xs text-vox-paper/50 leading-relaxed italic font-serif">
-              {user.moodHistory && user.moodHistory.length >= 3 ? 
-                "Your emotional landscape is showing patterns of growth. Notice how your rituals influence your resonance." : 
-                "Every entry is a brushstroke on the canvas of your self-awareness. Keep mapping your journey."}
-            </p>
-          </div>
-        </motion.div>
-
-        {/* Calendar View */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="lg:col-span-2 glass-dark p-10 rounded-[4rem] border border-white/5 shadow-2xl"
-        >
-          <div className="flex justify-between items-center mb-10">
-            <h3 className="text-xl font-serif italic text-vox-paper/80">Emotional Archive</h3>
-            <div className="text-[10px] uppercase tracking-widest font-bold text-vox-paper/30">
-              {now.toLocaleString('default', { month: 'long', year: 'numeric' })}
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-7 gap-4">
-            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d) => (
-              <div key={d} className="text-center text-[10px] text-vox-paper/20 font-bold uppercase tracking-widest mb-4">{d}</div>
-            ))}
-            
-            {/* Empty cells for first week */}
-            {Array.from({ length: firstDayOfMonth }).map((_, i) => (
-              <div key={`empty-${i}`} className="aspect-square" />
-            ))}
-            
-            {/* Actual days */}
-            {Array.from({ length: daysInMonth }).map((_, i) => {
-              const day = i + 1;
-              const entries = (user.moodHistory || []).filter(e => {
-                const d = new Date(e.timestamp);
-                return d.getDate() === day && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-              });
-              
-              const latestEntry = entries[0];
-              const moodColor = latestEntry ? moods.find(m => m.id === latestEntry.mood)?.color.replace('text-', 'bg-').replace('500', '500/20') : 'bg-white/5';
-              const moodIconColor = latestEntry ? moods.find(m => m.id === latestEntry.mood)?.color : 'text-vox-paper/10';
-              
-              return (
-                <div 
-                  key={day} 
-                  className={`aspect-square rounded-2xl flex flex-col items-center justify-center text-xs transition-all border border-white/5 relative group cursor-help ${moodColor} hover:border-vox-accent/30`}
-                >
-                  <span className="text-[10px] text-vox-paper/30 mb-1">{day}</span>
-                  {latestEntry && (
-                    <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}>
-                      {React.createElement(moods.find(m => m.id === latestEntry.mood)!.icon, { size: 16, className: moodIconColor })}
-                    </motion.div>
-                  )}
-                  
-                  {latestEntry && (
-                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 bg-vox-bg border border-white/10 p-4 rounded-2xl opacity-0 group-hover:opacity-100 transition-all z-50 shadow-2xl pointer-events-none w-48 backdrop-blur-xl">
-                      <div className="flex items-center gap-2 mb-2">
-                        {React.createElement(moods.find(m => m.id === latestEntry.mood)!.icon, { size: 14, className: moodIconColor })}
-                        <span className="text-[10px] uppercase tracking-widest font-bold text-white">{latestEntry.mood}</span>
-                      </div>
-                      {latestEntry.note && (
-                        <p className="text-[10px] text-vox-paper/60 italic font-serif leading-relaxed">
-                          "{latestEntry.note}"
-                        </p>
-                      )}
-                      <div className="mt-2 text-[8px] text-vox-paper/20 uppercase tracking-tighter">
-                        {new Date(latestEntry.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </div>
-                    </div>
-                  )}
+              ) : (
+                <div className="h-full flex flex-col items-center justify-center text-vox-paper/20 italic text-sm gap-4">
+                  <Activity size={48} className="opacity-10" />
+                  Log your mood to see trends
                 </div>
-              );
-            })}
-          </div>
-        </motion.div>
+              )}
+            </div>
+
+            {/* Heatmap Visualization */}
+            <div className="pt-8 border-t border-white/5">
+              <div className="flex justify-between items-center mb-6">
+                <h4 className="text-xs uppercase tracking-[0.2em] text-vox-paper/40 font-bold">30-Day Intensity Map</h4>
+                <div className="flex gap-1">
+                  {[1, 2, 3, 4, 5].map(v => (
+                    <div key={v} className={`w-2 h-2 rounded-sm ${getHeatmapColor(v)}`} />
+                  ))}
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {heatmapData.map((d, i) => (
+                  <div 
+                    key={i} 
+                    className={`w-4 h-4 rounded-sm transition-all hover:scale-125 cursor-help relative group ${getHeatmapColor(d.value)}`}
+                  >
+                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-vox-bg border border-white/10 rounded text-[8px] uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                      {d.date.toLocaleDateString()}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="glass-dark p-8 rounded-[3rem] border border-white/5 shadow-2xl"
+          >
+            <div className="flex justify-between items-center mb-10">
+              <h3 className="text-xl font-serif italic text-vox-paper/80">Emotional Archive</h3>
+              <div className="flex items-center gap-4">
+                <button onClick={() => changeMonth(-1)} className="p-2 hover:bg-white/5 rounded-full transition-colors text-vox-paper/40 hover:text-white">
+                  <ChevronRight className="rotate-180" size={16} />
+                </button>
+                <div className="text-[10px] uppercase tracking-widest font-bold text-vox-paper/60 min-w-[100px] text-center">
+                  {currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' })}
+                </div>
+                <button onClick={() => changeMonth(1)} className="p-2 hover:bg-white/5 rounded-full transition-colors text-vox-paper/40 hover:text-white">
+                  <ChevronRight size={16} />
+                </button>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-7 gap-3">
+              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d) => (
+                <div key={d} className="text-center text-[10px] text-vox-paper/20 font-bold uppercase tracking-widest mb-4">{d}</div>
+              ))}
+              
+              {/* Empty cells for first week */}
+              {Array.from({ length: firstDayOfMonth }).map((_, i) => (
+                <div key={`empty-${i}`} className="aspect-square" />
+              ))}
+              
+              {/* Actual days */}
+              {Array.from({ length: daysInMonth }).map((_, i) => {
+                const day = i + 1;
+                const entries = (user.moodHistory || []).filter(e => {
+                  const d = new Date(e.timestamp);
+                  return d.getDate() === day && d.getMonth() === currentMonth.getMonth() && d.getFullYear() === currentMonth.getFullYear();
+                });
+                
+                const latestEntry = entries[0];
+                const moodColor = latestEntry ? moods.find(m => m.id === latestEntry.mood)?.color.replace('text-', 'bg-').replace('500', '500/20') : 'bg-white/5';
+                const moodIconColor = latestEntry ? moods.find(m => m.id === latestEntry.mood)?.color : 'text-vox-paper/10';
+                
+                return (
+                  <div 
+                    key={day} 
+                    className={`aspect-square rounded-2xl flex flex-col items-center justify-center text-xs transition-all border border-white/5 relative group cursor-help ${moodColor} hover:border-vox-accent/30 hover:scale-105`}
+                  >
+                    <span className="text-[10px] text-vox-paper/30 mb-1">{day}</span>
+                    {latestEntry && (
+                      <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}>
+                        {React.createElement(moods.find(m => m.id === latestEntry.mood)!.icon, { size: 16, className: moodIconColor })}
+                      </motion.div>
+                    )}
+                    
+                    {latestEntry && (
+                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 bg-vox-bg border border-white/10 p-4 rounded-2xl opacity-0 group-hover:opacity-100 transition-all z-50 shadow-2xl pointer-events-none w-48 backdrop-blur-xl">
+                        <div className="flex items-center gap-2 mb-2">
+                          {React.createElement(moods.find(m => m.id === latestEntry.mood)!.icon, { size: 14, className: moodIconColor })}
+                          <span className="text-[10px] uppercase tracking-widest font-bold text-white">{latestEntry.mood}</span>
+                        </div>
+                        {latestEntry.note && (
+                          <p className="text-[10px] text-vox-paper/60 italic font-serif leading-relaxed">
+                            "{latestEntry.note}"
+                          </p>
+                        )}
+                        <div className="mt-2 text-[8px] text-vox-paper/20 uppercase tracking-tighter">
+                          {new Date(latestEntry.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </motion.div>
+        </div>
       </div>
     </div>
   );
@@ -5679,32 +5863,42 @@ const SettingsView = ({ onBack, user, setUser }: { onBack: () => void, user: Use
                   className="flex-1 bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-sm focus:outline-none focus:border-vox-accent transition-colors"
                   placeholder="Add a new goal..."
                 />
-                <button 
+                <motion.button 
+                  whileHover={{ scale: 1.05, backgroundColor: "rgba(45, 212, 191, 0.9)" }}
+                  whileTap={{ scale: 0.95 }}
                   onClick={addGoal}
-                  className="px-6 bg-vox-accent text-vox-bg rounded-2xl font-bold text-xs uppercase tracking-widest"
+                  className="px-6 bg-vox-accent text-vox-bg rounded-2xl font-bold text-xs uppercase tracking-widest transition-all"
                 >
                   Add
-                </button>
+                </motion.button>
               </div>
               <div className="space-y-2">
                 {goals.map(goal => (
-                  <div key={goal.id} className="flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/10 group">
+                  <motion.div 
+                    key={goal.id} 
+                    whileHover={{ x: 4, backgroundColor: "rgba(255, 255, 255, 0.08)" }}
+                    className="flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/10 group"
+                  >
                     <div className="flex items-center gap-4">
-                      <button 
+                      <motion.button 
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
                         onClick={() => toggleGoal(goal.id)}
                         className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${goal.completed ? 'bg-vox-accent border-vox-accent text-vox-bg' : 'border-white/20'}`}
                       >
                         {goal.completed && <CheckCircle2 size={14} />}
-                      </button>
+                      </motion.button>
                       <span className={`text-sm ${goal.completed ? 'text-vox-paper/30 line-through' : 'text-vox-paper'}`}>{goal.text}</span>
                     </div>
-                    <button 
+                    <motion.button 
+                      whileHover={{ scale: 1.2, color: "rgb(248, 113, 113)" }}
+                      whileTap={{ scale: 0.8 }}
                       onClick={() => removeGoal(goal.id)}
-                      className="text-vox-paper/20 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all"
+                      className="text-vox-paper/20 opacity-0 group-hover:opacity-100 transition-all"
                     >
                       <X size={16} />
-                    </button>
-                  </div>
+                    </motion.button>
+                  </motion.div>
                 ))}
               </div>
             </div>
@@ -5727,15 +5921,17 @@ const SettingsView = ({ onBack, user, setUser }: { onBack: () => void, user: Use
                     <p className="text-[10px] text-vox-paper/40 mt-1 italic font-serif">Share coordinates during critical events</p>
                   </div>
                 </div>
-                <button 
+                <motion.button 
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                   onClick={() => setLocationEnabled(!locationEnabled)}
                   className={`w-14 h-7 rounded-full relative transition-all ${locationEnabled ? 'bg-vox-accent' : 'bg-white/10'}`}
                 >
                   <motion.div 
-                    animate={{ x: locationEnabled ? 28 : 4 }}
+                    animate={{ x: locationEnabled ? 32 : 4 }}
                     className="absolute top-1 w-5 h-5 rounded-full bg-white shadow-lg"
                   />
-                </button>
+                </motion.button>
               </div>
 
               <div className="space-y-4">
@@ -5755,7 +5951,7 @@ const SettingsView = ({ onBack, user, setUser }: { onBack: () => void, user: Use
           </section>
 
           <motion.button 
-            whileHover={{ scale: 1.02 }}
+            whileHover={{ scale: 1.02, backgroundColor: isSaved ? "rgb(16, 185, 129)" : "rgba(45, 212, 191, 0.9)" }}
             whileTap={{ scale: 0.98 }}
             onClick={handleSave}
             className={`w-full py-6 rounded-2xl font-bold text-xs uppercase tracking-[0.4em] transition-all shadow-xl ${isSaved ? 'bg-emerald-500 text-white shadow-emerald-500/20' : 'bg-vox-accent text-vox-bg shadow-vox-accent/20'}`}
@@ -5870,6 +6066,7 @@ const Affirmations = ({ onBack, user, setUser }: { onBack: () => void, user: Use
           </div>
 
           <motion.button
+            whileHover={{ scale: 1.05, boxShadow: "0 0 30px rgba(45, 212, 191, 0.3)" }}
             whileTap={{ scale: 0.95 }}
             onClick={isRecording ? stopRecording : startRecording}
             className={`w-32 h-32 rounded-full flex items-center justify-center transition-all shadow-2xl ${isRecording ? 'bg-red-500 animate-pulse' : 'bg-vox-accent text-vox-bg'}`}
@@ -5890,19 +6087,23 @@ const Affirmations = ({ onBack, user, setUser }: { onBack: () => void, user: Use
 
           {recordedAudio && !isRecording && (
             <div className="flex gap-4 w-full max-w-xs">
-              <button 
+              <motion.button 
+                whileHover={{ scale: 1.05, backgroundColor: "rgba(45, 212, 191, 0.9)" }}
+                whileTap={{ scale: 0.95 }}
                 onClick={saveAffirmation}
                 disabled={isSaving}
-                className="flex-1 py-4 bg-vox-accent text-vox-bg rounded-2xl font-bold text-xs uppercase tracking-widest"
+                className="flex-1 py-4 bg-vox-accent text-vox-bg rounded-2xl font-bold text-xs uppercase tracking-widest transition-all"
               >
                 {isSaving ? "Saving..." : "Save Affirmation"}
-              </button>
-              <button 
+              </motion.button>
+              <motion.button 
+                whileHover={{ scale: 1.05, backgroundColor: "rgba(255, 255, 255, 0.1)" }}
+                whileTap={{ scale: 0.95 }}
                 onClick={() => setRecordedAudio(null)}
-                className="flex-1 py-4 bg-white/5 rounded-2xl font-bold text-xs uppercase tracking-widest"
+                className="flex-1 py-4 bg-white/5 rounded-2xl font-bold text-xs uppercase tracking-widest transition-all"
               >
                 Discard
-              </button>
+              </motion.button>
             </div>
           )}
         </div>
@@ -5916,7 +6117,11 @@ const Affirmations = ({ onBack, user, setUser }: { onBack: () => void, user: Use
               </div>
             ) : (
               affirmations.map(note => (
-                <div key={note.id} className="glass-dark p-6 rounded-3xl border border-white/5 flex items-center justify-between group">
+                <motion.div 
+                  key={note.id} 
+                  whileHover={{ scale: 1.02, backgroundColor: "rgba(255, 255, 255, 0.08)" }}
+                  className="glass-dark p-6 rounded-3xl border border-white/5 flex items-center justify-between group"
+                >
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 rounded-2xl bg-vox-accent/10 flex items-center justify-center">
                       <Quote size={20} className="text-vox-accent" />
@@ -5928,13 +6133,15 @@ const Affirmations = ({ onBack, user, setUser }: { onBack: () => void, user: Use
                       </div>
                     </div>
                   </div>
-                  <button 
+                  <motion.button 
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
                     onClick={() => playAffirmation(note)}
                     className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${playingId === note.id ? 'bg-vox-accent text-vox-bg' : 'bg-white/5 hover:bg-white/10'}`}
                   >
                     {playingId === note.id ? <Square size={16} fill="currentColor" /> : <Play size={16} fill="currentColor" className="ml-1" />}
-                  </button>
-                </div>
+                  </motion.button>
+                </motion.div>
               ))
             )}
           </div>
@@ -6027,7 +6234,11 @@ const Meditations = ({ onBack, safePlayPCM }: { onBack: () => void, safePlayPCM:
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 relative z-10">
         {meditationList.map(m => (
-          <div key={m.id} className="glass-dark rounded-[3rem] p-10 border border-white/5 flex flex-col justify-between group hover:border-vox-accent/30 transition-all">
+          <motion.div 
+            key={m.id} 
+            whileHover={{ scale: 1.02, y: -5, backgroundColor: "rgba(255, 255, 255, 0.05)" }}
+            className="glass-dark rounded-[3rem] p-10 border border-white/5 flex flex-col justify-between group hover:border-vox-accent/30 transition-all"
+          >
             <div>
               <div className="flex justify-between items-start mb-6">
                 <div className="text-[10px] uppercase tracking-widest font-bold text-vox-accent px-3 py-1 bg-vox-accent/10 rounded-full">
@@ -6039,10 +6250,12 @@ const Meditations = ({ onBack, safePlayPCM }: { onBack: () => void, safePlayPCM:
               <p className="text-vox-paper/50 text-sm leading-relaxed mb-8">{m.desc}</p>
             </div>
             
-            <button 
+            <motion.button 
+              whileHover={{ scale: 1.05, backgroundColor: activeMeditation?.id === m.id ? "rgb(220, 38, 38)" : "rgba(45, 212, 191, 0.9)" }}
+              whileTap={{ scale: 0.95 }}
               onClick={() => activeMeditation?.id === m.id ? stopMeditation() : startMeditation(m)}
               disabled={isLoading && activeMeditation?.id !== m.id}
-              className={`w-full py-5 rounded-2xl font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-3 transition-all ${activeMeditation?.id === m.id ? 'bg-red-500 text-white' : 'bg-vox-accent text-vox-bg hover:scale-[1.02]'}`}
+              className={`w-full py-5 rounded-2xl font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-3 transition-all ${activeMeditation?.id === m.id ? 'bg-red-500 text-white' : 'bg-vox-accent text-vox-bg shadow-lg shadow-vox-accent/20'}`}
             >
               {isLoading && activeMeditation?.id === m.id ? (
                 <motion.div 
@@ -6055,8 +6268,8 @@ const Meditations = ({ onBack, safePlayPCM }: { onBack: () => void, safePlayPCM:
               ) : (
                 <><Play size={16} fill="currentColor" className="ml-1" /> Begin Session</>
               )}
-            </button>
-          </div>
+            </motion.button>
+          </motion.div>
         ))}
       </div>
 
@@ -6200,6 +6413,11 @@ export default function App() {
     }
   }, [user, view]);
 
+  const pageTransition: any = {
+    duration: 0.4,
+    ease: "easeOut"
+  };
+
   return (
     <div className="min-h-screen bg-vox-bg text-vox-paper">
       {/* Global Background Elements */}
@@ -6210,146 +6428,289 @@ export default function App() {
 
       <AnimatePresence mode="wait">
         {view === 'landing' && (
-          <motion.div key="landing" exit={{ opacity: 0 }}>
+          <motion.div 
+            key="landing" 
+            initial={{ opacity: 0, scale: 0.99 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.99 }}
+            transition={pageTransition}
+          >
             <LandingPage onStart={() => setView(user ? 'dashboard' : 'auth')} isLoggedIn={!!user} />
           </motion.div>
         )}
 
         {view === 'auth' && (
-          <motion.div key="auth" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+          <motion.div 
+            key="auth" 
+            initial={{ opacity: 0, scale: 0.99 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.99 }}
+            transition={pageTransition}
+          >
             <AuthPage />
           </motion.div>
         )}
 
         {view === 'safety-onboarding' && user && (
-          <motion.div key="safety-onboarding" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+          <motion.div 
+            key="safety-onboarding" 
+            initial={{ opacity: 0, scale: 0.99 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.99 }}
+            transition={pageTransition}
+          >
             <SafetyOnboarding user={user} setUser={setUser} onComplete={() => setView('dashboard')} />
           </motion.div>
         )}
 
         {view === 'dashboard' && user && (
-          <motion.div key="dashboard" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+          <motion.div 
+            key="dashboard" 
+            initial={{ opacity: 0, scale: 0.99 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.99 }}
+            transition={pageTransition}
+          >
             <Dashboard user={user} setView={setView} setUser={setUser} />
           </motion.div>
         )}
 
         {view === 'whisper' && user && (
-          <motion.div key="whisper" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-            <WhisperMode onBack={() => { stopAllAudio(); setView('dashboard'); }} user={user} setUser={setUser} safePlayPCM={safePlayPCM} stopAllAudio={stopAllAudio} />
+          <motion.div 
+            key="whisper" 
+            initial={{ opacity: 0, x: 20 }} 
+            animate={{ opacity: 1, x: 0 }} 
+            exit={{ opacity: 0, x: -20 }}
+            transition={pageTransition}
+          >
+            <WhisperMode onBack={() => { stopAllAudio(); setView('dashboard'); }} user={user} setUser={setUser} safePlayPCM={safePlayPCM} stopAllAudio={stopAllAudio} setView={setView} />
           </motion.div>
         )}
 
         {view === 'echo' && user && (
-          <motion.div key="echo" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
+          <motion.div 
+            key="echo" 
+            initial={{ opacity: 0, y: 20 }} 
+            animate={{ opacity: 1, y: 0 }} 
+            exit={{ opacity: 0, y: -20 }}
+            transition={pageTransition}
+          >
             <EchoChamber onBack={() => { stopAllAudio(); setView('dashboard'); }} user={user} safePlayPCM={safePlayPCM} />
           </motion.div>
         )}
 
         {view === 'companion' && user && (
-          <motion.div key="companion" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
+          <motion.div 
+            key="companion" 
+            initial={{ opacity: 0, y: 20 }} 
+            animate={{ opacity: 1, y: 0 }} 
+            exit={{ opacity: 0, y: -20 }}
+            transition={pageTransition}
+          >
             <CompanionMode onBack={() => { stopAllAudio(); setView('dashboard'); }} user={user} setUser={setUser} safePlayPCM={safePlayPCM} stopAllAudio={stopAllAudio} />
           </motion.div>
         )}
 
         {view === 'presence' && (
-          <motion.div key="presence" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+          <motion.div 
+            key="presence" 
+            initial={{ opacity: 0, scale: 0.99 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.99 }}
+            transition={pageTransition}
+          >
             <PresenceMode onBack={() => { stopAllAudio(); setView('dashboard'); }} />
           </motion.div>
         )}
 
         {view === 'bridge' && (
-          <motion.div key="bridge" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}>
+          <motion.div 
+            key="bridge" 
+            initial={{ opacity: 0, scale: 0.99 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.99 }}
+            transition={pageTransition}
+          >
             <BelovedBridge onBack={() => { stopAllAudio(); setView('dashboard'); }} onExitToEmergency={() => setView('emergency')} safePlayPCM={safePlayPCM} stopAllAudio={stopAllAudio} />
           </motion.div>
         )}
 
         {view === 'emergency' && (
-          <motion.div key="emergency" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+          <motion.div 
+            key="emergency" 
+            initial={{ opacity: 0, scale: 0.99 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.99 }}
+            transition={pageTransition}
+          >
             <EmergencyScreen onBack={() => setView('landing')} onReturn={() => setView('dashboard')} />
           </motion.div>
         )}
 
         {view === 'live' && user && (
-          <motion.div key="live" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+          <motion.div 
+            key="live" 
+            initial={{ opacity: 0, scale: 0.99 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.99 }}
+            transition={pageTransition}
+          >
             <LiveSession onBack={() => setView('dashboard')} user={user} setUser={setUser} />
           </motion.div>
         )}
 
         {view === 'journal' && user && (
-          <motion.div key="journal" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}>
+          <motion.div 
+            key="journal" 
+            initial={{ opacity: 0, scale: 0.99 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.99 }}
+            transition={pageTransition}
+          >
             <Journal onBack={() => setView('dashboard')} user={user} setUser={setUser} />
           </motion.div>
         )}
 
         {view === 'rituals' && user && (
-          <motion.div key="rituals" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}>
+          <motion.div 
+            key="rituals" 
+            initial={{ opacity: 0, scale: 0.99 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.99 }}
+            transition={pageTransition}
+          >
             <DailyRituals user={user} setUser={setUser} onBack={() => setView('dashboard')} />
           </motion.div>
         )}
 
         {view === 'calm' && (
-          <motion.div key="calm" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}>
+          <motion.div 
+            key="calm" 
+            initial={{ opacity: 0, scale: 0.99 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.99 }}
+            transition={pageTransition}
+          >
             <CalmCenter onBack={() => setView('dashboard')} />
           </motion.div>
         )}
 
         {view === 'affirmations' && user && (
-          <motion.div key="affirmations" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
+          <motion.div 
+            key="affirmations" 
+            initial={{ opacity: 0, y: 20 }} 
+            animate={{ opacity: 1, y: 0 }} 
+            exit={{ opacity: 0, y: -20 }}
+            transition={pageTransition}
+          >
             <Affirmations onBack={() => setView('dashboard')} user={user} setUser={setUser} />
           </motion.div>
         )}
 
         {view === 'meditations' && (
-          <motion.div key="meditations" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}>
+          <motion.div 
+            key="meditations" 
+            initial={{ opacity: 0, scale: 0.99 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.99 }}
+            transition={pageTransition}
+          >
             <Meditations onBack={() => setView('dashboard')} safePlayPCM={safePlayPCM} />
           </motion.div>
         )}
 
-
         {view === 'mood' && user && (
-          <motion.div key="mood" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}>
+          <motion.div 
+            key="mood" 
+            initial={{ opacity: 0, scale: 0.99 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.99 }}
+            transition={pageTransition}
+          >
             <MoodTracker user={user} setUser={setUser} onBack={() => setView('dashboard')} />
           </motion.div>
         )}
 
         {view === 'map' && user && (
-          <motion.div key="map" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+          <motion.div 
+            key="map" 
+            initial={{ opacity: 0, scale: 0.99 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.99 }}
+            transition={pageTransition}
+          >
             <FearStrengthMap user={user} onBack={() => setView('dashboard')} />
           </motion.div>
         )}
 
         {view === 'circles' && user && (
-          <motion.div key="circles" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+          <motion.div 
+            key="circles" 
+            initial={{ opacity: 0, scale: 0.99 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.99 }}
+            transition={pageTransition}
+          >
             <VoiceCircles user={user} setUser={setUser} onBack={() => setView('dashboard')} />
           </motion.div>
         )}
 
         {view === 'connections' && user && (
-          <motion.div key="connections" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+          <motion.div 
+            key="connections" 
+            initial={{ opacity: 0, scale: 0.99 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.99 }}
+            transition={pageTransition}
+          >
             <CourageConnections user={user} onBack={() => setView('dashboard')} />
           </motion.div>
         )}
 
         {view === 'simulation' && user && (
-          <motion.div key="simulation" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+          <motion.div 
+            key="simulation" 
+            initial={{ opacity: 0, scale: 0.99 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.99 }}
+            transition={pageTransition}
+          >
             <FearSimulation onBack={() => setView('dashboard')} user={user} setUser={setUser} />
           </motion.div>
         )}
 
         {view === 'exit' && (
-          <motion.div key="exit" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+          <motion.div 
+            key="exit" 
+            initial={{ opacity: 0, scale: 0.99 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.99 }}
+            transition={pageTransition}
+          >
             <ExitRitual onBack={() => setView('anchor')} />
           </motion.div>
         )}
 
         {view === 'anchor' && user && (
-          <motion.div key="anchor" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+          <motion.div 
+            key="anchor" 
+            initial={{ opacity: 0, scale: 0.99 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.99 }}
+            transition={pageTransition}
+          >
             <AnchorMode onBack={() => setView('dashboard')} user={user} setUser={setUser} />
           </motion.div>
         )}
 
         {view === 'settings' && user && (
-          <motion.div key="settings" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}>
+          <motion.div 
+            key="settings" 
+            initial={{ opacity: 0, scale: 0.99 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.99 }}
+            transition={pageTransition}
+          >
             <SettingsView onBack={() => setView('dashboard')} user={user} setUser={setUser} />
           </motion.div>
         )}
@@ -6369,8 +6730,10 @@ export default function App() {
             { id: 'whisper', icon: Mic, label: 'Whisper' },
             { id: 'settings', icon: Settings, label: 'Settings' },
           ].map((item) => (
-            <button 
+            <motion.button 
               key={item.id}
+              whileHover={{ scale: 1.2, y: -4 }}
+              whileTap={{ scale: 0.8 }}
               onClick={() => setView(item.id as AppState)}
               className={`w-12 h-12 rounded-full flex items-center justify-center transition-all relative group ${view === item.id ? 'bg-vox-accent text-white' : 'text-vox-paper/50 hover:bg-white/5'}`}
               title={item.label}
@@ -6379,7 +6742,7 @@ export default function App() {
               <span className="absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-vox-bg border border-white/10 rounded text-[10px] uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
                 {item.label}
               </span>
-            </button>
+            </motion.button>
           ))}
           <div className="w-px h-8 bg-white/10 self-center mx-1" />
           <button 

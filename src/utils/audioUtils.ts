@@ -1,16 +1,20 @@
+let sharedAudioCtx: AudioContext | null = null;
+
+const getAudioCtx = () => {
+  if (!sharedAudioCtx) {
+    sharedAudioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+  }
+  return sharedAudioCtx;
+};
+
 export const playPCM = async (base64Audio: string, sampleRate: number = 24000, onEnded?: () => void, volume: number = 1.0) => {
   try {
-    const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const audioCtx = getAudioCtx();
     
     // Ensure context is resumed (browsers often start it in 'suspended' state)
-    // We also need to handle the case where resume() might need to be called multiple times
-    const resumeContext = async () => {
-      if (audioCtx.state === 'suspended') {
-        await audioCtx.resume();
-      }
-    };
-
-    await resumeContext();
+    if (audioCtx.state === 'suspended') {
+      await audioCtx.resume();
+    }
 
     const binaryString = atob(base64Audio);
     const len = binaryString.length;
@@ -38,13 +42,15 @@ export const playPCM = async (base64Audio: string, sampleRate: number = 24000, o
     
     source.onended = () => {
       if (onEnded) onEnded();
-      setTimeout(() => audioCtx.close(), 1000);
     };
     
     return {
       stop: () => {
-        source.stop();
-        audioCtx.close();
+        try {
+          source.stop();
+        } catch (e) {
+          // Ignore if already stopped
+        }
       }
     };
   } catch (err) {

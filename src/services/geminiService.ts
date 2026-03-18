@@ -3,16 +3,22 @@ import { GoogleGenAI, Modality, Type } from "@google/genai";
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
 
 // Helper for retrying API calls with exponential backoff
-const withRetry = async <T>(fn: () => Promise<T>, maxRetries = 3): Promise<T> => {
+const withRetry = async <T>(fn: () => Promise<T>, maxRetries = 5): Promise<T> => {
   let lastError: any;
   for (let i = 0; i < maxRetries; i++) {
     try {
       return await fn();
     } catch (error: any) {
       lastError = error;
-      const isQuotaError = error?.message?.includes('429') || error?.status === 'RESOURCE_EXHAUSTED';
+      const isQuotaError = 
+        error?.message?.includes('429') || 
+        error?.status === 'RESOURCE_EXHAUSTED' ||
+        (error?.response?.status === 429);
+        
       if (isQuotaError && i < maxRetries - 1) {
-        const delay = Math.pow(2, i) * 1000 + Math.random() * 1000;
+        // Longer delay for quota errors
+        const delay = Math.pow(3, i) * 2000 + Math.random() * 1000;
+        console.warn(`Gemini Rate Limit hit (429). Retrying in ${Math.round(delay)}ms...`);
         await new Promise(resolve => setTimeout(resolve, delay));
         continue;
       }
