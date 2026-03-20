@@ -979,8 +979,7 @@ const LandingPage = ({ onStart, isLoggedIn }: { onStart: () => void, isLoggedIn:
         <VoxaraLogo className="w-10 h-10" />
         <div className="flex flex-col">
           <span className="text-lg font-serif tracking-tighter leading-none">VOXARA</span>
-          <span className="text-[8px] uppercase tracking-[0.4em] text-vox-accent font-bold mt-1">Aura of voice,Power of Rise
-</span>
+          <span className="text-[8px] uppercase tracking-[0.4em] text-vox-accent font-bold mt-1">Courage Companion</span>
         </div>
       </div>
       <motion.button 
@@ -3290,6 +3289,7 @@ const LiveSession = ({ onBack, user, setUser }: { onBack: () => void, user: User
   const [isUserSpeaking, setIsUserSpeaking] = useState(false);
   const sessionRef = useRef<any>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
+  const inputContextRef = useRef<AudioContext | null>(null);
   const processorRef = useRef<AudioNode | null>(null);
   const audioQueueRef = useRef<AudioBuffer[]>([]);
   const isPlayingRef = useRef(false);
@@ -3368,7 +3368,7 @@ const LiveSession = ({ onBack, user, setUser }: { onBack: () => void, user: User
     
     try {
       const sessionPromise = ai.live.connect({
-        model: "gemini-2.5-flash-native-audio-preview-09-2025",
+        model: "gemini-2.5-flash-native-audio-preview-12-2025",
         callbacks: {
           onopen: () => {
             setIsConnected(true);
@@ -3479,16 +3479,19 @@ const LiveSession = ({ onBack, user, setUser }: { onBack: () => void, user: User
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       
-      // If context was created for playback, it might have a different sample rate
-      // But for input we need 16000. Let's use a separate context for input if needed, 
-      // or just ensure the current one can handle it.
-      // Actually, Gemini Live API expects 16000 for input.
+      // Use a dedicated context for input at 16000Hz as required by Gemini Live API
+      if (!inputContextRef.current) {
+        inputContextRef.current = new AudioContext({ sampleRate: 16000 });
+      }
       
-      const inputContext = new AudioContext({ sampleRate: 16000 });
-      const source = inputContext.createMediaStreamSource(stream);
+      if (inputContextRef.current.state === 'suspended') {
+        await inputContextRef.current.resume();
+      }
+
+      const source = inputContextRef.current.createMediaStreamSource(stream);
       
       // Simple volume detection for user speaking state
-      const analyser = inputContext.createAnalyser();
+      const analyser = inputContextRef.current.createAnalyser();
       analyser.fftSize = 256;
       source.connect(analyser);
       const dataArray = new Uint8Array(analyser.frequencyBinCount);
@@ -3519,9 +3522,9 @@ const LiveSession = ({ onBack, user, setUser }: { onBack: () => void, user: User
         `;
         const blob = new Blob([workletCode], { type: 'application/javascript' });
         const url = URL.createObjectURL(blob);
-        await audioContextRef.current.audioWorklet.addModule(url);
+        await inputContextRef.current.audioWorklet.addModule(url);
         
-        const workletNode = new AudioWorkletNode(audioContextRef.current, 'audio-processor');
+        const workletNode = new AudioWorkletNode(inputContextRef.current, 'audio-processor');
         workletNode.port.onmessage = (event) => {
           if (!sessionActiveRef.current || !sessionRef.current || sessionRef.current.readyState !== 1) return;
           const inputData = event.data;
@@ -3531,16 +3534,16 @@ const LiveSession = ({ onBack, user, setUser }: { onBack: () => void, user: User
           }
           const base64Data = btoa(String.fromCharCode(...new Uint8Array(pcmData.buffer)));
           session.sendRealtimeInput({
-            media: { data: base64Data, mimeType: 'audio/pcm;rate=16000' }
+            audio: { data: base64Data, mimeType: 'audio/pcm;rate=16000' }
           });
         };
         
         source.connect(workletNode);
-        workletNode.connect(audioContextRef.current.destination);
+        // Do NOT connect to destination to avoid feedback
         processorRef.current = workletNode;
       } catch (workletErr) {
         console.warn("AudioWorklet failed, falling back to ScriptProcessor:", workletErr);
-        const scriptProcessor = audioContextRef.current.createScriptProcessor(4096, 1, 1);
+        const scriptProcessor = inputContextRef.current.createScriptProcessor(4096, 1, 1);
         scriptProcessor.onaudioprocess = (e) => {
           if (!sessionActiveRef.current || !sessionRef.current || sessionRef.current.readyState !== 1) return;
           const inputData = e.inputBuffer.getChannelData(0);
@@ -3550,11 +3553,11 @@ const LiveSession = ({ onBack, user, setUser }: { onBack: () => void, user: User
           }
           const base64Data = btoa(String.fromCharCode(...new Uint8Array(pcmData.buffer)));
           session.sendRealtimeInput({
-            media: { data: base64Data, mimeType: 'audio/pcm;rate=16000' }
+            audio: { data: base64Data, mimeType: 'audio/pcm;rate=16000' }
           });
         };
         source.connect(scriptProcessor);
-        scriptProcessor.connect(audioContextRef.current.destination);
+        // Do NOT connect to destination to avoid feedback
         processorRef.current = scriptProcessor;
       }
     } catch (err: any) {
@@ -3575,7 +3578,14 @@ const LiveSession = ({ onBack, user, setUser }: { onBack: () => void, user: User
 
   const cleanupAudio = () => {
     if (processorRef.current) processorRef.current.disconnect();
-    if (audioContextRef.current) audioContextRef.current.close();
+    if (audioContextRef.current) {
+      audioContextRef.current.close();
+      audioContextRef.current = null;
+    }
+    if (inputContextRef.current) {
+      inputContextRef.current.close();
+      inputContextRef.current = null;
+    }
   };
 
   return (
@@ -6255,8 +6265,8 @@ const Meditations = ({ onBack, safePlayPCM }: { onBack: () => void, safePlayPCM:
               whileHover={{ scale: 1.05, backgroundColor: activeMeditation?.id === m.id ? "rgb(220, 38, 38)" : "rgba(45, 212, 191, 0.9)" }}
               whileTap={{ scale: 0.95 }}
               onClick={() => activeMeditation?.id === m.id ? stopMeditation() : startMeditation(m)}
-              disabled={isLoading && activeMeditation?.id !== m.id}
-              className={`w-full py-5 rounded-2xl font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-3 transition-all ${activeMeditation?.id === m.id ? 'bg-red-500 text-white' : 'bg-vox-accent text-vox-bg shadow-lg shadow-vox-accent/20'}`}
+              disabled={isLoading}
+              className={`w-full py-5 rounded-2xl font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-3 transition-all ${activeMeditation?.id === m.id ? 'bg-red-500 text-white' : 'bg-vox-accent text-vox-bg shadow-lg shadow-vox-accent/20'} ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               {isLoading && activeMeditation?.id === m.id ? (
                 <motion.div 
