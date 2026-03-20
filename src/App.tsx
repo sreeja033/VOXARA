@@ -2027,11 +2027,13 @@ const WhisperMode = ({ onBack, user, setUser, safePlayPCM, stopAllAudio, setView
           if (practiceWord) {
             // Practice logic
             const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
+            const normalizedMimeType = mimeType.split(';')[0];
             const response = await ai.models.generateContent({
               model: "gemini-3-flash-preview",
               contents: [{
+                role: 'user',
                 parts: [
-                  { inlineData: { data: base64Audio, mimeType } },
+                  { inlineData: { data: base64Audio, mimeType: normalizedMimeType } },
                   { text: `The user is practicing in ${mode} mode. The target word/sound is: "${practiceWord}". 
                   Analyze the audio for:
                   1. Sentiment (emotional tone)
@@ -2060,11 +2062,13 @@ const WhisperMode = ({ onBack, user, setUser, safePlayPCM, stopAllAudio, setView
 
             // Get AI Insight for standard recording
             const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
+            const normalizedMimeType = mimeType.split(';')[0];
             const response = await ai.models.generateContent({
               model: "gemini-3-flash-preview",
               contents: [{
+                role: 'user',
                 parts: [
-                  { inlineData: { data: base64Audio, mimeType } },
+                  { inlineData: { data: base64Audio, mimeType: normalizedMimeType } },
                   { text: `The user just recorded a ${mode} note: "${text}". 
                   Provide a very brief (1-2 sentences) supportive insight or validation based on their voice and what they said. 
                   Keep it atmospheric and trauma-informed.` }
@@ -3381,6 +3385,13 @@ const LiveSession = ({ onBack, user, setUser }: { onBack: () => void, user: User
             if (message.serverContent?.modelTurn?.parts[0]?.inlineData?.data) {
               const base64Audio = message.serverContent.modelTurn.parts[0].inlineData.data;
               playAudio(base64Audio);
+            }
+
+            // Handle interruption
+            if (message.serverContent?.interrupted) {
+              audioQueueRef.current = [];
+              isPlayingRef.current = false;
+              setIsModelSpeaking(false);
             }
 
             // Handle model transcription

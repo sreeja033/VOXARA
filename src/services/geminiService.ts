@@ -159,15 +159,19 @@ export const ghostModePractice = async (message: string, persona: string) => {
 
 export const transcribeAudio = async (base64Audio: string, mimeType: string) => {
   try {
+    // Normalize mimeType for Gemini API
+    const normalizedMimeType = mimeType.split(';')[0];
+    
     const response = await withRetry(() => ai.models.generateContent({
       model: "gemini-3-flash-preview",
       contents: [
         {
+          role: 'user',
           parts: [
             {
               inlineData: {
                 data: base64Audio,
-                mimeType: mimeType,
+                mimeType: normalizedMimeType,
               },
             },
             { text: "Please transcribe this audio accurately. If it's just breathing or silence, describe it briefly in brackets like [silence] or [heavy breathing]." },
