@@ -52,6 +52,8 @@ import {
   EyeOff,
   Navigation,
   TrendingDown,
+  Loader2,
+  RefreshCw,
 } from 'lucide-react';
 import { AppState, User, VoiceNote, LiveSessionEntry, JournalEntry, UserGoal, EmergencyContact, CourageHistoryEntry, MoodEntry } from './types';
 import { 
@@ -5903,6 +5905,17 @@ const SettingsView = ({ onBack, user, setUser, safePlayPCM }: { onBack: () => vo
   const [locationEnabled, setLocationEnabled] = useState(user.locationEnabled || false);
   const [newGoal, setNewGoal] = useState('');
   const [isSaved, setIsSaved] = useState(false);
+  const [apiStatus, setApiStatus] = useState<'idle' | 'busy' | 'error' | 'retry'>('idle');
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    const handleStatusChange = (e: any) => {
+      setApiStatus(e.detail);
+      if (e.detail === 'idle') setErrorMessage(null);
+    };
+    window.addEventListener('gemini-api-status', handleStatusChange);
+    return () => window.removeEventListener('gemini-api-status', handleStatusChange);
+  }, []);
 
   const handleSave = () => {
     setUser(prev => prev ? ({ ...prev, safeWord, bio, location, goals, locationEnabled }) : null);
@@ -6092,30 +6105,71 @@ const SettingsView = ({ onBack, user, setUser, safePlayPCM }: { onBack: () => vo
               <Activity size={16} className="text-vox-accent" />
               <h3 className="text-xs uppercase tracking-[0.3em] font-bold text-vox-accent">Diagnostics</h3>
             </div>
-            <button 
-              onClick={async () => {
-                const testText = "Testing audio sanctuary. If you hear this, your voice companion is ready.";
-                console.log("Settings: Testing audio...");
-                const audio = await generateSpeech(testText);
-                if (audio) {
-                  await safePlayPCM(audio);
-                } else {
-                  console.error("Settings: Failed to generate test audio");
-                }
-              }}
-              className="w-full glass p-6 rounded-2xl flex items-center justify-between hover:bg-white/5 transition-all border border-white/10 group"
-            >
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-2xl bg-vox-accent/20 flex items-center justify-center text-vox-accent group-hover:scale-110 transition-transform">
-                  <Volume2 size={24} />
+            <div className="space-y-4">
+              <button 
+                disabled={apiStatus !== 'idle'}
+                onClick={async () => {
+                  try {
+                    const testText = "Testing audio sanctuary. If you hear this, your voice companion is ready.";
+                    console.log("Settings: Testing audio...");
+                    setErrorMessage(null);
+                    const audio = await generateSpeech(testText);
+                    if (audio) {
+                      await safePlayPCM(audio);
+                    } else {
+                      console.error("Settings: Failed to generate test audio");
+                    }
+                  } catch (err: any) {
+                    setErrorMessage(err.message || "Failed to test audio. Please try again.");
+                  }
+                }}
+                className={`w-full glass p-6 rounded-2xl flex items-center justify-between transition-all border border-white/10 group ${
+                  apiStatus === 'retry' ? 'bg-amber-500/10 border-amber-500/30 text-amber-500' :
+                  apiStatus === 'busy' ? 'bg-vox-accent/10 border-vox-accent/30 text-vox-accent' :
+                  apiStatus === 'error' ? 'bg-red-500/10 border-red-500/30 text-red-500' :
+                  'hover:bg-white/5'
+                } disabled:opacity-50`}
+              >
+                <div className="flex items-center gap-4">
+                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform ${
+                    apiStatus === 'retry' ? 'bg-amber-500/20' :
+                    apiStatus === 'busy' ? 'bg-vox-accent/20' :
+                    apiStatus === 'error' ? 'bg-red-500/20' :
+                    'bg-vox-accent/20 text-vox-accent'
+                  }`}>
+                    {apiStatus === 'busy' ? <Loader2 className="animate-spin" size={24} /> :
+                     apiStatus === 'retry' ? <RefreshCw className="animate-spin" size={24} /> :
+                     <Volume2 size={24} />}
+                  </div>
+                  <div className="text-left">
+                    <div className="text-vox-paper font-bold uppercase tracking-widest text-sm">
+                      {apiStatus === 'busy' ? 'Connecting...' :
+                       apiStatus === 'retry' ? 'Retrying (Rate Limit)...' :
+                       'Test AI Voice'}
+                    </div>
+                    <div className="text-vox-paper/40 text-[10px] italic font-serif mt-1">
+                      {apiStatus === 'retry' ? 'Gemini is busy, waiting to retry...' :
+                       "Verify your companion's voice connection"}
+                    </div>
+                  </div>
                 </div>
-                <div className="text-left">
-                  <div className="text-vox-paper font-bold uppercase tracking-widest text-sm">Test AI Voice</div>
-                  <div className="text-vox-paper/40 text-[10px] italic font-serif mt-1">Verify your companion's voice connection</div>
-                </div>
-              </div>
-              <Play size={20} className="text-vox-accent opacity-50 group-hover:opacity-100 transition-opacity" />
-            </button>
+                {apiStatus === 'idle' ? (
+                  <Play size={20} className="text-vox-accent opacity-50 group-hover:opacity-100 transition-opacity" />
+                ) : (
+                  <div className="w-5 h-5" />
+                )}
+              </button>
+
+              {errorMessage && (
+                <motion.div 
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl text-[10px] text-red-400 italic font-serif leading-relaxed"
+                >
+                  {errorMessage}
+                </motion.div>
+              )}
+            </div>
           </section>
 
           <motion.button 
@@ -6969,6 +7023,8 @@ export default function App() {
           </button>
         </nav>
       )}
+
+      <ApiStatusIndicator />
     </div>
   );
 }
