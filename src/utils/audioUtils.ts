@@ -1,12 +1,24 @@
 let sharedAudioCtx: AudioContext | null = null;
 
-const getAudioCtx = () => {
+export const getAudioCtx = () => {
   if (!sharedAudioCtx) {
     sharedAudioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
     // Also attach to window for global access if needed
     (window as any)._voxAudioContext = sharedAudioCtx;
   }
   return sharedAudioCtx;
+};
+
+export const globalResumeAudioContext = async () => {
+  const ctx = getAudioCtx();
+  if (ctx.state === 'suspended') {
+    console.log("Global: Resuming AudioContext on user gesture");
+    try {
+      await ctx.resume();
+    } catch (e) {
+      console.error("Global: Failed to resume AudioContext:", e);
+    }
+  }
 };
 
 export const playPCM = async (base64Audio: string, sampleRate: number = 24000, onEnded?: () => void, volume: number = 1.0) => {

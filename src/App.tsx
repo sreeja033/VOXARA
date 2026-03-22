@@ -63,7 +63,7 @@ import {
   generateWhisperFeedback,
   generateWhisperInsight
 } from './services/geminiService';
-import { playPCM } from './utils/audioUtils';
+import { playPCM, getAudioCtx, globalResumeAudioContext } from './utils/audioUtils';
 import { signUp, logIn, logOut, subscribeToAuthChanges } from './services/authService';
 import { getUserData, saveUserData } from './services/userService';
 import { GoogleGenAI, Modality, LiveServerMessage } from "@google/genai";
@@ -3344,6 +3344,7 @@ const LiveSession = ({ onBack, user, setUser }: { onBack: () => void, user: User
       isPlayingRef.current = false;
       processQueue();
     };
+    console.log("LiveSession: Starting source playback, queue length:", audioQueueRef.current.length);
     source.start();
   };
 
@@ -3381,9 +3382,12 @@ const LiveSession = ({ onBack, user, setUser }: { onBack: () => void, user: User
     
     // Initialize AudioContext early for playback
     if (!audioContextRef.current) {
-      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+      audioContextRef.current = getAudioCtx();
     }
+    
+    // Ensure it's resumed
     if (audioContextRef.current.state === 'suspended') {
+      console.log("LiveSession: Resuming shared AudioContext");
       await audioContextRef.current.resume();
     }
 
@@ -3406,7 +3410,7 @@ const LiveSession = ({ onBack, user, setUser }: { onBack: () => void, user: User
             // Handle audio output
             if (message.serverContent?.modelTurn?.parts[0]?.inlineData?.data) {
               const base64Audio = message.serverContent.modelTurn.parts[0].inlineData.data;
-              console.log("LiveSession: Playing audio chunk, length:", base64Audio.length);
+              console.log("LiveSession: Received audio chunk, length:", base64Audio.length, "state:", audioContextRef.current?.state);
               playAudio(base64Audio);
             }
 
@@ -3623,10 +3627,8 @@ const LiveSession = ({ onBack, user, setUser }: { onBack: () => void, user: User
 
   const cleanupAudio = () => {
     if (processorRef.current) processorRef.current.disconnect();
-    if (audioContextRef.current) {
-      audioContextRef.current.close().catch(console.error);
-      audioContextRef.current = null;
-    }
+    // Do NOT close the shared audio context, just null it out
+    audioContextRef.current = null;
     if (inputContextRef.current) {
       inputContextRef.current.close().catch(console.error);
       inputContextRef.current = null;
@@ -3783,7 +3785,7 @@ const LiveSession = ({ onBack, user, setUser }: { onBack: () => void, user: User
                     <h3 className="text-xl font-bold mb-2 text-white">Microphone Issue</h3>
                     <p className="text-sm text-vox-paper/60 mb-8 leading-relaxed">{micError}</p>
                     <button 
-                      onClick={startSession}
+                      onClick={() => { globalResumeAudioContext(); startSession(); }}
                       className="px-8 py-3 bg-vox-accent text-vox-bg rounded-full font-bold text-xs uppercase tracking-widest hover:scale-105 transition-all"
                     >
                       Try Again
@@ -3851,7 +3853,7 @@ const LiveSession = ({ onBack, user, setUser }: { onBack: () => void, user: User
             {!isConnected ? (
               <div className="flex flex-col items-center gap-6">
                 <button 
-                  onClick={startSession}
+                  onClick={() => { globalResumeAudioContext(); startSession(); }}
                   disabled={isConnecting}
                   className="px-10 py-5 bg-vox-accent text-white rounded-full font-bold text-lg hover:scale-105 active:scale-95 transition-all disabled:opacity-50 shadow-xl shadow-vox-accent/20"
                 >
@@ -5168,35 +5170,7 @@ const MoodTracker = ({ user, setUser, onBack, safePlayPCM }: { user: User, setUs
                 </div>
               )}
             </div>
-
-            {/* Heatmap Visualization */}
-            <div className="space-y-4">
-        <h3 className="text-vox-paper/50 text-xs uppercase tracking-widest font-medium">Diagnostics</h3>
-        <button 
-          onClick={async () => {
-            const testText = "Testing audio sanctuary. If you hear this, your voice companion is ready.";
-            console.log("Settings: Testing audio...");
-            const audio = await generateSpeech(testText);
-            if (audio) {
-              await safePlayPCM(audio);
-            } else {
-              console.error("Settings: Failed to generate test audio");
-            }
-          }}
-          className="w-full glass p-4 rounded-xl flex items-center justify-between hover:bg-white/5 transition-colors"
-        >
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-vox-accent/20 flex items-center justify-center text-vox-accent">
-              <Volume2 size={20} />
-            </div>
-            <div className="text-left">
-              <div className="text-vox-paper font-medium">Test AI Voice</div>
-              <div className="text-vox-paper/50 text-sm">Verify your companion's voice</div>
-            </div>
-          </div>
-          <Play size={18} className="text-vox-paper/30" />
-        </button>
-      </div>
+          </motion.div>
 
       <div className="pt-8 border-t border-white/5">
               <div className="flex justify-between items-center mb-6">
@@ -5220,7 +5194,7 @@ const MoodTracker = ({ user, setUser, onBack, safePlayPCM }: { user: User, setUs
                 ))}
               </div>
             </div>
-          </motion.div>
+          </div>
 
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
@@ -5300,9 +5274,8 @@ const MoodTracker = ({ user, setUser, onBack, safePlayPCM }: { user: User, setUs
           </motion.div>
         </div>
       </div>
-    </div>
-  );
-};
+    );
+  };
 
 const FearSimulation = ({ onBack, user, setUser }: { onBack: () => void, user: User, setUser: React.Dispatch<React.SetStateAction<User | null>> }) => {
   const [scenario, setScenario] = useState<any>(null);
@@ -6091,6 +6064,38 @@ const SettingsView = ({ onBack, user, setUser, safePlayPCM }: { onBack: () => vo
             </div>
           </section>
 
+          {/* Diagnostics Section */}
+          <section>
+            <div className="flex items-center gap-2 mb-6">
+              <Activity size={16} className="text-vox-accent" />
+              <h3 className="text-xs uppercase tracking-[0.3em] font-bold text-vox-accent">Diagnostics</h3>
+            </div>
+            <button 
+              onClick={async () => {
+                const testText = "Testing audio sanctuary. If you hear this, your voice companion is ready.";
+                console.log("Settings: Testing audio...");
+                const audio = await generateSpeech(testText);
+                if (audio) {
+                  await safePlayPCM(audio);
+                } else {
+                  console.error("Settings: Failed to generate test audio");
+                }
+              }}
+              className="w-full glass p-6 rounded-2xl flex items-center justify-between hover:bg-white/5 transition-all border border-white/10 group"
+            >
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-vox-accent/20 flex items-center justify-center text-vox-accent group-hover:scale-110 transition-transform">
+                  <Volume2 size={24} />
+                </div>
+                <div className="text-left">
+                  <div className="text-vox-paper font-bold uppercase tracking-widest text-sm">Test AI Voice</div>
+                  <div className="text-vox-paper/40 text-[10px] italic font-serif mt-1">Verify your companion's voice connection</div>
+                </div>
+              </div>
+              <Play size={20} className="text-vox-accent opacity-50 group-hover:opacity-100 transition-opacity" />
+            </button>
+          </section>
+
           <motion.button 
             whileHover={{ scale: 1.02, backgroundColor: isSaved ? "rgb(16, 185, 129)" : "rgba(45, 212, 191, 0.9)" }}
             whileTap={{ scale: 0.98 }}
@@ -6472,17 +6477,7 @@ const ApiStatusIndicator = () => {
 };
 
 // Global helper to resume context on any click
-const globalResumeAudioContext = async () => {
-  // We can try to resume any context we find
-  if ((window as any)._voxAudioContext && (window as any)._voxAudioContext.state === 'suspended') {
-    console.log("Global: Resuming AudioContext on user gesture");
-    try {
-      await (window as any)._voxAudioContext.resume();
-    } catch (e) {
-      console.error("Global: Failed to resume AudioContext:", e);
-    }
-  }
-};
+// Now imported from audioUtils
 
 export default function App() {
   const [view, setView] = useState<AppState>('landing');
