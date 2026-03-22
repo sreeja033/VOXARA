@@ -16,14 +16,16 @@ const MIN_REQUEST_GAP = 1000; // 1 second gap between requests
 const ttsCache = new Map<string, string>();
 const MAX_CACHE_SIZE = 50;
 
-const emitApiStatus = (status: 'idle' | 'busy' | 'error' | 'retry') => {
+const emitApiStatus = (status: 'idle' | 'busy' | 'error' | 'retry', delay?: number) => {
   if (typeof window !== 'undefined') {
-    window.dispatchEvent(new CustomEvent('gemini-api-status', { detail: status }));
+    window.dispatchEvent(new CustomEvent('gemini-api-status', { 
+      detail: { status, delay } 
+    }));
   }
 };
 
 // Helper for retrying API calls with exponential backoff
-const withRetry = async <T>(fn: () => Promise<T>, maxRetries = 5): Promise<T> => {
+const withRetry = async <T>(fn: () => Promise<T>, maxRetries = 7): Promise<T> => {
   let lastError: any;
   emitApiStatus('busy');
   
@@ -56,10 +58,10 @@ const withRetry = async <T>(fn: () => Promise<T>, maxRetries = 5): Promise<T> =>
         responseStatus === 429;
         
       if (isQuotaError && i < maxRetries - 1) {
-        emitApiStatus('retry');
         // More aggressive backoff for quota errors
-        // i=0: ~5s, i=1: ~15s, i=2: ~45s, i=3: ~135s
+        // i=0: ~5s, i=1: ~15s, i=2: ~45s, i=3: ~135s...
         const delay = Math.pow(3, i) * 5000 + Math.random() * 2000;
+        emitApiStatus('retry', delay);
         console.warn(`Gemini Rate Limit hit (429). Retrying in ${Math.round(delay)}ms... (Attempt ${i + 1}/${maxRetries})`);
         await new Promise(resolve => setTimeout(resolve, delay));
         continue;
@@ -68,7 +70,7 @@ const withRetry = async <T>(fn: () => Promise<T>, maxRetries = 5): Promise<T> =>
       emitApiStatus('error');
       // If it's a quota error and we've exhausted retries, throw a clearer error
       if (isQuotaError) {
-        throw new Error("VOXARA is currently resting. Our AI companion is experiencing high demand. Please try again in a few minutes.");
+        throw new Error("VOXARA is currently resting. The AI service is experiencing high demand. Please wait a minute and try again.");
       }
       
       throw error;

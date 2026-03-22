@@ -5907,14 +5907,30 @@ const SettingsView = ({ onBack, user, setUser, safePlayPCM }: { onBack: () => vo
   const [isSaved, setIsSaved] = useState(false);
   const [apiStatus, setApiStatus] = useState<'idle' | 'busy' | 'error' | 'retry'>('idle');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [countdown, setCountdown] = useState<number | null>(null);
 
   useEffect(() => {
+    let timer: NodeJS.Timeout;
     const handleStatusChange = (e: any) => {
-      setApiStatus(e.detail);
-      if (e.detail === 'idle') setErrorMessage(null);
+      const { status, delay } = e.detail;
+      setApiStatus(status);
+      if (status === 'idle') setErrorMessage(null);
+      
+      if (status === 'retry' && delay) {
+        setCountdown(Math.round(delay / 1000));
+        timer = setInterval(() => {
+          setCountdown(prev => (prev !== null && prev > 0) ? prev - 1 : 0);
+        }, 1000);
+      } else {
+        setCountdown(null);
+        if (timer) clearInterval(timer);
+      }
     };
     window.addEventListener('gemini-api-status', handleStatusChange);
-    return () => window.removeEventListener('gemini-api-status', handleStatusChange);
+    return () => {
+      window.removeEventListener('gemini-api-status', handleStatusChange);
+      if (timer) clearInterval(timer);
+    };
   }, []);
 
   const handleSave = () => {
@@ -6121,13 +6137,13 @@ const SettingsView = ({ onBack, user, setUser, safePlayPCM }: { onBack: () => vo
                       Gemini API: {
                         apiStatus === 'idle' ? 'Ready' :
                         apiStatus === 'busy' ? 'Processing' :
-                        apiStatus === 'retry' ? 'Rate Limited (Retrying)' :
+                        apiStatus === 'retry' ? `Rate Limited (Retrying in ${countdown}s)` :
                         'Connection Error'
                       }
                     </span>
                   </div>
                   {apiStatus === 'retry' && (
-                    <span className="text-[10px] text-amber-500 italic font-serif">Waiting for cooldown...</span>
+                    <span className="text-[10px] text-amber-500 italic font-serif">Cooldown active...</span>
                   )}
                 </div>
                 
@@ -6135,6 +6151,16 @@ const SettingsView = ({ onBack, user, setUser, safePlayPCM }: { onBack: () => vo
                   The "Too Many Requests (429)" error is a temporary limit from Google's servers. 
                   VOXARA automatically retries these requests with a delay to ensure your experience remains stable.
                 </p>
+
+                <div className="pt-2 border-t border-white/5">
+                  <button 
+                    onClick={() => window.location.reload()}
+                    className="flex items-center gap-2 text-[10px] text-vox-accent hover:text-vox-accent/80 transition-colors uppercase tracking-widest font-bold"
+                  >
+                    <RotateCcw size={12} />
+                    Sync Application (Fix 404 Errors)
+                  </button>
+                </div>
               </div>
 
               <div className="space-y-4">
@@ -6176,7 +6202,7 @@ const SettingsView = ({ onBack, user, setUser, safePlayPCM }: { onBack: () => vo
                     <div className="text-left">
                       <div className="text-vox-paper font-bold uppercase tracking-widest text-sm">
                         {apiStatus === 'busy' ? 'Connecting...' :
-                         apiStatus === 'retry' ? 'Retrying (Rate Limit)...' :
+                         apiStatus === 'retry' ? `Retrying in ${countdown}s...` :
                          'Test AI Voice'}
                       </div>
                       <div className="text-vox-paper/40 text-[10px] italic font-serif mt-1">
@@ -6555,11 +6581,29 @@ const Meditations = ({ onBack, safePlayPCM }: { onBack: () => void, safePlayPCM:
 
 const ApiStatusIndicator = () => {
   const [status, setStatus] = useState<'idle' | 'busy' | 'error' | 'retry'>('idle');
+  const [countdown, setCountdown] = useState<number | null>(null);
 
   useEffect(() => {
-    const handleStatus = (e: any) => setStatus(e.detail);
+    let timer: NodeJS.Timeout;
+    const handleStatus = (e: any) => {
+      const { status: newStatus, delay } = e.detail;
+      setStatus(newStatus);
+      
+      if (newStatus === 'retry' && delay) {
+        setCountdown(Math.round(delay / 1000));
+        timer = setInterval(() => {
+          setCountdown(prev => (prev !== null && prev > 0) ? prev - 1 : 0);
+        }, 1000);
+      } else {
+        setCountdown(null);
+        if (timer) clearInterval(timer);
+      }
+    };
     window.addEventListener('gemini-api-status', handleStatus);
-    return () => window.removeEventListener('gemini-api-status', handleStatus);
+    return () => {
+      window.removeEventListener('gemini-api-status', handleStatus);
+      if (timer) clearInterval(timer);
+    };
   }, []);
 
   if (status === 'idle') return null;
@@ -6578,7 +6622,7 @@ const ApiStatusIndicator = () => {
       }`} />
       <span className="text-[10px] uppercase tracking-widest font-bold text-vox-paper/70">
         {status === 'busy' ? 'AI Processing...' : 
-         status === 'retry' ? 'Rate Limit (Retrying...)' : 
+         status === 'retry' ? `Rate Limit (Retrying in ${countdown}s...)` : 
          'AI Connection Error'}
       </span>
     </motion.div>
