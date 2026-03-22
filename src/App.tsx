@@ -3405,13 +3405,51 @@ const LiveSession = ({ onBack, user, setUser }: { onBack: () => void, user: User
             sessionPromise.then(s => setupAudio(s));
           },
           onmessage: async (message: LiveServerMessage) => {
-            console.log("LiveSession: Received message type:", Object.keys(message));
+            console.log("LiveSession: Received message:", message);
             
-            // Handle audio output
-            if (message.serverContent?.modelTurn?.parts[0]?.inlineData?.data) {
-              const base64Audio = message.serverContent.modelTurn.parts[0].inlineData.data;
-              console.log("LiveSession: Received audio chunk, length:", base64Audio.length, "state:", audioContextRef.current?.state);
-              playAudio(base64Audio);
+            // Handle model turn
+            if (message.serverContent?.modelTurn) {
+              const parts = message.serverContent.modelTurn.parts;
+              for (const part of parts) {
+                // Handle audio output
+                if (part.inlineData?.data) {
+                  const base64Audio = part.inlineData.data;
+                  console.log("LiveSession: Received audio chunk, length:", base64Audio.length, "state:", audioContextRef.current?.state);
+                  playAudio(base64Audio);
+                }
+
+                // Handle model transcription
+                if (part.text) {
+                  const text = part.text;
+                  console.log("LiveSession: Model text:", text);
+                  setTranscription(prev => prev + ' ' + text);
+                  setCurrentMessages(prev => {
+                    const last = prev[prev.length - 1];
+                    if (last && last.role === 'model' && Date.now() - last.timestamp < 5000) {
+                      return [...prev.slice(0, -1), { ...last, text: last.text + ' ' + text, timestamp: Date.now() }];
+                    }
+                    return [...prev, { role: 'model', text, timestamp: Date.now() }];
+                  });
+                }
+              }
+            }
+
+            // Handle user turn transcription
+            if ((message as any).serverContent?.userTurn) {
+              const parts = (message as any).serverContent.userTurn.parts;
+              for (const part of parts) {
+                if (part.text) {
+                  const userText = part.text;
+                  console.log("LiveSession: User transcription:", userText);
+                  setCurrentMessages(prev => {
+                    const last = prev[prev.length - 1];
+                    if (last && last.role === 'user' && Date.now() - last.timestamp < 5000) {
+                      return [...prev.slice(0, -1), { ...last, text: last.text + ' ' + userText, timestamp: Date.now() }];
+                    }
+                    return [...prev, { role: 'user', text: userText, timestamp: Date.now() }];
+                  });
+                }
+              }
             }
 
             // Handle interruption
@@ -3420,32 +3458,6 @@ const LiveSession = ({ onBack, user, setUser }: { onBack: () => void, user: User
               audioQueueRef.current = [];
               isPlayingRef.current = false;
               setIsModelSpeaking(false);
-            }
-
-            // Handle model transcription
-            if (message.serverContent?.modelTurn?.parts[0]?.text) {
-              const text = message.serverContent.modelTurn.parts[0].text;
-              console.log("LiveSession: Model text:", text);
-              setTranscription(prev => prev + ' ' + text);
-              setCurrentMessages(prev => {
-                const last = prev[prev.length - 1];
-                if (last && last.role === 'model' && Date.now() - last.timestamp < 5000) {
-                  return [...prev.slice(0, -1), { ...last, text: last.text + ' ' + text, timestamp: Date.now() }];
-                }
-                return [...prev, { role: 'model', text, timestamp: Date.now() }];
-              });
-            }
-
-            // Handle user transcription
-            const userText = (message as any).serverContent?.userTurn?.parts?.[0]?.text;
-            if (userText) {
-               setCurrentMessages(prev => {
-                 const last = prev[prev.length - 1];
-                 if (last && last.role === 'user' && Date.now() - last.timestamp < 5000) {
-                   return [...prev.slice(0, -1), { ...last, text: last.text + ' ' + userText, timestamp: Date.now() }];
-                 }
-                 return [...prev, { role: 'user', text: userText, timestamp: Date.now() }];
-               });
             }
           },
           onclose: () => {
@@ -3581,7 +3593,12 @@ const LiveSession = ({ onBack, user, setUser }: { onBack: () => void, user: User
           for (let i = 0; i < inputData.length; i++) {
             pcmData[i] = Math.max(-1, Math.min(1, inputData[i])) * 0x7FFF;
           }
-          const base64Data = btoa(String.fromCharCode(...new Uint8Array(pcmData.buffer)));
+          const uint8 = new Uint8Array(pcmData.buffer);
+          let binary = '';
+          for (let i = 0; i < uint8.length; i++) {
+            binary += String.fromCharCode(uint8[i]);
+          }
+          const base64Data = btoa(binary);
           session.sendRealtimeInput({
             audio: { data: base64Data, mimeType: 'audio/pcm;rate=16000' }
           });
@@ -3600,7 +3617,12 @@ const LiveSession = ({ onBack, user, setUser }: { onBack: () => void, user: User
           for (let i = 0; i < inputData.length; i++) {
             pcmData[i] = Math.max(-1, Math.min(1, inputData[i])) * 0x7FFF;
           }
-          const base64Data = btoa(String.fromCharCode(...new Uint8Array(pcmData.buffer)));
+          const uint8 = new Uint8Array(pcmData.buffer);
+          let binary = '';
+          for (let i = 0; i < uint8.length; i++) {
+            binary += String.fromCharCode(uint8[i]);
+          }
+          const base64Data = btoa(binary);
           session.sendRealtimeInput({
             audio: { data: base64Data, mimeType: 'audio/pcm;rate=16000' }
           });
