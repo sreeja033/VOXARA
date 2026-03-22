@@ -2,6 +2,12 @@ import { GoogleGenAI, Modality, Type } from "@google/genai";
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
 
+if (!process.env.GEMINI_API_KEY) {
+  console.error("geminiService: GEMINI_API_KEY is missing!");
+} else {
+  console.log("geminiService: GEMINI_API_KEY is configured.");
+}
+
 // Global cooldown to prevent rapid-fire requests
 let lastRequestTime = 0;
 const MIN_REQUEST_GAP = 1000; // 1 second gap between requests

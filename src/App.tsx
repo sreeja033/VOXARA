@@ -2646,11 +2646,14 @@ const CompanionMode = ({ onBack, user, setUser, safePlayPCM, stopAllAudio }: { o
       // Generate and play speech
       if (useVoice) {
         setIsSpeaking(true);
+        console.log("CompanionMode: Generating speech for response:", response.substring(0, 50) + "...");
         const audioBase64 = await generateSpeech(response);
         if (audioBase64) {
+          console.log("CompanionMode: Speech generated, length:", audioBase64.length);
           setLastAudio(audioBase64);
           playRawAudio(audioBase64);
         } else {
+          console.warn("CompanionMode: Speech generation failed (no audio returned)");
           setIsSpeaking(false);
         }
       }
@@ -3330,7 +3333,13 @@ const LiveSession = ({ onBack, user, setUser }: { onBack: () => void, user: User
     const buffer = audioQueueRef.current.shift()!;
     const source = audioContextRef.current.createBufferSource();
     source.buffer = buffer;
-    source.connect(audioContextRef.current.destination);
+    
+    const gainNode = audioContextRef.current.createGain();
+    gainNode.gain.value = 1.0; // Full volume for live session
+    
+    source.connect(gainNode);
+    gainNode.connect(audioContextRef.current.destination);
+    
     source.onended = () => {
       isPlayingRef.current = false;
       processQueue();
@@ -3340,6 +3349,7 @@ const LiveSession = ({ onBack, user, setUser }: { onBack: () => void, user: User
 
   const playAudio = async (base64Audio: string) => {
     if (!audioContextRef.current) return;
+    console.log("LiveSession: Received audio chunk, length:", base64Audio.length);
     try {
       const binaryString = atob(base64Audio);
       const bytes = new Uint8Array(binaryString.length);
@@ -3348,7 +3358,8 @@ const LiveSession = ({ onBack, user, setUser }: { onBack: () => void, user: User
       }
       
       // Ensure we have a valid Int16Array from the bytes
-      const pcmData = new Int16Array(bytes.buffer, bytes.byteOffset, bytes.byteLength / 2);
+      const alignedLength = Math.floor(bytes.byteLength / 2) * 2;
+      const pcmData = new Int16Array(bytes.buffer, bytes.byteOffset, alignedLength / 2);
       const floatData = new Float32Array(pcmData.length);
       for (let i = 0; i < pcmData.length; i++) {
         floatData[i] = pcmData[i] / 32768.0;
@@ -3370,7 +3381,7 @@ const LiveSession = ({ onBack, user, setUser }: { onBack: () => void, user: User
     
     // Initialize AudioContext early for playback
     if (!audioContextRef.current) {
-      audioContextRef.current = new AudioContext({ sampleRate: 24000 });
+      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
     }
     if (audioContextRef.current.state === 'suspended') {
       await audioContextRef.current.resume();
@@ -3390,14 +3401,18 @@ const LiveSession = ({ onBack, user, setUser }: { onBack: () => void, user: User
             sessionPromise.then(s => setupAudio(s));
           },
           onmessage: async (message: LiveServerMessage) => {
+            console.log("LiveSession: Received message type:", Object.keys(message));
+            
             // Handle audio output
             if (message.serverContent?.modelTurn?.parts[0]?.inlineData?.data) {
               const base64Audio = message.serverContent.modelTurn.parts[0].inlineData.data;
+              console.log("LiveSession: Playing audio chunk, length:", base64Audio.length);
               playAudio(base64Audio);
             }
 
             // Handle interruption
             if (message.serverContent?.interrupted) {
+              console.log("LiveSession: Interrupted");
               audioQueueRef.current = [];
               isPlayingRef.current = false;
               setIsModelSpeaking(false);
@@ -3406,6 +3421,7 @@ const LiveSession = ({ onBack, user, setUser }: { onBack: () => void, user: User
             // Handle model transcription
             if (message.serverContent?.modelTurn?.parts[0]?.text) {
               const text = message.serverContent.modelTurn.parts[0].text;
+              console.log("LiveSession: Model text:", text);
               setTranscription(prev => prev + ' ' + text);
               setCurrentMessages(prev => {
                 const last = prev[prev.length - 1];
@@ -4949,7 +4965,7 @@ const VoiceCircles = ({ onBack, user, setUser }: { onBack: () => void, user: Use
   );
 };
 
-const MoodTracker = ({ user, setUser, onBack }: { user: User, setUser: React.Dispatch<React.SetStateAction<User | null>>, onBack: () => void }) => {
+const MoodTracker = ({ user, setUser, onBack, safePlayPCM }: { user: User, setUser: React.Dispatch<React.SetStateAction<User | null>>, onBack: () => void, safePlayPCM: any }) => {
   const [selectedMood, setSelectedMood] = useState<MoodEntry['mood'] | null>(null);
   const [note, setNote] = useState('');
 
@@ -5154,7 +5170,35 @@ const MoodTracker = ({ user, setUser, onBack }: { user: User, setUser: React.Dis
             </div>
 
             {/* Heatmap Visualization */}
-            <div className="pt-8 border-t border-white/5">
+            <div className="space-y-4">
+        <h3 className="text-vox-paper/50 text-xs uppercase tracking-widest font-medium">Diagnostics</h3>
+        <button 
+          onClick={async () => {
+            const testText = "Testing audio sanctuary. If you hear this, your voice companion is ready.";
+            console.log("Settings: Testing audio...");
+            const audio = await generateSpeech(testText);
+            if (audio) {
+              await safePlayPCM(audio);
+            } else {
+              console.error("Settings: Failed to generate test audio");
+            }
+          }}
+          className="w-full glass p-4 rounded-xl flex items-center justify-between hover:bg-white/5 transition-colors"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-vox-accent/20 flex items-center justify-center text-vox-accent">
+              <Volume2 size={20} />
+            </div>
+            <div className="text-left">
+              <div className="text-vox-paper font-medium">Test AI Voice</div>
+              <div className="text-vox-paper/50 text-sm">Verify your companion's voice</div>
+            </div>
+          </div>
+          <Play size={18} className="text-vox-paper/30" />
+        </button>
+      </div>
+
+      <div className="pt-8 border-t border-white/5">
               <div className="flex justify-between items-center mb-6">
                 <h4 className="text-xs uppercase tracking-[0.2em] text-vox-paper/40 font-bold">30-Day Intensity Map</h4>
                 <div className="flex gap-1">
@@ -5856,7 +5900,7 @@ const CourageConnections = ({ onBack, user }: { onBack: () => void, user: User }
 
 // --- Main App ---
 
-const SettingsView = ({ onBack, user, setUser }: { onBack: () => void, user: User, setUser: React.Dispatch<React.SetStateAction<User | null>> }) => {
+const SettingsView = ({ onBack, user, setUser, safePlayPCM }: { onBack: () => void, user: User, setUser: React.Dispatch<React.SetStateAction<User | null>>, safePlayPCM: any }) => {
   const [safeWord, setSafeWord] = useState(user.safeWord);
   const [bio, setBio] = useState(user.bio || '');
   const [location, setLocation] = useState(user.location || '');
@@ -6427,42 +6471,16 @@ const ApiStatusIndicator = () => {
   );
 };
 
-// Global Audio Helper
-const safePlayPCM = async (base64Audio: string, sampleRate: number = 24000) => {
-  try {
-    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-    const binaryString = atob(base64Audio);
-    const bytes = new Uint8Array(binaryString.length);
-    for (let i = 0; i < binaryString.length; i++) {
-      bytes[i] = binaryString.charCodeAt(i);
+// Global helper to resume context on any click
+const globalResumeAudioContext = async () => {
+  // We can try to resume any context we find
+  if ((window as any)._voxAudioContext && (window as any)._voxAudioContext.state === 'suspended') {
+    console.log("Global: Resuming AudioContext on user gesture");
+    try {
+      await (window as any)._voxAudioContext.resume();
+    } catch (e) {
+      console.error("Global: Failed to resume AudioContext:", e);
     }
-    
-    const pcmData = new Int16Array(bytes.buffer, bytes.byteOffset, bytes.byteLength / 2);
-    const floatData = new Float32Array(pcmData.length);
-    for (let i = 0; i < pcmData.length; i++) {
-      floatData[i] = pcmData[i] / 32768.0;
-    }
-
-    const buffer = audioContext.createBuffer(1, floatData.length, sampleRate);
-    buffer.getChannelData(0).set(floatData);
-
-    const source = audioContext.createBufferSource();
-    source.buffer = buffer;
-    source.connect(audioContext.destination);
-    
-    if (audioContext.state === 'suspended') {
-      await audioContext.resume();
-    }
-    
-    source.start();
-    return new Promise<void>((resolve) => {
-      source.onended = () => {
-        audioContext.close();
-        resolve();
-      };
-    });
-  } catch (err) {
-    console.error("Error playing audio:", err);
   }
 };
 
@@ -6471,6 +6489,14 @@ export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [isUserLoading, setIsUserLoading] = useState(true);
   const currentAudioRef = useRef<{ stop: () => void } | null>(null);
+
+  useEffect(() => {
+    if (!process.env.GEMINI_API_KEY) {
+      console.error("CRITICAL: GEMINI_API_KEY is missing from environment variables!");
+    } else {
+      console.log("GEMINI_API_KEY is present.");
+    }
+  }, []);
 
   const stopAllAudio = () => {
     if (currentAudioRef.current) {
@@ -6587,7 +6613,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-vox-bg text-vox-paper">
+    <div className="min-h-screen bg-vox-bg text-vox-paper" onClick={globalResumeAudioContext}>
       <ApiStatusIndicator />
       {/* Global Background Elements */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
@@ -6796,7 +6822,7 @@ export default function App() {
             exit={{ opacity: 0, scale: 0.99 }}
             transition={pageTransition}
           >
-            <MoodTracker user={user} setUser={setUser} onBack={() => setView('dashboard')} />
+            <MoodTracker user={user} setUser={setUser} onBack={() => setView('dashboard')} safePlayPCM={safePlayPCM} />
           </motion.div>
         )}
 
@@ -6880,7 +6906,7 @@ export default function App() {
             exit={{ opacity: 0, scale: 0.99 }}
             transition={pageTransition}
           >
-            <SettingsView onBack={() => setView('dashboard')} user={user} setUser={setUser} />
+            <SettingsView onBack={() => setView('dashboard')} user={user} setUser={setUser} safePlayPCM={safePlayPCM} />
           </motion.div>
         )}
       </AnimatePresence>
