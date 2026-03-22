@@ -54,7 +54,15 @@ import {
   TrendingDown,
 } from 'lucide-react';
 import { AppState, User, VoiceNote, LiveSessionEntry, JournalEntry, UserGoal, EmergencyContact, CourageHistoryEntry, MoodEntry } from './types';
-import { generateCompanionResponse, ghostModePractice, generateSpeech, transcribeAudio, generateJournalPrompt } from './services/geminiService';
+import { 
+  generateCompanionResponse, 
+  ghostModePractice, 
+  generateSpeech, 
+  transcribeAudio, 
+  generateJournalPrompt,
+  generateWhisperFeedback,
+  generateWhisperInsight
+} from './services/geminiService';
 import { playPCM } from './utils/audioUtils';
 import { signUp, logIn, logOut, subscribeToAuthChanges } from './services/authService';
 import { getUserData, saveUserData } from './services/userService';
@@ -979,8 +987,7 @@ const LandingPage = ({ onStart, isLoggedIn }: { onStart: () => void, isLoggedIn:
         <VoxaraLogo className="w-10 h-10" />
         <div className="flex flex-col">
           <span className="text-lg font-serif tracking-tighter leading-none">VOXARA</span>
-          <span className="text-[8px] uppercase tracking-[0.4em] text-vox-accent font-bold mt-1">Aura of voice,Power of Rise
-</span>
+          <span className="text-[8px] uppercase tracking-[0.4em] text-vox-accent font-bold mt-1">Courage Companion</span>
         </div>
       </div>
       <motion.button 
@@ -1437,22 +1444,28 @@ const FearMapEvolution = ({ history }: { history: CourageHistoryEntry[] }) => {
 
   return (
     <div className="h-full w-full min-h-[240px]">
-      <ResponsiveContainer width="99%" height={240} debounce={100}>
-        <AreaChart data={data}>
-          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-          <XAxis dataKey="name" hide />
-          <YAxis hide domain={[0, 100]} />
-          <Tooltip 
-            contentStyle={{ backgroundColor: '#020617', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '1rem' }}
-            itemStyle={{ fontSize: '10px', padding: '2px 0' }}
-            labelStyle={{ display: 'none' }}
-          />
-          <Area type="monotone" dataKey="rejection" stroke="#2dd4bf" fillOpacity={0.05} fill="#2dd4bf" strokeWidth={2} />
-          <Area type="monotone" dataKey="conflict" stroke="#fb923c" fillOpacity={0.05} fill="#fb923c" strokeWidth={2} />
-          <Area type="monotone" dataKey="misunderstanding" stroke="#a855f7" fillOpacity={0.05} fill="#a855f7" strokeWidth={2} />
-          <Area type="monotone" dataKey="vulnerability" stroke="#facc15" fillOpacity={0.05} fill="#facc15" strokeWidth={2} />
-        </AreaChart>
-      </ResponsiveContainer>
+      {data.length > 0 ? (
+        <ResponsiveContainer width="99%" height={240} debounce={100} minWidth={0} minHeight={0}>
+          <AreaChart data={data}>
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+            <XAxis dataKey="name" hide />
+            <YAxis hide domain={[0, 100]} />
+            <Tooltip 
+              contentStyle={{ backgroundColor: '#020617', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '1rem' }}
+              itemStyle={{ fontSize: '10px', padding: '2px 0' }}
+              labelStyle={{ display: 'none' }}
+            />
+            <Area type="monotone" dataKey="rejection" stroke="#2dd4bf" fillOpacity={0.05} fill="#2dd4bf" strokeWidth={2} />
+            <Area type="monotone" dataKey="conflict" stroke="#fb923c" fillOpacity={0.05} fill="#fb923c" strokeWidth={2} />
+            <Area type="monotone" dataKey="misunderstanding" stroke="#a855f7" fillOpacity={0.05} fill="#a855f7" strokeWidth={2} />
+            <Area type="monotone" dataKey="vulnerability" stroke="#facc15" fillOpacity={0.05} fill="#facc15" strokeWidth={2} />
+          </AreaChart>
+        </ResponsiveContainer>
+      ) : (
+        <div className="h-full flex items-center justify-center text-vox-paper/20 italic text-xs">
+          No history yet.
+        </div>
+      )}
     </div>
   );
 };
@@ -1735,6 +1748,17 @@ const Dashboard = ({ user, setView, setUser }: { user: User, setView: (v: AppSta
             image="https://picsum.photos/seed/vocal/800/600"
             accentColor="#2dd4bf"
             onClick={() => setView('whisper')}
+            className="md:col-span-2 lg:col-span-3 min-h-[320px] md:h-[400px]"
+          />
+
+          <FeatureCard 
+            title="Live Session"
+            label="Real-time Voice"
+            description="Immersive, low-latency voice conversation with your companion."
+            icon={Zap}
+            image="https://picsum.photos/seed/live/800/600"
+            accentColor="#f27d26"
+            onClick={() => setView('live')}
             className="md:col-span-2 lg:col-span-3 min-h-[320px] md:h-[400px]"
           />
 
@@ -2027,56 +2051,29 @@ const WhisperMode = ({ onBack, user, setUser, safePlayPCM, stopAllAudio, setView
         try {
           if (practiceWord) {
             // Practice logic
-            const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
-            const normalizedMimeType = mimeType.split(';')[0];
-            const response = await ai.models.generateContent({
-              model: "gemini-3-flash-preview",
-              contents: [{
-                role: 'user',
-                parts: [
-                  { inlineData: { data: base64Audio, mimeType: normalizedMimeType } },
-                  { text: `The user is practicing in ${mode} mode. The target word/sound is: "${practiceWord}". 
-                  Analyze the audio for:
-                  1. Sentiment (emotional tone)
-                  2. Courage level (confidence and strength in voice)
-                  3. Pronunciation (clarity and articulation)
-                  
-                  IMPORTANT: Since the user is in ${mode} mode, adjust your expectations. 
-                  - If 'breath', focus on the quality of the exhale and release.
-                  - If 'whisper', focus on the softness and intentionality.
-                  - If 'voice', focus on resonance and clarity.
-                  
-                  Provide gentle, encouraging feedback focusing on these three aspects.` }
-                ]
-              }]
-            });
-            setPracticeFeedback(response.text);
+            const feedback = await generateWhisperFeedback(base64Audio, mimeType, mode, practiceWord);
+            setPracticeFeedback(feedback);
           } else {
             const text = await transcribeAudio(base64Audio, mimeType);
             setTranscription(text);
             
             // Check for safe word
-            if (user.safeWord && text.toLowerCase().includes(user.safeWord.toLowerCase())) {
+            if (user.safeWord && text && text.toLowerCase().includes(user.safeWord.toLowerCase())) {
               setView('anchor');
               return;
             }
 
             // Get AI Insight for standard recording
-            const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
-            const normalizedMimeType = mimeType.split(';')[0];
-            const response = await ai.models.generateContent({
-              model: "gemini-3-flash-preview",
-              contents: [{
-                role: 'user',
-                parts: [
-                  { inlineData: { data: base64Audio, mimeType: normalizedMimeType } },
-                  { text: `The user just recorded a ${mode} note: "${text}". 
-                  Provide a very brief (1-2 sentences) supportive insight or validation based on their voice and what they said. 
-                  Keep it atmospheric and trauma-informed.` }
-                ]
-              }]
-            });
-            setPracticeFeedback(response.text); // Reuse practiceFeedback for the insight
+            if (text) {
+              const insight = await generateWhisperInsight(base64Audio, mimeType, mode, text);
+              setPracticeFeedback(insight);
+              
+              // Speak the insight
+              const audio = await generateSpeech(insight);
+              if (audio) {
+                await safePlayPCM(audio, 24000);
+              }
+            }
           }
         } catch (err) {
           console.error("Whisper recording error:", err);
@@ -3292,12 +3289,21 @@ const LiveSession = ({ onBack, user, setUser }: { onBack: () => void, user: User
   const [micError, setMicError] = useState<string | null>(null);
   const [isModelSpeaking, setIsModelSpeaking] = useState(false);
   const [isUserSpeaking, setIsUserSpeaking] = useState(false);
+  const [selectedVoice, setSelectedVoice] = useState('Zephyr');
   const sessionRef = useRef<any>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const inputContextRef = useRef<AudioContext | null>(null);
   const processorRef = useRef<AudioNode | null>(null);
   const audioQueueRef = useRef<AudioBuffer[]>([]);
   const isPlayingRef = useRef(false);
+  const isWorkletLoadedRef = useRef(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [currentMessages]);
 
   useEffect(() => {
     return () => {
@@ -3336,15 +3342,16 @@ const LiveSession = ({ onBack, user, setUser }: { onBack: () => void, user: User
     if (!audioContextRef.current) return;
     try {
       const binaryString = atob(base64Audio);
-      const len = binaryString.length;
-      const bytes = new Uint8Array(len);
-      for (let i = 0; i < len; i++) {
+      const bytes = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
         bytes[i] = binaryString.charCodeAt(i);
       }
-      const pcmData = new Int16Array(bytes.buffer);
+      
+      // Ensure we have a valid Int16Array from the bytes
+      const pcmData = new Int16Array(bytes.buffer, bytes.byteOffset, bytes.byteLength / 2);
       const floatData = new Float32Array(pcmData.length);
       for (let i = 0; i < pcmData.length; i++) {
-        floatData[i] = pcmData[i] / 0x7FFF;
+        floatData[i] = pcmData[i] / 32768.0;
       }
 
       const buffer = audioContextRef.current.createBuffer(1, floatData.length, 24000);
@@ -3369,6 +3376,7 @@ const LiveSession = ({ onBack, user, setUser }: { onBack: () => void, user: User
       await audioContextRef.current.resume();
     }
 
+    // Use a single instance of GoogleGenAI or handle connection carefully
     const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
     
     try {
@@ -3435,7 +3443,7 @@ const LiveSession = ({ onBack, user, setUser }: { onBack: () => void, user: User
         config: {
           responseModalities: [Modality.AUDIO],
           speechConfig: {
-            voiceConfig: { prebuiltVoiceConfig: { voiceName: "Zephyr" } },
+            voiceConfig: { prebuiltVoiceConfig: { voiceName: selectedVoice } },
           },
           inputAudioTranscription: {},
           outputAudioTranscription: {},
@@ -3463,7 +3471,10 @@ const LiveSession = ({ onBack, user, setUser }: { onBack: () => void, user: User
   };
 
   const stopSession = () => {
-    if (sessionRef.current) sessionRef.current.close();
+    if (sessionRef.current) {
+      sessionRef.current.close();
+      sessionRef.current = null;
+    }
     setIsConnected(false);
     cleanupAudio();
     audioQueueRef.current = [];
@@ -3474,15 +3485,18 @@ const LiveSession = ({ onBack, user, setUser }: { onBack: () => void, user: User
       const newEntry: LiveSessionEntry = {
         id: Math.random().toString(36).substr(2, 9),
         timestamp: Date.now(),
-        messages: currentMessages
+        messages: [...currentMessages]
       };
       setUser(prev => {
         if (!prev) return null;
+        // Avoid duplicate entries if called rapidly
+        if (prev.liveHistory?.some(h => h.timestamp === newEntry.timestamp)) return prev;
         return {
           ...prev,
           liveHistory: [newEntry, ...(prev.liveHistory || [])]
         };
       });
+      setCurrentMessages([]); // Clear after saving
     }
   };
 
@@ -3519,22 +3533,25 @@ const LiveSession = ({ onBack, user, setUser }: { onBack: () => void, user: User
 
       // Use AudioWorklet if supported, fallback to ScriptProcessor
       try {
-        const workletCode = `
-          class AudioProcessor extends AudioWorkletProcessor {
-            process(inputs, outputs, parameters) {
-              const input = inputs[0];
-              if (input.length > 0) {
-                const channelData = input[0];
-                this.port.postMessage(channelData);
+        if (!isWorkletLoadedRef.current) {
+          const workletCode = `
+            class AudioProcessor extends AudioWorkletProcessor {
+              process(inputs, outputs, parameters) {
+                const input = inputs[0];
+                if (input.length > 0) {
+                  const channelData = input[0];
+                  this.port.postMessage(channelData);
+                }
+                return true;
               }
-              return true;
             }
-          }
-          registerProcessor('audio-processor', AudioProcessor);
-        `;
-        const blob = new Blob([workletCode], { type: 'application/javascript' });
-        const url = URL.createObjectURL(blob);
-        await inputContextRef.current.audioWorklet.addModule(url);
+            registerProcessor('audio-processor', AudioProcessor);
+          `;
+          const blob = new Blob([workletCode], { type: 'application/javascript' });
+          const url = URL.createObjectURL(blob);
+          await inputContextRef.current.audioWorklet.addModule(url);
+          isWorkletLoadedRef.current = true;
+        }
         
         const workletNode = new AudioWorkletNode(inputContextRef.current, 'audio-processor');
         workletNode.port.onmessage = (event) => {
@@ -3591,12 +3608,13 @@ const LiveSession = ({ onBack, user, setUser }: { onBack: () => void, user: User
   const cleanupAudio = () => {
     if (processorRef.current) processorRef.current.disconnect();
     if (audioContextRef.current) {
-      audioContextRef.current.close();
+      audioContextRef.current.close().catch(console.error);
       audioContextRef.current = null;
     }
     if (inputContextRef.current) {
-      inputContextRef.current.close();
+      inputContextRef.current.close().catch(console.error);
       inputContextRef.current = null;
+      isWorkletLoadedRef.current = false;
     }
   };
 
@@ -3605,7 +3623,7 @@ const LiveSession = ({ onBack, user, setUser }: { onBack: () => void, user: User
       <div className="absolute inset-0 vox-gradient opacity-30" />
       
       <div className="absolute top-10 left-10 z-20 flex gap-4 items-center">
-        <button onClick={onBack} className="flex items-center gap-2 text-vox-paper/50 hover:text-vox-paper transition-colors">
+        <button onClick={() => { stopSession(); onBack(); }} className="flex items-center gap-2 text-vox-paper/50 hover:text-vox-paper transition-colors">
           <ChevronRight className="rotate-180" size={20} /> Exit
         </button>
         {isConnected && (
@@ -3626,6 +3644,20 @@ const LiveSession = ({ onBack, user, setUser }: { onBack: () => void, user: User
         >
           <History size={18} /> {showHistory ? "Back to Session" : "Session History"}
         </button>
+        
+        {!isConnected && !showHistory && (
+          <div className="flex items-center gap-2 glass p-1 rounded-full">
+            {['Zephyr', 'Kore', 'Puck', 'Fenrir', 'Charon'].map(v => (
+              <button 
+                key={v}
+                onClick={() => setSelectedVoice(v)}
+                className={`px-3 py-1 rounded-full text-[10px] font-bold transition-all ${selectedVoice === v ? 'bg-vox-accent text-white' : 'text-vox-paper/40 hover:bg-white/5'}`}
+              >
+                {v}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       <AnimatePresence mode="wait">
@@ -3760,11 +3792,45 @@ const LiveSession = ({ onBack, user, setUser }: { onBack: () => void, user: User
               </div>
             </div>
 
-            <div className="text-center mb-12">
+            <div className="text-center mb-8">
               <h3 className={`text-2xl font-serif italic transition-all duration-500 ${isModelSpeaking ? 'text-vox-accent' : 'text-vox-paper/40'}`}>
                 {isModelSpeaking ? "Companion is speaking..." : isUserSpeaking ? "Listening to you..." : isConnected ? "I'm listening..." : "Waiting for connection..."}
               </h3>
             </div>
+
+            {/* Real-time Transcription Display */}
+            {isConnected && (
+              <motion.div 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="w-full h-48 glass-dark rounded-3xl p-6 mb-8 overflow-hidden flex flex-col"
+              >
+                <div className="flex items-center gap-2 mb-4 text-[10px] uppercase tracking-widest text-vox-paper/30 font-bold">
+                  <MessageSquare size={12} /> Live Transcript
+                </div>
+                <div className="flex-1 overflow-y-auto space-y-4 pr-2 scrollbar-hide" id="live-transcript">
+                  {currentMessages.length === 0 ? (
+                    <div className="h-full flex items-center justify-center text-vox-paper/20 italic text-sm">
+                      Speak to start the conversation...
+                    </div>
+                  ) : (
+                    currentMessages.map((msg, idx) => (
+                      <motion.div 
+                        key={idx}
+                        initial={{ opacity: 0, x: msg.role === 'user' ? -10 : 10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        className={`flex gap-3 ${msg.role === 'user' ? 'justify-start' : 'justify-end'}`}
+                      >
+                        <div className={`max-w-[85%] p-3 rounded-2xl text-sm ${msg.role === 'user' ? 'bg-white/5 text-vox-paper/80 rounded-tl-none' : 'bg-vox-accent/10 text-vox-accent italic font-serif rounded-tr-none'}`}>
+                          {msg.text}
+                        </div>
+                      </motion.div>
+                    ))
+                  )}
+                  <div ref={scrollRef} />
+                </div>
+              </motion.div>
+            )}
 
             {!isConnected ? (
               <div className="flex flex-col items-center gap-6">
@@ -3812,7 +3878,7 @@ const LiveSession = ({ onBack, user, setUser }: { onBack: () => void, user: User
 };
 
 const Journal = ({ onBack, user, setUser }: { onBack: () => void, user: User, setUser: React.Dispatch<React.SetStateAction<User | null>> }) => {
-  const [prompt, setPrompt] = useState('');
+  const [prompt, setPrompt] = useState('What is one small way you can show yourself courage today?');
   const [response, setResponse] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -3897,7 +3963,9 @@ const Journal = ({ onBack, user, setUser }: { onBack: () => void, user: User, se
   };
 
   useEffect(() => {
-    getNewPrompt();
+    if (!prompt || prompt === 'What is one small way you can show yourself courage today?') {
+      getNewPrompt();
+    }
   }, []);
 
   const saveEntry = () => {
@@ -4332,47 +4400,53 @@ const FearStrengthMap = ({ user, onBack }: { user: User, onBack: () => void }) =
           <div className="glass-dark p-10 rounded-[3rem] border border-white/5">
             <h3 className="text-xl font-light tracking-widest uppercase mb-8 text-vox-paper/40">Evolution of Courage</h3>
             <div className="h-[300px] w-full min-h-[300px]">
-              <ResponsiveContainer width="99%" height={300} debounce={100}>
-                <AreaChart data={chartData}>
-                  <defs>
-                    <linearGradient id="colorLevel" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#0EA5E9" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="#0EA5E9" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                  <XAxis 
-                    dataKey="time" 
-                    stroke="rgba(255,255,255,0.2)" 
-                    fontSize={10} 
-                    tickLine={false}
-                    axisLine={false}
-                  />
-                  <YAxis 
-                    stroke="rgba(255,255,255,0.2)" 
-                    fontSize={10} 
-                    tickLine={false}
-                    axisLine={false}
-                    domain={[0, 100]}
-                  />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: '#050505', 
-                      border: '1px solid rgba(255,255,255,0.1)',
-                      borderRadius: '12px',
-                      fontSize: '12px'
-                    }}
-                  />
-                  <Area 
-                    type="monotone" 
-                    dataKey="level" 
-                    stroke="#0EA5E9" 
-                    fillOpacity={1} 
-                    fill="url(#colorLevel)" 
-                    strokeWidth={2}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
+              {chartData.length > 0 ? (
+                <ResponsiveContainer width="99%" height={300} debounce={100} minWidth={0} minHeight={0}>
+                  <AreaChart data={chartData}>
+                    <defs>
+                      <linearGradient id="colorLevel" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#0EA5E9" stopOpacity={0.3}/>
+                        <stop offset="95%" stopColor="#0EA5E9" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                    <XAxis 
+                      dataKey="time" 
+                      stroke="rgba(255,255,255,0.2)" 
+                      fontSize={10} 
+                      tickLine={false}
+                      axisLine={false}
+                    />
+                    <YAxis 
+                      stroke="rgba(255,255,255,0.2)" 
+                      fontSize={10} 
+                      tickLine={false}
+                      axisLine={false}
+                      domain={[0, 100]}
+                    />
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: '#050505', 
+                        border: '1px solid rgba(255,255,255,0.1)',
+                        borderRadius: '12px',
+                        fontSize: '12px'
+                      }}
+                    />
+                    <Area 
+                      type="monotone" 
+                      dataKey="level" 
+                      stroke="#0EA5E9" 
+                      fillOpacity={1} 
+                      fill="url(#colorLevel)" 
+                      strokeWidth={2}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-full flex items-center justify-center text-vox-paper/20 italic">
+                  Not enough data to map your journey yet.
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -5038,7 +5112,7 @@ const MoodTracker = ({ user, setUser, onBack }: { user: User, setUser: React.Dis
             
             <div className="h-56 w-full mb-8">
               {user.moodHistory && user.moodHistory.length > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                   <AreaChart data={moodData}>
                     <defs>
                       <linearGradient id="moodGradient" x1="0" y1="0" x2="0" y2="1">
@@ -6321,6 +6395,77 @@ const Meditations = ({ onBack, safePlayPCM }: { onBack: () => void, safePlayPCM:
   );
 };
 
+const ApiStatusIndicator = () => {
+  const [status, setStatus] = useState<'idle' | 'busy' | 'error' | 'retry'>('idle');
+
+  useEffect(() => {
+    const handleStatus = (e: any) => setStatus(e.detail);
+    window.addEventListener('gemini-api-status', handleStatus);
+    return () => window.removeEventListener('gemini-api-status', handleStatus);
+  }, []);
+
+  if (status === 'idle') return null;
+
+  return (
+    <motion.div 
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      className="fixed top-4 right-4 z-[100] flex items-center gap-3 px-4 py-2 rounded-full glass-dark border border-white/10 shadow-2xl"
+    >
+      <div className={`w-2 h-2 rounded-full animate-pulse ${
+        status === 'busy' ? 'bg-blue-400' : 
+        status === 'retry' ? 'bg-yellow-400' : 
+        'bg-red-400'
+      }`} />
+      <span className="text-[10px] uppercase tracking-widest font-bold text-vox-paper/70">
+        {status === 'busy' ? 'AI Processing...' : 
+         status === 'retry' ? 'Rate Limit (Retrying...)' : 
+         'AI Connection Error'}
+      </span>
+    </motion.div>
+  );
+};
+
+// Global Audio Helper
+const safePlayPCM = async (base64Audio: string, sampleRate: number = 24000) => {
+  try {
+    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const binaryString = atob(base64Audio);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+    
+    const pcmData = new Int16Array(bytes.buffer, bytes.byteOffset, bytes.byteLength / 2);
+    const floatData = new Float32Array(pcmData.length);
+    for (let i = 0; i < pcmData.length; i++) {
+      floatData[i] = pcmData[i] / 32768.0;
+    }
+
+    const buffer = audioContext.createBuffer(1, floatData.length, sampleRate);
+    buffer.getChannelData(0).set(floatData);
+
+    const source = audioContext.createBufferSource();
+    source.buffer = buffer;
+    source.connect(audioContext.destination);
+    
+    if (audioContext.state === 'suspended') {
+      await audioContext.resume();
+    }
+    
+    source.start();
+    return new Promise<void>((resolve) => {
+      source.onended = () => {
+        audioContext.close();
+        resolve();
+      };
+    });
+  } catch (err) {
+    console.error("Error playing audio:", err);
+  }
+};
+
 export default function App() {
   const [view, setView] = useState<AppState>('landing');
   const [user, setUser] = useState<User | null>(null);
@@ -6443,6 +6588,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-vox-bg text-vox-paper">
+      <ApiStatusIndicator />
       {/* Global Background Elements */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-vox-accent/10 blur-[120px] rounded-full" />
