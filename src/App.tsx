@@ -6103,72 +6103,105 @@ const SettingsView = ({ onBack, user, setUser, safePlayPCM }: { onBack: () => vo
           <section>
             <div className="flex items-center gap-2 mb-6">
               <Activity size={16} className="text-vox-accent" />
-              <h3 className="text-xs uppercase tracking-[0.3em] font-bold text-vox-accent">Diagnostics</h3>
+              <h3 className="text-xs uppercase tracking-[0.3em] font-bold text-vox-accent">Diagnostics & Status</h3>
             </div>
-            <div className="space-y-4">
-              <button 
-                disabled={apiStatus !== 'idle'}
-                onClick={async () => {
-                  try {
-                    const testText = "Testing audio sanctuary. If you hear this, your voice companion is ready.";
-                    console.log("Settings: Testing audio...");
-                    setErrorMessage(null);
-                    const audio = await generateSpeech(testText);
-                    if (audio) {
-                      await safePlayPCM(audio);
-                    } else {
-                      console.error("Settings: Failed to generate test audio");
-                    }
-                  } catch (err: any) {
-                    setErrorMessage(err.message || "Failed to test audio. Please try again.");
-                  }
-                }}
-                className={`w-full glass p-6 rounded-2xl flex items-center justify-between transition-all border border-white/10 group ${
-                  apiStatus === 'retry' ? 'bg-amber-500/10 border-amber-500/30 text-amber-500' :
-                  apiStatus === 'busy' ? 'bg-vox-accent/10 border-vox-accent/30 text-vox-accent' :
-                  apiStatus === 'error' ? 'bg-red-500/10 border-red-500/30 text-red-500' :
-                  'hover:bg-white/5'
-                } disabled:opacity-50`}
-              >
-                <div className="flex items-center gap-4">
-                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform ${
-                    apiStatus === 'retry' ? 'bg-amber-500/20' :
-                    apiStatus === 'busy' ? 'bg-vox-accent/20' :
-                    apiStatus === 'error' ? 'bg-red-500/20' :
-                    'bg-vox-accent/20 text-vox-accent'
-                  }`}>
-                    {apiStatus === 'busy' ? <Loader2 className="animate-spin" size={24} /> :
-                     apiStatus === 'retry' ? <RefreshCw className="animate-spin" size={24} /> :
-                     <Volume2 size={24} />}
+            
+            <div className="space-y-6">
+              {/* API Status Info */}
+              <div className="p-6 bg-white/5 rounded-3xl border border-white/10 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-2 h-2 rounded-full ${
+                      apiStatus === 'idle' ? 'bg-emerald-500' :
+                      apiStatus === 'busy' ? 'bg-blue-500 animate-pulse' :
+                      apiStatus === 'retry' ? 'bg-amber-500 animate-pulse' :
+                      'bg-red-500'
+                    }`} />
+                    <span className="text-[10px] uppercase tracking-widest font-bold opacity-70">
+                      Gemini API: {
+                        apiStatus === 'idle' ? 'Ready' :
+                        apiStatus === 'busy' ? 'Processing' :
+                        apiStatus === 'retry' ? 'Rate Limited (Retrying)' :
+                        'Connection Error'
+                      }
+                    </span>
                   </div>
-                  <div className="text-left">
-                    <div className="text-vox-paper font-bold uppercase tracking-widest text-sm">
-                      {apiStatus === 'busy' ? 'Connecting...' :
-                       apiStatus === 'retry' ? 'Retrying (Rate Limit)...' :
-                       'Test AI Voice'}
-                    </div>
-                    <div className="text-vox-paper/40 text-[10px] italic font-serif mt-1">
-                      {apiStatus === 'retry' ? 'Gemini is busy, waiting to retry...' :
-                       "Verify your companion's voice connection"}
-                    </div>
-                  </div>
+                  {apiStatus === 'retry' && (
+                    <span className="text-[10px] text-amber-500 italic font-serif">Waiting for cooldown...</span>
+                  )}
                 </div>
-                {apiStatus === 'idle' ? (
-                  <Play size={20} className="text-vox-accent opacity-50 group-hover:opacity-100 transition-opacity" />
-                ) : (
-                  <div className="w-5 h-5" />
-                )}
-              </button>
+                
+                <p className="text-[10px] text-vox-paper/40 leading-relaxed italic font-serif">
+                  The "Too Many Requests (429)" error is a temporary limit from Google's servers. 
+                  VOXARA automatically retries these requests with a delay to ensure your experience remains stable.
+                </p>
+              </div>
 
-              {errorMessage && (
-                <motion.div 
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl text-[10px] text-red-400 italic font-serif leading-relaxed"
+              <div className="space-y-4">
+                <button 
+                  disabled={apiStatus !== 'idle'}
+                  onClick={async () => {
+                    try {
+                      const testText = "Testing audio sanctuary. If you hear this, your voice companion is ready.";
+                      console.log("Settings: Testing audio...");
+                      setErrorMessage(null);
+                      const audio = await generateSpeech(testText);
+                      if (audio) {
+                        await safePlayPCM(audio);
+                      } else {
+                        console.error("Settings: Failed to generate test audio");
+                      }
+                    } catch (err: any) {
+                      setErrorMessage(err.message || "Failed to test audio. Please try again.");
+                    }
+                  }}
+                  className={`w-full glass p-6 rounded-2xl flex items-center justify-between transition-all border border-white/10 group ${
+                    apiStatus === 'retry' ? 'bg-amber-500/10 border-amber-500/30 text-amber-500' :
+                    apiStatus === 'busy' ? 'bg-vox-accent/10 border-vox-accent/30 text-vox-accent' :
+                    apiStatus === 'error' ? 'bg-red-500/10 border-red-500/30 text-red-500' :
+                    'hover:bg-white/5'
+                  } disabled:opacity-50`}
                 >
-                  {errorMessage}
-                </motion.div>
-              )}
+                  <div className="flex items-center gap-4">
+                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform ${
+                      apiStatus === 'retry' ? 'bg-amber-500/20' :
+                      apiStatus === 'busy' ? 'bg-vox-accent/20' :
+                      apiStatus === 'error' ? 'bg-red-500/20' :
+                      'bg-vox-accent/20 text-vox-accent'
+                    }`}>
+                      {apiStatus === 'busy' ? <Loader2 className="animate-spin" size={24} /> :
+                       apiStatus === 'retry' ? <RefreshCw className="animate-spin" size={24} /> :
+                       <Volume2 size={24} />}
+                    </div>
+                    <div className="text-left">
+                      <div className="text-vox-paper font-bold uppercase tracking-widest text-sm">
+                        {apiStatus === 'busy' ? 'Connecting...' :
+                         apiStatus === 'retry' ? 'Retrying (Rate Limit)...' :
+                         'Test AI Voice'}
+                      </div>
+                      <div className="text-vox-paper/40 text-[10px] italic font-serif mt-1">
+                        {apiStatus === 'retry' ? 'Gemini is busy, waiting to retry...' :
+                         "Verify your companion's voice connection"}
+                      </div>
+                    </div>
+                  </div>
+                  {apiStatus === 'idle' ? (
+                    <Play size={20} className="text-vox-accent opacity-50 group-hover:opacity-100 transition-opacity" />
+                  ) : (
+                    <div className="w-5 h-5" />
+                  )}
+                </button>
+
+                {errorMessage && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl text-[10px] text-red-400 italic font-serif leading-relaxed"
+                  >
+                    {errorMessage}
+                  </motion.div>
+                )}
+              </div>
             </div>
           </section>
 
