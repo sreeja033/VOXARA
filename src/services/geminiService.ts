@@ -157,6 +157,59 @@ export const ghostModePractice = async (message: string, persona: string) => {
   }
 };
 
+export const generateVoiceInsight = async (text: string, base64Audio: string, mimeType: string, mode: string) => {
+  try {
+    const normalizedMimeType = mimeType.split(';')[0];
+    const response = await withRetry(() => ai.models.generateContent({
+      model: "gemini-3-flash-preview",
+      contents: [{
+        role: 'user',
+        parts: [
+          { inlineData: { data: base64Audio, mimeType: normalizedMimeType } },
+          { text: `The user just recorded a ${mode} note: "${text}". 
+          Provide a very brief (1-2 sentences) supportive insight or validation based on their voice and what they said. 
+          Keep it atmospheric and trauma-informed.` }
+        ]
+      }]
+    }));
+    return response.text;
+  } catch (error) {
+    console.error("Error generating voice insight:", error);
+    return null;
+  }
+};
+
+export const analyzePracticeAudio = async (practiceWord: string, base64Audio: string, mimeType: string, mode: string) => {
+  try {
+    const normalizedMimeType = mimeType.split(';')[0];
+    const response = await withRetry(() => ai.models.generateContent({
+      model: "gemini-3-flash-preview",
+      contents: [{
+        role: 'user',
+        parts: [
+          { inlineData: { data: base64Audio, mimeType: normalizedMimeType } },
+          { text: `The user is practicing in ${mode} mode. The target word/sound is: "${practiceWord}". 
+          Analyze the audio for:
+          1. Sentiment (emotional tone)
+          2. Courage level (confidence and strength in voice)
+          3. Pronunciation (clarity and articulation)
+          
+          IMPORTANT: Since the user is in ${mode} mode, adjust your expectations. 
+          - If 'breath', focus on the quality of the exhale and release.
+          - If 'whisper', focus on the softness and intentionality.
+          - If 'voice', focus on resonance and clarity.
+          
+          Provide gentle, encouraging feedback focusing on these three aspects.` }
+        ]
+      }]
+    }));
+    return response.text;
+  } catch (error) {
+    console.error("Error analyzing practice audio:", error);
+    return null;
+  }
+};
+
 export const transcribeAudio = async (base64Audio: string, mimeType: string) => {
   try {
     // Normalize mimeType for Gemini API

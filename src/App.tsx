@@ -54,7 +54,7 @@ import {
   TrendingDown,
 } from 'lucide-react';
 import { AppState, User, VoiceNote, LiveSessionEntry, JournalEntry, UserGoal, EmergencyContact, CourageHistoryEntry, MoodEntry } from './types';
-import { generateCompanionResponse, ghostModePractice, generateSpeech, transcribeAudio, generateJournalPrompt } from './services/geminiService';
+import { generateCompanionResponse, ghostModePractice, generateSpeech, transcribeAudio, generateJournalPrompt, generateVoiceInsight, analyzePracticeAudio } from './services/geminiService';
 import { playPCM } from './utils/audioUtils';
 import { signUp, logIn, logOut, subscribeToAuthChanges } from './services/authService';
 import { getUserData, saveUserData } from './services/userService';
@@ -1435,9 +1435,9 @@ const FearMapEvolution = ({ history }: { history: CourageHistoryEntry[] }) => {
   }));
 
   return (
-    <div className="h-full w-full min-h-[240px]">
-      <ResponsiveContainer width="99%" height={240} debounce={100}>
-        <AreaChart data={data}>
+    <div className="h-[240px] w-full min-h-[240px] relative">
+      <ResponsiveContainer width="100%" height="100%" debounce={50}>
+        <AreaChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
           <XAxis dataKey="name" hide />
           <YAxis hide domain={[0, 100]} />
@@ -2036,31 +2036,8 @@ const WhisperMode = ({ onBack, user, setUser, safePlayPCM, stopAllAudio, setView
         
         try {
           if (practiceWord) {
-            // Practice logic
-            const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
-            const normalizedMimeType = mimeType.split(';')[0];
-            const response = await ai.models.generateContent({
-              model: "gemini-3-flash-preview",
-              contents: [{
-                role: 'user',
-                parts: [
-                  { inlineData: { data: base64Audio, mimeType: normalizedMimeType } },
-                  { text: `The user is practicing in ${mode} mode. The target word/sound is: "${practiceWord}". 
-                  Analyze the audio for:
-                  1. Sentiment (emotional tone)
-                  2. Courage level (confidence and strength in voice)
-                  3. Pronunciation (clarity and articulation)
-                  
-                  IMPORTANT: Since the user is in ${mode} mode, adjust your expectations. 
-                  - If 'breath', focus on the quality of the exhale and release.
-                  - If 'whisper', focus on the softness and intentionality.
-                  - If 'voice', focus on resonance and clarity.
-                  
-                  Provide gentle, encouraging feedback focusing on these three aspects.` }
-                ]
-              }]
-            });
-            setPracticeFeedback(response.text);
+            const feedback = await analyzePracticeAudio(practiceWord, base64Audio, mimeType, mode);
+            setPracticeFeedback(feedback);
           } else {
             const text = await transcribeAudio(base64Audio, mimeType);
             setTranscription(text);
@@ -2072,21 +2049,8 @@ const WhisperMode = ({ onBack, user, setUser, safePlayPCM, stopAllAudio, setView
             }
 
             // Get AI Insight for standard recording
-            const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
-            const normalizedMimeType = mimeType.split(';')[0];
-            const response = await ai.models.generateContent({
-              model: "gemini-3-flash-preview",
-              contents: [{
-                role: 'user',
-                parts: [
-                  { inlineData: { data: base64Audio, mimeType: normalizedMimeType } },
-                  { text: `The user just recorded a ${mode} note: "${text}". 
-                  Provide a very brief (1-2 sentences) supportive insight or validation based on their voice and what they said. 
-                  Keep it atmospheric and trauma-informed.` }
-                ]
-              }]
-            });
-            setPracticeFeedback(response.text); // Reuse practiceFeedback for the insight
+            const insight = await generateVoiceInsight(text, base64Audio, mimeType, mode);
+            setPracticeFeedback(insight); // Reuse practiceFeedback for the insight
           }
         } catch (err) {
           console.error("Whisper recording error:", err);
@@ -2601,7 +2565,7 @@ const CompanionMode = ({ onBack, user, setUser, safePlayPCM, stopAllAudio }: { o
     setIsLoading(true);
     // Greeting complete
 
-    const history = messages.map(m => ({ role: m.role, parts: [{ text: m.text }] }));
+    const history = messages.slice(-10).map(m => ({ role: m.role, parts: [{ text: m.text }] }));
     const response = await generateCompanionResponse(userMsg, history);
     
     if (response) {
@@ -6347,6 +6311,7 @@ export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [isUserLoading, setIsUserLoading] = useState(true);
   const currentAudioRef = useRef<{ stop: () => void } | null>(null);
+  const lastNotifiedLevelRef = useRef<number | null>(null);
 
   const stopAllAudio = () => {
     if (currentAudioRef.current) {
@@ -6447,15 +6412,23 @@ export default function App() {
       }
 
       // Discreet emergency notification if level is critical
+      // Only log if the level has changed or we haven't notified yet for this level
       if (user.courageLevel <= 20 && user.emergencyContacts && user.emergencyContacts.length > 0) {
-        // In a real app, this would trigger a server-side notification
-        console.log("CRITICAL LEVEL REACHED: Notifying emergency contacts...", {
-          contacts: user.emergencyContacts,
-          location: user.locationEnabled ? user.location : 'Location sharing disabled'
-        });
+        if (lastNotifiedLevelRef.current !== user.courageLevel) {
+          // In a real app, this would trigger a server-side notification
+          console.log("CRITICAL LEVEL REACHED: Notifying emergency contacts...", {
+            contacts: user.emergencyContacts,
+            location: user.locationEnabled ? user.location : 'Location sharing disabled',
+            currentLevel: user.courageLevel
+          });
+          lastNotifiedLevelRef.current = user.courageLevel;
+        }
+      } else if (user.courageLevel > 20) {
+        // Reset notification ref when level recovers
+        lastNotifiedLevelRef.current = null;
       }
     }
-  }, [user, view]);
+  }, [user, view, isUserLoading]);
 
   const pageTransition: any = {
     duration: 0.4,
