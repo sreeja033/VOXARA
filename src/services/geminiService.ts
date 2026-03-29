@@ -3,25 +3,37 @@ import { GoogleGenAI, Modality, Type } from "@google/genai";
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
 
 // Helper for retrying API calls with exponential backoff
-const withRetry = async <T>(fn: () => Promise<T>, maxRetries = 5): Promise<T> => {
+const withRetry = async <T>(fn: () => Promise<T>, maxRetries = 10): Promise<T> => {
   let lastError: any;
   for (let i = 0; i < maxRetries; i++) {
     try {
       return await fn();
     } catch (error: any) {
       lastError = error;
+      const errorString = error?.message || String(error);
       const isQuotaError = 
-        error?.message?.includes('429') || 
-        error?.status === 'RESOURCE_EXHAUSTED' ||
+        errorString.includes('429') || 
+        errorString.includes('RESOURCE_EXHAUSTED') ||
+        errorString.includes('Rate limit') ||
+        errorString.includes('quota') ||
+        (error?.status === 'RESOURCE_EXHAUSTED') ||
         (error?.response?.status === 429);
         
       if (isQuotaError && i < maxRetries - 1) {
-        // Longer delay for quota errors
-        const delay = Math.pow(3, i) * 2000 + Math.random() * 1000;
-        console.warn(`Gemini Rate Limit hit (429). Retrying in ${Math.round(delay)}ms...`);
+        // Even longer delay for quota errors with exponential backoff
+        // i=0: ~5s, i=1: ~15s, i=2: ~45s, etc.
+        const delay = Math.pow(3, i) * 5000 + Math.random() * 2000;
+        console.warn(`Gemini Rate Limit hit (429). Retry attempt ${i + 1}/${maxRetries}. Retrying in ${Math.round(delay)}ms...`);
         await new Promise(resolve => setTimeout(resolve, delay));
         continue;
       }
+      
+      // For other errors, maybe retry once or twice with shorter delay
+      if (i < 2 && !isQuotaError) {
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        continue;
+      }
+
       throw error;
     }
   }
@@ -40,7 +52,7 @@ const FALLBACK_PROMPTS = [
 export const generateCompanionResponse = async (message: string, history: { role: 'user' | 'model', parts: { text: string }[] }[]) => {
   try {
     const response = await withRetry(() => ai.models.generateContent({
-      model: "gemini-3-flash-preview",
+      model: "gemini-3.1-flash-lite-preview",
       contents: [
         ...history.map(h => ({ role: h.role, parts: h.parts })),
         { role: 'user', parts: [{ text: message }] }
@@ -90,8 +102,15 @@ export const generateSpeech = async (text: string, voiceName: string = 'Zephyr')
       },
     }));
 
-    const base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-    return base64Audio;
+    // Iterate through candidates and parts to find the audio data
+    for (const candidate of response.candidates || []) {
+      for (const part of candidate.content?.parts || []) {
+        if (part.inlineData?.data) {
+          return part.inlineData.data;
+        }
+      }
+    }
+    return null;
   } catch (error) {
     console.error("TTS Error:", error);
     return null;
@@ -161,7 +180,7 @@ export const generateVoiceInsight = async (text: string, base64Audio: string, mi
   try {
     const normalizedMimeType = mimeType.split(';')[0];
     const response = await withRetry(() => ai.models.generateContent({
-      model: "gemini-3-flash-preview",
+      model: "gemini-3.1-flash-lite-preview",
       contents: [{
         role: 'user',
         parts: [
@@ -216,7 +235,7 @@ export const transcribeAudio = async (base64Audio: string, mimeType: string) => 
     const normalizedMimeType = mimeType.split(';')[0];
     
     const response = await withRetry(() => ai.models.generateContent({
-      model: "gemini-3-flash-preview",
+      model: "gemini-3.1-flash-lite-preview",
       contents: [
         {
           role: 'user',
@@ -242,7 +261,7 @@ export const transcribeAudio = async (base64Audio: string, mimeType: string) => 
 export const generateJournalPrompt = async (userContext?: string) => {
   try {
     const response = await withRetry(() => ai.models.generateContent({
-      model: "gemini-3-flash-preview",
+      model: "gemini-3.1-flash-lite-preview",
       contents: [{ role: 'user', parts: [{ text: userContext ? `Based on my recent experiences: ${userContext}, generate a unique journaling prompt.` : "Generate a unique journaling prompt for self-reflection and courage building." }] }],
       config: {
         systemInstruction: `You are the VOXARA Courage Guide. 

@@ -1435,8 +1435,8 @@ const FearMapEvolution = ({ history }: { history: CourageHistoryEntry[] }) => {
   }));
 
   return (
-    <div className="h-[240px] w-full min-h-[240px] relative">
-      <ResponsiveContainer width="100%" height="100%" debounce={50}>
+    <div className="h-[240px] w-full min-h-[240px] min-w-[300px] relative">
+      <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0} debounce={50}>
         <AreaChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
           <XAxis dataKey="name" hide />
@@ -2574,25 +2574,6 @@ const CompanionMode = ({ onBack, user, setUser, safePlayPCM, stopAllAudio }: { o
       setIsLoading(false);
       
       // Save to history automatically
-      const updatedHistory = [...(user.liveHistory || [])];
-      const companionSessionId = `companion-${new Date().toDateString()}`;
-      const existingSessionIdx = updatedHistory.findIndex(s => s.id === companionSessionId);
-      
-      const newMessages = [
-        { role: 'user' as const, text: userMsg, timestamp: Date.now() },
-        { role: 'model' as const, text: response, timestamp: Date.now() }
-      ];
-
-      if (existingSessionIdx >= 0) {
-        updatedHistory[existingSessionIdx].messages = [...updatedHistory[existingSessionIdx].messages, ...newMessages];
-      } else {
-        updatedHistory.unshift({
-          id: companionSessionId,
-          timestamp: Date.now(),
-          messages: newMessages
-        });
-      }
-
       setUser(prev => {
         if (!prev) return null;
         const updatedHistory = [...(prev.liveHistory || [])];
@@ -2623,11 +2604,16 @@ const CompanionMode = ({ onBack, user, setUser, safePlayPCM, stopAllAudio }: { o
       // Generate and play speech
       if (useVoice) {
         setIsSpeaking(true);
-        const audioBase64 = await generateSpeech(response);
-        if (audioBase64) {
-          setLastAudio(audioBase64);
-          playRawAudio(audioBase64);
-        } else {
+        try {
+          const audioBase64 = await generateSpeech(response);
+          if (audioBase64) {
+            setLastAudio(audioBase64);
+            await playRawAudio(audioBase64);
+          } else {
+            setIsSpeaking(false);
+          }
+        } catch (err) {
+          console.error("Speech generation error:", err);
           setIsSpeaking(false);
         }
       }
@@ -3308,7 +3294,7 @@ const LiveSession = ({ onBack, user, setUser }: { onBack: () => void, user: User
   };
 
   const playAudio = async (base64Audio: string) => {
-    if (!audioContextRef.current) return;
+    if (!audioContextRef.current || !sessionActiveRef.current) return;
     try {
       const binaryString = atob(base64Audio);
       const len = binaryString.length;
@@ -3316,7 +3302,9 @@ const LiveSession = ({ onBack, user, setUser }: { onBack: () => void, user: User
       for (let i = 0; i < len; i++) {
         bytes[i] = binaryString.charCodeAt(i);
       }
-      const pcmData = new Int16Array(bytes.buffer);
+      
+      // Ensure we have an even number of bytes for Int16Array
+      const pcmData = new Int16Array(bytes.buffer, 0, Math.floor(len / 2));
       const floatData = new Float32Array(pcmData.length);
       for (let i = 0; i < pcmData.length; i++) {
         floatData[i] = pcmData[i] / 0x7FFF;
@@ -3325,7 +3313,9 @@ const LiveSession = ({ onBack, user, setUser }: { onBack: () => void, user: User
       const buffer = audioContextRef.current.createBuffer(1, floatData.length, 24000);
       buffer.getChannelData(0).set(floatData);
       audioQueueRef.current.push(buffer);
-      processQueue();
+      if (!isPlayingRef.current) {
+        processQueue();
+      }
     } catch (e) {
       console.error("Error playing audio chunk:", e);
     }
@@ -3348,7 +3338,7 @@ const LiveSession = ({ onBack, user, setUser }: { onBack: () => void, user: User
     
     try {
       const sessionPromise = ai.live.connect({
-        model: "gemini-2.5-flash-native-audio-preview-12-2025",
+        model: "gemini-3.1-flash-live-preview",
         callbacks: {
           onopen: () => {
             setIsConnected(true);
@@ -3358,9 +3348,12 @@ const LiveSession = ({ onBack, user, setUser }: { onBack: () => void, user: User
           },
           onmessage: async (message: LiveServerMessage) => {
             // Handle audio output
-            if (message.serverContent?.modelTurn?.parts[0]?.inlineData?.data) {
-              const base64Audio = message.serverContent.modelTurn.parts[0].inlineData.data;
-              playAudio(base64Audio);
+            if (message.serverContent?.modelTurn?.parts) {
+              for (const part of message.serverContent.modelTurn.parts) {
+                if (part.inlineData?.data) {
+                  playAudio(part.inlineData.data);
+                }
+              }
             }
 
             // Handle interruption
@@ -3371,16 +3364,20 @@ const LiveSession = ({ onBack, user, setUser }: { onBack: () => void, user: User
             }
 
             // Handle model transcription
-            if (message.serverContent?.modelTurn?.parts[0]?.text) {
-              const text = message.serverContent.modelTurn.parts[0].text;
-              setTranscription(prev => prev + ' ' + text);
-              setCurrentMessages(prev => {
-                const last = prev[prev.length - 1];
-                if (last && last.role === 'model' && Date.now() - last.timestamp < 5000) {
-                  return [...prev.slice(0, -1), { ...last, text: last.text + ' ' + text, timestamp: Date.now() }];
+            if (message.serverContent?.modelTurn?.parts) {
+              for (const part of message.serverContent.modelTurn.parts) {
+                if (part.text) {
+                  const text = part.text;
+                  setTranscription(prev => prev + ' ' + text);
+                  setCurrentMessages(prev => {
+                    const last = prev[prev.length - 1];
+                    if (last && last.role === 'model' && Date.now() - last.timestamp < 5000) {
+                      return [...prev.slice(0, -1), { ...last, text: last.text + ' ' + text, timestamp: Date.now() }];
+                    }
+                    return [...prev, { role: 'model', text, timestamp: Date.now() }];
+                  });
                 }
-                return [...prev, { role: 'model', text, timestamp: Date.now() }];
-              });
+              }
             }
 
             // Handle user transcription
@@ -3402,6 +3399,7 @@ const LiveSession = ({ onBack, user, setUser }: { onBack: () => void, user: User
           },
           onerror: (err) => {
             console.error("Live API Error:", err);
+            setMicError(err instanceof Error ? err.message : String(err));
             setIsConnecting(false);
             sessionActiveRef.current = false;
             cleanupAudio();
@@ -4316,8 +4314,8 @@ const FearStrengthMap = ({ user, onBack }: { user: User, onBack: () => void }) =
 
           <div className="glass-dark p-10 rounded-[3rem] border border-white/5">
             <h3 className="text-xl font-light tracking-widest uppercase mb-8 text-vox-paper/40">Evolution of Courage</h3>
-            <div className="h-[300px] w-full min-h-[300px]">
-              <ResponsiveContainer width="99%" height={300} debounce={100}>
+            <div className="h-[300px] w-full min-h-[300px] min-w-[300px]">
+              <ResponsiveContainer width="99%" height={300} minWidth={0} minHeight={0} debounce={100}>
                 <AreaChart data={chartData}>
                   <defs>
                     <linearGradient id="colorLevel" x1="0" y1="0" x2="0" y2="1">
@@ -5021,9 +5019,9 @@ const MoodTracker = ({ user, setUser, onBack }: { user: User, setUser: React.Dis
               </div>
             </div>
             
-            <div className="h-56 w-full mb-8">
+            <div className="h-56 w-full mb-8 min-h-[224px] min-w-[300px]">
               {user.moodHistory && user.moodHistory.length > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                   <AreaChart data={moodData}>
                     <defs>
                       <linearGradient id="moodGradient" x1="0" y1="0" x2="0" y2="1">

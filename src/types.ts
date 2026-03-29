@@ -74,9 +74,15 @@ export interface User {
   dailyRituals?: DailyRitual[];
   moodHistory?: MoodEntry[];
   hasCompletedSafetyOnboarding?: boolean;
+  courageStats?: {
+    rejection: number;
+    conflict: number;
+    misunderstanding: number;
+    vulnerability: number;
+  };
 }
 
-export type AppState = 'landing' | 'auth' | 'dashboard' | 'whisper' | 'companion' | 'map' | 'circles' | 'presence' | 'bridge' | 'simulation' | 'echo' | 'live' | 'anchor' | 'exit' | 'emergency' | 'connections' | 'journal' | 'settings' | 'affirmations' | 'meditations' | 'rituals' | 'calm' | 'mood' | 'safety-onboarding';
+export type AppState = 'onboarding' | 'auth' | 'dashboard' | 'whisper' | 'companion' | 'map' | 'circles' | 'presence' | 'bridge' | 'simulation' | 'echo' | 'live' | 'anchor' | 'exit' | 'emergency' | 'connections' | 'journal' | 'settings' | 'affirmations' | 'meditations' | 'rituals' | 'calm' | 'mood' | 'safety-onboarding' | 'ghost' | 'explore';
 
 export interface VoiceNote {
   id: string;

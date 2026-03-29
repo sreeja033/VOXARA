@@ -1,35 +1,23 @@
 let sharedAudioCtx: AudioContext | null = null;
 
-export const getAudioCtx = () => {
+const getAudioCtx = () => {
   if (!sharedAudioCtx) {
     sharedAudioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
-    // Also attach to window for global access if needed
-    (window as any)._voxAudioContext = sharedAudioCtx;
   }
   return sharedAudioCtx;
 };
 
-export const globalResumeAudioContext = async () => {
-  const ctx = getAudioCtx();
-  if (ctx.state === 'suspended') {
-    console.log("Global: Resuming AudioContext on user gesture");
-    try {
-      await ctx.resume();
-    } catch (e) {
-      console.error("Global: Failed to resume AudioContext:", e);
-    }
-  }
-};
-
 export const playPCM = async (base64Audio: string, sampleRate: number = 24000, onEnded?: () => void, volume: number = 1.0) => {
-  console.log("playPCM: Starting playback, base64 length:", base64Audio?.length);
   try {
     const audioCtx = getAudioCtx();
     
     // Ensure context is resumed (browsers often start it in 'suspended' state)
     if (audioCtx.state === 'suspended') {
-      console.log("playPCM: Resuming suspended AudioContext");
-      await audioCtx.resume();
+      try {
+        await audioCtx.resume();
+      } catch (e) {
+        console.warn("Could not resume AudioContext:", e);
+      }
     }
 
     const binaryString = atob(base64Audio);
@@ -39,12 +27,11 @@ export const playPCM = async (base64Audio: string, sampleRate: number = 24000, o
       bytes[i] = binaryString.charCodeAt(i);
     }
     
-    // Ensure even number of bytes for Int16Array
-    const alignedLength = Math.floor(bytes.byteLength / 2) * 2;
-    const pcmData = new Int16Array(bytes.buffer, bytes.byteOffset, alignedLength / 2);
+    // Ensure we have an even number of bytes for Int16Array
+    const pcmData = new Int16Array(bytes.buffer, 0, Math.floor(len / 2));
     const floatData = new Float32Array(pcmData.length);
     for (let i = 0; i < pcmData.length; i++) {
-      floatData[i] = pcmData[i] / 32768.0;
+      floatData[i] = pcmData[i] / 0x7FFF;
     }
 
     const buffer = audioCtx.createBuffer(1, floatData.length, sampleRate);
@@ -58,11 +45,14 @@ export const playPCM = async (base64Audio: string, sampleRate: number = 24000, o
     source.connect(gainNode);
     gainNode.connect(audioCtx.destination);
     
-    console.log("playPCM: Starting source");
+    // Final check for context state
+    if (audioCtx.state === 'suspended') {
+      await audioCtx.resume();
+    }
+    
     source.start();
     
     source.onended = () => {
-      console.log("playPCM: Playback ended");
       if (onEnded) onEnded();
     };
     
@@ -77,7 +67,6 @@ export const playPCM = async (base64Audio: string, sampleRate: number = 24000, o
     };
   } catch (err) {
     console.error("PCM Playback error:", err);
-    if (onEnded) onEnded();
     return null;
   }
 };
