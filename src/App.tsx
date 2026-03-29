@@ -1507,17 +1507,19 @@ const ThoughtOfTheDay = () => {
 };
 
 const Home = ({ user, setView }: { user: User, setView: (v: AppState) => void }) => {
+  const [activeNode, setActiveNode] = useState<string | null>(null);
+
   const nodes = [
-    { id: 'meditations', label: 'Guided Meditation', x: 15, y: 50, icon: Moon },
-    { id: 'whisper', label: 'Whisper to Voice', x: 30, y: 30, icon: Mic, featured: true },
-    { id: 'calm', label: 'Grief Support', x: 50, y: 20, icon: Heart },
-    { id: 'mood', label: 'Mood Tracker', x: 65, y: 35, icon: Smile },
-    { id: 'emergency', label: 'Crisis Toolkit', x: 80, y: 25, icon: AlertCircle },
-    { id: 'circles', label: 'Community Connections', x: 85, y: 50, icon: Users },
-    { id: 'journal', label: 'Journaling Space', x: 65, y: 65, icon: BookOpen },
-    { id: 'rituals', label: 'Mindfulness Exercises', x: 45, y: 75, icon: Sparkles },
-    { id: 'echo', label: 'Resource Library', x: 30, y: 70, icon: Volume2 },
-    { id: 'dashboard', label: 'Personalized Insights', x: 75, y: 75, icon: BarChart2 },
+    { id: 'meditations', label: 'Guided Meditation', x: 15, y: 50, icon: Moon, desc: 'Find peace through guided mindfulness journeys.' },
+    { id: 'whisper', label: 'Whisper to Voice', x: 30, y: 30, icon: Mic, desc: 'Speak your truth in a safe, private space.' },
+    { id: 'calm', label: 'Grief Support', x: 50, y: 20, icon: Heart, desc: 'Gentle support for navigating loss and healing.' },
+    { id: 'mood', label: 'Mood Tracker', x: 65, y: 35, icon: Smile, desc: 'Visualize your emotional patterns over time.' },
+    { id: 'emergency', label: 'Crisis Toolkit', x: 80, y: 25, icon: AlertCircle, desc: 'Immediate resources for difficult moments.' },
+    { id: 'circles', label: 'Community Connections', x: 85, y: 50, icon: Users, desc: 'Connect with others in a supportive environment.' },
+    { id: 'journal', label: 'Journaling Space', x: 65, y: 65, icon: BookOpen, desc: 'Reflect on your thoughts and daily experiences.' },
+    { id: 'rituals', label: 'Mindfulness Exercises', x: 45, y: 75, icon: Sparkles, desc: 'Daily habits to ground your mind and soul.' },
+    { id: 'echo', label: 'Resource Library', x: 30, y: 70, icon: Volume2, desc: 'A collection of tools for your mental well-being.' },
+    { id: 'dashboard', label: 'Personalized Insights', x: 75, y: 75, icon: BarChart2, desc: 'Deep dives into your emotional growth data.' },
   ];
 
   const lines = [
@@ -1537,7 +1539,7 @@ const Home = ({ user, setView }: { user: User, setView: (v: AppState) => void })
   ];
 
   return (
-    <div className="min-h-screen bg-vox-bg text-vox-paper overflow-hidden relative">
+    <div className="min-h-screen bg-vox-bg text-vox-paper overflow-hidden relative" onClick={() => setActiveNode(null)}>
       {/* Header */}
       <div className="absolute top-12 left-12 z-10">
         <motion.h1 
@@ -1545,7 +1547,7 @@ const Home = ({ user, setView }: { user: User, setView: (v: AppState) => void })
           animate={{ opacity: 1, x: 0 }}
           className="text-4xl font-light tracking-tighter"
         >
-          Hello, <span className="text-vox-accent font-serif italic">Traveler</span>
+          Hello, <span className="text-vox-accent font-serif italic">{user.name}</span>
         </motion.h1>
         <motion.div
           initial={{ opacity: 0, x: -20 }}
@@ -1553,7 +1555,7 @@ const Home = ({ user, setView }: { user: User, setView: (v: AppState) => void })
           transition={{ delay: 0.1 }}
           className="mt-4"
         >
-          <h2 className="text-2xl uppercase tracking-[0.3em] font-bold opacity-80">VOXARA Constellation Dashboard</h2>
+          <h2 className="text-2xl uppercase tracking-[0.3em] font-bold opacity-80">Your Emotional Sanctuary</h2>
           <p className="text-vox-paper/40 text-xs uppercase tracking-[0.4em] mt-1">Sanctuary Home</p>
         </motion.div>
       </div>
@@ -1565,7 +1567,8 @@ const Home = ({ user, setView }: { user: User, setView: (v: AppState) => void })
           <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-30">
             {lines.map(([startId, endId], i) => {
               const start = nodes.find(n => n.id === startId)!;
-              const end = nodes.find(n => n.id === endId)!;
+              const end = endId ? nodes.find(n => n.id === endId)! : null;
+              if (!end) return null;
               return (
                 <motion.line
                   key={i}
@@ -1595,55 +1598,59 @@ const Home = ({ user, setView }: { user: User, setView: (v: AppState) => void })
               className="absolute -translate-x-1/2 -translate-y-1/2 group z-20"
             >
               {/* Star Glow */}
-              <div className="absolute inset-0 bg-vox-accent blur-xl opacity-0 group-hover:opacity-40 transition-opacity rounded-full scale-150" />
+              <div className={`absolute inset-0 bg-vox-accent blur-xl transition-opacity rounded-full scale-150 ${activeNode === node.id ? 'opacity-60' : 'opacity-0 group-hover:opacity-40'}`} />
               
               {/* Node Button */}
               <button
-                onClick={() => setView(node.id as AppState)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setActiveNode(activeNode === node.id ? null : node.id);
+                }}
                 className="relative flex flex-col items-center gap-3"
               >
-                <div className="w-4 h-4 rounded-full bg-vox-accent shadow-[0_0_15px_rgba(242,125,38,0.8)] group-hover:scale-125 transition-transform" />
-                <div className="flex flex-col items-center opacity-0 group-hover:opacity-100 transition-opacity absolute top-6 whitespace-nowrap">
+                <div className={`w-4 h-4 rounded-full bg-vox-accent shadow-[0_0_15px_rgba(242,125,38,0.8)] transition-transform ${activeNode === node.id ? 'scale-150' : 'group-hover:scale-125'}`} />
+                <div className={`flex flex-col items-center transition-opacity absolute top-6 whitespace-nowrap ${activeNode === node.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
                   <node.icon size={16} className="text-vox-accent mb-1" />
                   <span className="text-[10px] uppercase tracking-widest font-bold text-vox-paper/80">
                     {node.label}
                   </span>
                 </div>
                 {/* Label (Always visible but small) */}
-                {!node.featured && (
-                  <span className="absolute -top-8 text-[9px] uppercase tracking-[0.2em] font-medium text-vox-paper/40 group-hover:text-vox-paper transition-colors whitespace-nowrap">
-                    {node.label}
-                  </span>
-                )}
+                <span className={`absolute -top-8 text-[9px] uppercase tracking-[0.2em] font-medium transition-colors whitespace-nowrap ${activeNode === node.id ? 'text-vox-accent' : 'text-vox-paper/40 group-hover:text-vox-paper'}`}>
+                  {node.label}
+                </span>
               </button>
 
-              {/* Featured Card for Whisper to Voice */}
-              {node.featured && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 1.2 }}
-                  className="absolute top-12 -left-24 w-64 glass-dark p-6 rounded-3xl border border-white/10 shadow-2xl pointer-events-auto"
-                >
-                  <div className="flex flex-col items-center text-center gap-4">
-                    <div className="w-12 h-12 rounded-full bg-vox-accent/10 flex items-center justify-center text-vox-accent">
-                      <Mic size={24} />
+              {/* Feature Card (Shown when active) */}
+              <AnimatePresence>
+                {activeNode === node.id && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20, scale: 0.9 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.9 }}
+                    className="absolute top-12 left-1/2 -translate-x-1/2 w-64 glass-dark p-6 rounded-3xl border border-white/10 shadow-2xl z-50 pointer-events-auto"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="flex flex-col items-center text-center gap-4">
+                      <div className="w-12 h-12 rounded-full bg-vox-accent/10 flex items-center justify-center text-vox-accent">
+                        <node.icon size={24} />
+                      </div>
+                      <div className="space-y-2">
+                        <h3 className="text-lg font-serif italic">{node.label}</h3>
+                        <p className="text-xs text-vox-paper/40 leading-relaxed">
+                          {node.desc}
+                        </p>
+                      </div>
+                      <button 
+                        onClick={() => setView(node.id as AppState)}
+                        className="w-full py-3 bg-vox-accent text-white rounded-full text-xs font-bold uppercase tracking-widest hover:bg-vox-accent/80 transition-colors flex items-center justify-center gap-2"
+                      >
+                        Enter Feature <ChevronRight size={14} />
+                      </button>
                     </div>
-                    <div className="space-y-2">
-                      <h3 className="text-lg font-serif italic">Whisper to Voice</h3>
-                      <p className="text-xs text-vox-paper/40 leading-relaxed">
-                        Record your thoughts and feelings through secure voice messages.
-                      </p>
-                    </div>
-                    <button 
-                      onClick={() => setView('whisper')}
-                      className="w-full py-3 bg-vox-accent text-white rounded-full text-xs font-bold uppercase tracking-widest hover:bg-vox-accent/80 transition-colors"
-                    >
-                      Start Whispering
-                    </button>
-                  </div>
-                </motion.div>
-              )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </motion.div>
           ))}
         </div>
@@ -6710,10 +6717,10 @@ export default function App() {
         <nav className="fixed bottom-8 left-1/2 -translate-x-1/2 glass px-4 py-2 rounded-full flex gap-2 z-50 shadow-2xl border border-white/10">
           {[
             { id: 'home', icon: HomeIcon, label: 'Home' },
-            { id: 'profile', icon: UserIcon, label: 'Profile' },
+            { id: 'dashboard', icon: BarChart2, label: 'Progress' },
+            { id: 'mood', icon: Smile, label: 'Mood' },
+            { id: 'companion', icon: Sparkles, label: 'AI Companion' },
             { id: 'settings', icon: Settings, label: 'Settings' },
-            { id: 'notifications', icon: Bell, label: 'Notifications' },
-            { id: 'help', icon: HelpCircle, label: 'Help' },
           ].map((item) => (
             <motion.button 
               key={item.id}
