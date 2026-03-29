@@ -84,7 +84,7 @@ export interface User {
   affirmations?: Affirmation[];
 }
 
-export type AppState = 'landing' | 'auth' | 'home' | 'space' | 'dashboard' | 'whisper' | 'companion' | 'map' | 'circles' | 'presence' | 'bridge' | 'simulation' | 'echo' | 'live' | 'anchor' | 'exit' | 'emergency' | 'connections' | 'journal' | 'settings' | 'affirmations' | 'meditations' | 'rituals' | 'calm' | 'mood' | 'safety-onboarding';
+export type AppState = 'landing' | 'auth' | 'home' | 'space' | 'dashboard' | 'whisper' | 'companion' | 'map' | 'circles' | 'presence' | 'bridge' | 'simulation' | 'echo' | 'live' | 'anchor' | 'exit' | 'emergency' | 'connections' | 'journal' | 'settings' | 'affirmations' | 'meditations' | 'rituals' | 'calm' | 'mood' | 'safety-onboarding' | 'profile' | 'notifications' | 'help';
 
 export interface VoiceNote {
   id: string;

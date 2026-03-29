@@ -58,6 +58,9 @@ import {
   Radio,
   Trash2,
   Moon,
+  Bell,
+  HelpCircle,
+  BarChart2,
 } from 'lucide-react';
 import { AppState, User, VoiceNote, LiveSessionEntry, JournalEntry, UserGoal, EmergencyContact, CourageHistoryEntry, MoodEntry, Affirmation } from './types';
 import { generateCompanionResponse, ghostModePractice, generateSpeech, transcribeAudio, generateJournalPrompt, generateVoiceInsight, analyzePracticeAudio } from './services/geminiService';
@@ -1503,120 +1506,162 @@ const ThoughtOfTheDay = () => {
   );
 };
 
-const Home = ({ user, setUser, setView }: { user: User, setUser: React.Dispatch<React.SetStateAction<User | null>>, setView: (v: AppState) => void }) => {
-  const [selectedMood, setSelectedMood] = useState<MoodEntry['mood'] | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const moods: { type: MoodEntry['mood']; icon: any; label: string; color: string }[] = [
-    { type: 'great', icon: Sun, label: 'Great', color: 'text-yellow-400' },
-    { type: 'good', icon: CloudSun, label: 'Good', color: 'text-orange-400' },
-    { type: 'neutral', icon: Cloud, label: 'Neutral', color: 'text-vox-paper/60' },
-    { type: 'bad', icon: CloudRain, label: 'Bad', color: 'text-blue-400' },
-    { type: 'terrible', icon: CloudLightning, label: 'Terrible', color: 'text-purple-400' },
+const Home = ({ user, setView }: { user: User, setView: (v: AppState) => void }) => {
+  const nodes = [
+    { id: 'meditations', label: 'Guided Meditation', x: 15, y: 50, icon: Moon },
+    { id: 'whisper', label: 'Whisper to Voice', x: 30, y: 30, icon: Mic, featured: true },
+    { id: 'calm', label: 'Grief Support', x: 50, y: 20, icon: Heart },
+    { id: 'mood', label: 'Mood Tracker', x: 65, y: 35, icon: Smile },
+    { id: 'emergency', label: 'Crisis Toolkit', x: 80, y: 25, icon: AlertCircle },
+    { id: 'circles', label: 'Community Connections', x: 85, y: 50, icon: Users },
+    { id: 'journal', label: 'Journaling Space', x: 65, y: 65, icon: BookOpen },
+    { id: 'rituals', label: 'Mindfulness Exercises', x: 45, y: 75, icon: Sparkles },
+    { id: 'echo', label: 'Resource Library', x: 30, y: 70, icon: Volume2 },
+    { id: 'dashboard', label: 'Personalized Insights', x: 75, y: 75, icon: BarChart2 },
   ];
 
-  const handleMoodSelect = async (mood: MoodEntry['mood']) => {
-    setSelectedMood(mood);
-    setIsSubmitting(true);
-    
-    const newEntry: MoodEntry = {
-      timestamp: Date.now(),
-      mood,
-    };
-
-    setUser(prev => {
-      if (!prev) return null;
-      return {
-        ...prev,
-        moodHistory: [newEntry, ...(prev.moodHistory || [])]
-      };
-    });
-
-    setTimeout(() => {
-      setIsSubmitting(false);
-    }, 1000);
-  };
+  const lines = [
+    ['meditations', 'whisper'],
+    ['meditations', 'echo'],
+    ['whisper', 'calm'],
+    ['whisper', 'rituals'],
+    ['calm', 'mood'],
+    ['calm', 'journal'],
+    ['mood', 'emergency'],
+    ['mood', 'journal'],
+    ['emergency', 'circles'],
+    ['circles', 'dashboard'],
+    ['journal', 'dashboard'],
+    ['journal', 'rituals'],
+    ['rituals', 'echo'],
+  ];
 
   return (
-    <div className="min-h-screen p-6 pt-24 max-w-7xl mx-auto pb-32">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-24 items-center">
-        {/* Left Side: Greeting & Mood */}
-        <div className="space-y-16">
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-          >
-            <h1 className="text-7xl font-light tracking-tighter mb-4 leading-none">
-              Hello, <br />
-              <span className="text-vox-accent font-serif italic">{user.name}</span>
-            </h1>
-            <p className="text-vox-paper/40 text-sm uppercase tracking-[0.4em] mt-6">Welcome back to your sanctuary</p>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="glass-dark p-12 rounded-[4rem] border border-white/5 shadow-2xl"
-          >
-            <div className="flex items-center gap-4 mb-12">
-              <div className="w-12 h-12 rounded-full bg-vox-accent/10 flex items-center justify-center text-vox-accent">
-                <Sparkles size={24} />
-              </div>
-              <h2 className="text-3xl font-serif italic text-vox-paper/80">How are you feeling today?</h2>
-            </div>
-            
-            <div className="flex justify-between items-center gap-4">
-              {moods.map((m) => (
-                <button
-                  key={m.type}
-                  onClick={() => handleMoodSelect(m.type)}
-                  disabled={isSubmitting}
-                  className={`flex flex-col items-center gap-4 transition-all group ${selectedMood === m.type ? 'scale-110' : 'hover:scale-105 opacity-60 hover:opacity-100'}`}
-                >
-                  <div className={`w-16 h-16 rounded-3xl flex items-center justify-center transition-all ${selectedMood === m.type ? 'bg-vox-accent text-white shadow-[0_0_20px_rgba(242,125,38,0.3)]' : 'bg-white/5 text-vox-paper/40 group-hover:bg-white/10'}`}>
-                    <m.icon size={32} />
-                  </div>
-                  <span className={`text-[10px] uppercase tracking-widest font-bold ${selectedMood === m.type ? 'text-vox-accent' : 'text-vox-paper/20'}`}>
-                    {m.label}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </motion.div>
-        </div>
-
-        {/* Right Side: Navigation */}
-        <motion.div
-          initial={{ opacity: 0, x: 20 }}
+    <div className="min-h-screen bg-vox-bg text-vox-paper overflow-hidden relative">
+      {/* Header */}
+      <div className="absolute top-12 left-12 z-10">
+        <motion.h1 
+          initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.4 }}
-          className="flex flex-col items-center lg:items-end space-y-12"
+          className="text-4xl font-light tracking-tighter"
         >
-          <div className="relative w-full lg:w-auto">
-            <div className="absolute -top-3 left-1/2 lg:left-auto lg:right-4 -translate-x-1/2 lg:translate-x-0 px-4 bg-vox-bg text-[10px] uppercase tracking-[0.5em] text-vox-paper/20 whitespace-nowrap">
-              Sanctuary Access
-            </div>
-            <div className="pt-16 lg:pt-0 border-t lg:border-t-0 lg:border-r border-white/5 pr-0 lg:pr-16 text-center lg:text-right">
-              <p className="text-vox-paper/30 text-xs uppercase tracking-[0.3em] mb-8">Ready to continue your journey?</p>
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => setView('space')}
-                className="group relative px-16 py-8 rounded-full overflow-hidden inline-block"
-              >
-                <div className="absolute inset-0 bg-vox-accent opacity-10 group-hover:opacity-20 transition-opacity" />
-                <div className="absolute inset-0 border border-vox-accent/20 rounded-full" />
-                <div className="relative flex items-center gap-6">
-                  <span className="text-2xl font-serif italic tracking-wide">Enter Your Space</span>
-                  <div className="w-12 h-12 rounded-full bg-vox-accent flex items-center justify-center text-white shadow-lg shadow-vox-accent/20">
-                    <ChevronRight size={28} />
-                  </div>
-                </div>
-              </motion.button>
-            </div>
-          </div>
+          Hello, <span className="text-vox-accent font-serif italic">Traveler</span>
+        </motion.h1>
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.1 }}
+          className="mt-4"
+        >
+          <h2 className="text-2xl uppercase tracking-[0.3em] font-bold opacity-80">VOXARA Constellation Dashboard</h2>
+          <p className="text-vox-paper/40 text-xs uppercase tracking-[0.4em] mt-1">Sanctuary Home</p>
         </motion.div>
+      </div>
+
+      {/* Constellation Container */}
+      <div className="absolute inset-0 flex items-center justify-center">
+        <div className="relative w-full h-full max-w-6xl max-h-[80vh]">
+          {/* SVG Lines */}
+          <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-30">
+            {lines.map(([startId, endId], i) => {
+              const start = nodes.find(n => n.id === startId)!;
+              const end = nodes.find(n => n.id === endId)!;
+              return (
+                <motion.line
+                  key={i}
+                  initial={{ pathLength: 0, opacity: 0 }}
+                  animate={{ pathLength: 1, opacity: 1 }}
+                  transition={{ duration: 1.5, delay: i * 0.1 }}
+                  x1={`${start.x}%`}
+                  y1={`${start.y}%`}
+                  x2={`${end.x}%`}
+                  y2={`${end.y}%`}
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  className="text-vox-accent"
+                />
+              );
+            })}
+          </svg>
+
+          {/* Nodes */}
+          {nodes.map((node) => (
+            <motion.div
+              key={node.id}
+              initial={{ opacity: 0, scale: 0 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.5 + nodes.indexOf(node) * 0.05 }}
+              style={{ left: `${node.x}%`, top: `${node.y}%` }}
+              className="absolute -translate-x-1/2 -translate-y-1/2 group z-20"
+            >
+              {/* Star Glow */}
+              <div className="absolute inset-0 bg-vox-accent blur-xl opacity-0 group-hover:opacity-40 transition-opacity rounded-full scale-150" />
+              
+              {/* Node Button */}
+              <button
+                onClick={() => setView(node.id as AppState)}
+                className="relative flex flex-col items-center gap-3"
+              >
+                <div className="w-4 h-4 rounded-full bg-vox-accent shadow-[0_0_15px_rgba(242,125,38,0.8)] group-hover:scale-125 transition-transform" />
+                <div className="flex flex-col items-center opacity-0 group-hover:opacity-100 transition-opacity absolute top-6 whitespace-nowrap">
+                  <node.icon size={16} className="text-vox-accent mb-1" />
+                  <span className="text-[10px] uppercase tracking-widest font-bold text-vox-paper/80">
+                    {node.label}
+                  </span>
+                </div>
+                {/* Label (Always visible but small) */}
+                {!node.featured && (
+                  <span className="absolute -top-8 text-[9px] uppercase tracking-[0.2em] font-medium text-vox-paper/40 group-hover:text-vox-paper transition-colors whitespace-nowrap">
+                    {node.label}
+                  </span>
+                )}
+              </button>
+
+              {/* Featured Card for Whisper to Voice */}
+              {node.featured && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 1.2 }}
+                  className="absolute top-12 -left-24 w-64 glass-dark p-6 rounded-3xl border border-white/10 shadow-2xl pointer-events-auto"
+                >
+                  <div className="flex flex-col items-center text-center gap-4">
+                    <div className="w-12 h-12 rounded-full bg-vox-accent/10 flex items-center justify-center text-vox-accent">
+                      <Mic size={24} />
+                    </div>
+                    <div className="space-y-2">
+                      <h3 className="text-lg font-serif italic">Whisper to Voice</h3>
+                      <p className="text-xs text-vox-paper/40 leading-relaxed">
+                        Record your thoughts and feelings through secure voice messages.
+                      </p>
+                    </div>
+                    <button 
+                      onClick={() => setView('whisper')}
+                      className="w-full py-3 bg-vox-accent text-white rounded-full text-xs font-bold uppercase tracking-widest hover:bg-vox-accent/80 transition-colors"
+                    >
+                      Start Whispering
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </motion.div>
+          ))}
+        </div>
+      </div>
+
+      {/* Enter Your Space CTA */}
+      <div className="absolute bottom-32 left-1/2 -translate-x-1/2 z-30">
+        <motion.button
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1.5 }}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => setView('space')}
+          className="px-12 py-4 rounded-full bg-vox-accent/20 border border-vox-accent/40 text-vox-accent uppercase tracking-[0.4em] font-bold text-sm shadow-[0_0_30px_rgba(242,125,38,0.2)] hover:bg-vox-accent/30 transition-all"
+        >
+          Enter Your Space
+        </motion.button>
       </div>
     </div>
   );
@@ -6322,7 +6367,7 @@ export default function App() {
             exit={{ opacity: 0, scale: 0.99 }}
             transition={pageTransition}
           >
-            <Home user={user} setUser={setUser} setView={setView} />
+            <Home user={user} setView={setView} />
           </motion.div>
         )}
 
@@ -6589,6 +6634,75 @@ export default function App() {
             <SettingsView onBack={() => setView('home')} user={user} setUser={setUser} />
           </motion.div>
         )}
+
+        {view === 'profile' && user && (
+          <motion.div 
+            key="profile" 
+            initial={{ opacity: 0, scale: 0.99 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.99 }}
+            transition={pageTransition}
+            className="min-h-screen p-12 pt-32 max-w-4xl mx-auto"
+          >
+            <h2 className="text-4xl font-light tracking-tighter mb-8">Your Profile</h2>
+            <div className="glass-dark p-8 rounded-3xl border border-white/10">
+              <div className="flex items-center gap-6 mb-8">
+                <div className="w-24 h-24 rounded-full bg-vox-accent/20 flex items-center justify-center text-vox-accent">
+                  <UserIcon size={48} />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-serif italic">{user.name}</h3>
+                  <p className="text-vox-paper/40">{user.email}</p>
+                </div>
+              </div>
+              <button onClick={() => setView('home')} className="text-vox-accent uppercase tracking-widest text-xs font-bold">Back to Home</button>
+            </div>
+          </motion.div>
+        )}
+
+        {view === 'notifications' && user && (
+          <motion.div 
+            key="notifications" 
+            initial={{ opacity: 0, scale: 0.99 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.99 }}
+            transition={pageTransition}
+            className="min-h-screen p-12 pt-32 max-w-4xl mx-auto"
+          >
+            <h2 className="text-4xl font-light tracking-tighter mb-8">Notifications</h2>
+            <div className="glass-dark p-8 rounded-3xl border border-white/10 text-center">
+              <p className="text-vox-paper/40 italic">No new notifications in your sanctuary.</p>
+              <button onClick={() => setView('home')} className="mt-8 text-vox-accent uppercase tracking-widest text-xs font-bold">Back to Home</button>
+            </div>
+          </motion.div>
+        )}
+
+        {view === 'help' && user && (
+          <motion.div 
+            key="help" 
+            initial={{ opacity: 0, scale: 0.99 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.99 }}
+            transition={pageTransition}
+            className="min-h-screen p-12 pt-32 max-w-4xl mx-auto"
+          >
+            <h2 className="text-4xl font-light tracking-tighter mb-8">Sanctuary Help</h2>
+            <div className="glass-dark p-8 rounded-3xl border border-white/10 space-y-6">
+              <p className="text-vox-paper/60 leading-relaxed">
+                Welcome to VOXARA. This sanctuary is designed to help you find your voice and build courage.
+              </p>
+              <div className="space-y-4">
+                <h4 className="font-bold text-vox-accent uppercase tracking-widest text-xs">Quick Guide</h4>
+                <ul className="text-sm text-vox-paper/40 space-y-2 list-disc pl-4">
+                  <li>Use "Whisper to Voice" to practice speaking safely.</li>
+                  <li>Explore the "Courage Map" to track your growth.</li>
+                  <li>Visit the "Calm Center" when you need a moment of peace.</li>
+                </ul>
+              </div>
+              <button onClick={() => setView('home')} className="pt-4 text-vox-accent uppercase tracking-widest text-xs font-bold block">Back to Home</button>
+            </div>
+          </motion.div>
+        )}
       </AnimatePresence>
 
       {/* Global Navigation (Only when logged in) */}
@@ -6596,10 +6710,10 @@ export default function App() {
         <nav className="fixed bottom-8 left-1/2 -translate-x-1/2 glass px-4 py-2 rounded-full flex gap-2 z-50 shadow-2xl border border-white/10">
           {[
             { id: 'home', icon: HomeIcon, label: 'Home' },
-            { id: 'dashboard', icon: MapIcon, label: 'Progress' },
-            { id: 'mood', icon: TrendingUp, label: 'Mood' },
-            { id: 'companion', icon: Sparkles, label: 'AI' },
+            { id: 'profile', icon: UserIcon, label: 'Profile' },
             { id: 'settings', icon: Settings, label: 'Settings' },
+            { id: 'notifications', icon: Bell, label: 'Notifications' },
+            { id: 'help', icon: HelpCircle, label: 'Help' },
           ].map((item) => (
             <motion.button 
               key={item.id}
