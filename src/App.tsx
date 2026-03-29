@@ -52,8 +52,14 @@ import {
   EyeOff,
   Navigation,
   TrendingDown,
+  CloudSun,
+  CloudLightning,
+  Home as HomeIcon,
+  Radio,
+  Trash2,
+  Moon,
 } from 'lucide-react';
-import { AppState, User, VoiceNote, LiveSessionEntry, JournalEntry, UserGoal, EmergencyContact, CourageHistoryEntry, MoodEntry } from './types';
+import { AppState, User, VoiceNote, LiveSessionEntry, JournalEntry, UserGoal, EmergencyContact, CourageHistoryEntry, MoodEntry, Affirmation } from './types';
 import { generateCompanionResponse, ghostModePractice, generateSpeech, transcribeAudio, generateJournalPrompt, generateVoiceInsight, analyzePracticeAudio } from './services/geminiService';
 import { playPCM } from './utils/audioUtils';
 import { signUp, logIn, logOut, subscribeToAuthChanges } from './services/authService';
@@ -1436,7 +1442,7 @@ const FearMapEvolution = ({ history }: { history: CourageHistoryEntry[] }) => {
 
   return (
     <div className="h-[240px] w-full min-h-[240px] min-w-[300px] relative">
-      <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0} debounce={50}>
+      <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0} debounce={100} aspect={undefined}>
         <AreaChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
           <XAxis dataKey="name" hide />
@@ -1497,459 +1503,279 @@ const ThoughtOfTheDay = () => {
   );
 };
 
-const Dashboard = ({ user, setView, setUser }: { user: User, setView: (v: AppState) => void, setUser: React.Dispatch<React.SetStateAction<User | null>> }) => {
-  const [isEditingIntention, setIsEditingIntention] = useState(false);
-  const [intentionInput, setIntentionInput] = useState(user.dailyIntention || '');
+const Home = ({ user, setUser, setView }: { user: User, setUser: React.Dispatch<React.SetStateAction<User | null>>, setView: (v: AppState) => void }) => {
+  const [selectedMood, setSelectedMood] = useState<MoodEntry['mood'] | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Interactive Effects
-  const mouseX = useMotionValue(0);
-  const mouseY = useMotionValue(0);
-  const springConfig = { damping: 25, stiffness: 150 };
-  const rotateX = useSpring(useTransform(mouseY, [0, 800], [5, -5]), springConfig);
-  const rotateY = useSpring(useTransform(mouseX, [0, 1200], [-5, 5]), springConfig);
+  const moods: { type: MoodEntry['mood']; icon: any; label: string; color: string }[] = [
+    { type: 'great', icon: Sun, label: 'Great', color: 'text-yellow-400' },
+    { type: 'good', icon: CloudSun, label: 'Good', color: 'text-orange-400' },
+    { type: 'neutral', icon: Cloud, label: 'Neutral', color: 'text-vox-paper/60' },
+    { type: 'bad', icon: CloudRain, label: 'Bad', color: 'text-blue-400' },
+    { type: 'terrible', icon: CloudLightning, label: 'Terrible', color: 'text-purple-400' },
+  ];
 
-  const handleMouseMove = (e: React.MouseEvent) => {
-    const { clientX, clientY } = e;
-    mouseX.set(clientX);
-    mouseY.set(clientY);
-  };
+  const handleMoodSelect = async (mood: MoodEntry['mood']) => {
+    setSelectedMood(mood);
+    setIsSubmitting(true);
+    
+    const newEntry: MoodEntry = {
+      timestamp: Date.now(),
+      mood,
+    };
 
-  const saveIntention = () => {
-    setUser(prev => prev ? ({ ...prev, dailyIntention: intentionInput }) : null);
-    setIsEditingIntention(false);
+    setUser(prev => {
+      if (!prev) return null;
+      return {
+        ...prev,
+        moodHistory: [newEntry, ...(prev.moodHistory || [])]
+      };
+    });
+
+    setTimeout(() => {
+      setIsSubmitting(false);
+    }, 1000);
   };
 
   return (
-    <div 
-      onMouseMove={handleMouseMove}
-      className="min-h-screen bg-vox-bg text-vox-paper selection:bg-vox-accent/30 overflow-x-hidden"
-    >
+    <div className="min-h-screen p-6 pt-24 max-w-7xl mx-auto pb-32">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-24 items-center">
+        {/* Left Side: Greeting & Mood */}
+        <div className="space-y-16">
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+          >
+            <h1 className="text-7xl font-light tracking-tighter mb-4 leading-none">
+              Hello, <br />
+              <span className="text-vox-accent font-serif italic">{user.name}</span>
+            </h1>
+            <p className="text-vox-paper/40 text-sm uppercase tracking-[0.4em] mt-6">Welcome back to your sanctuary</p>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="glass-dark p-12 rounded-[4rem] border border-white/5 shadow-2xl"
+          >
+            <div className="flex items-center gap-4 mb-12">
+              <div className="w-12 h-12 rounded-full bg-vox-accent/10 flex items-center justify-center text-vox-accent">
+                <Sparkles size={24} />
+              </div>
+              <h2 className="text-3xl font-serif italic text-vox-paper/80">How are you feeling today?</h2>
+            </div>
+            
+            <div className="flex justify-between items-center gap-4">
+              {moods.map((m) => (
+                <button
+                  key={m.type}
+                  onClick={() => handleMoodSelect(m.type)}
+                  disabled={isSubmitting}
+                  className={`flex flex-col items-center gap-4 transition-all group ${selectedMood === m.type ? 'scale-110' : 'hover:scale-105 opacity-60 hover:opacity-100'}`}
+                >
+                  <div className={`w-16 h-16 rounded-3xl flex items-center justify-center transition-all ${selectedMood === m.type ? 'bg-vox-accent text-white shadow-[0_0_20px_rgba(242,125,38,0.3)]' : 'bg-white/5 text-vox-paper/40 group-hover:bg-white/10'}`}>
+                    <m.icon size={32} />
+                  </div>
+                  <span className={`text-[10px] uppercase tracking-widest font-bold ${selectedMood === m.type ? 'text-vox-accent' : 'text-vox-paper/20'}`}>
+                    {m.label}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </motion.div>
+        </div>
+
+        {/* Right Side: Navigation */}
+        <motion.div
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.4 }}
+          className="flex flex-col items-center lg:items-end space-y-12"
+        >
+          <div className="relative w-full lg:w-auto">
+            <div className="absolute -top-3 left-1/2 lg:left-auto lg:right-4 -translate-x-1/2 lg:translate-x-0 px-4 bg-vox-bg text-[10px] uppercase tracking-[0.5em] text-vox-paper/20 whitespace-nowrap">
+              Sanctuary Access
+            </div>
+            <div className="pt-16 lg:pt-0 border-t lg:border-t-0 lg:border-r border-white/5 pr-0 lg:pr-16 text-center lg:text-right">
+              <p className="text-vox-paper/30 text-xs uppercase tracking-[0.3em] mb-8">Ready to continue your journey?</p>
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => setView('space')}
+                className="group relative px-16 py-8 rounded-full overflow-hidden inline-block"
+              >
+                <div className="absolute inset-0 bg-vox-accent opacity-10 group-hover:opacity-20 transition-opacity" />
+                <div className="absolute inset-0 border border-vox-accent/20 rounded-full" />
+                <div className="relative flex items-center gap-6">
+                  <span className="text-2xl font-serif italic tracking-wide">Enter Your Space</span>
+                  <div className="w-12 h-12 rounded-full bg-vox-accent flex items-center justify-center text-white shadow-lg shadow-vox-accent/20">
+                    <ChevronRight size={28} />
+                  </div>
+                </div>
+              </motion.button>
+            </div>
+          </div>
+        </motion.div>
+      </div>
+    </div>
+  );
+};
+
+const YourSpace = ({ onBack, setView }: { onBack: () => void, setView: (v: AppState) => void }) => {
+  const features: { id: AppState; icon: any; title: string; desc: string; color: string }[] = [
+    { id: 'rituals', icon: Sparkles, title: 'Daily Rituals', desc: 'Mindful habits for growth', color: 'from-emerald-500/20 to-teal-500/20' },
+    { id: 'calm', icon: Wind, title: 'Calm Center', desc: 'Instant peace & breathing', color: 'from-blue-500/20 to-cyan-500/20' },
+    { id: 'whisper', icon: Mic, title: 'Ghost Mode', desc: 'Speak your truth safely', color: 'from-vox-accent/20 to-orange-500/20' },
+    { id: 'echo', icon: Volume2, title: 'Voice Echo', desc: 'Hear your inner strength', color: 'from-purple-500/20 to-pink-500/20' },
+    { id: 'simulation', icon: Zap, title: 'Beloved Bridge', desc: 'Practice difficult moments', color: 'from-yellow-500/20 to-orange-500/20' },
+    { id: 'journal', icon: BookOpen, title: 'Anchor Mode', desc: 'Reflect on your journey', color: 'from-indigo-500/20 to-blue-500/20' },
+    { id: 'circles', icon: Users, title: 'Connections', desc: 'Find your voice with others', color: 'from-rose-500/20 to-pink-500/20' },
+    { id: 'affirmations', icon: Heart, title: 'Affirmations', desc: 'Record your daily strength', color: 'from-amber-500/20 to-orange-500/20' },
+    { id: 'meditations', icon: Moon, title: 'Meditations', desc: 'Guided paths to peace', color: 'from-violet-500/20 to-purple-500/20' },
+    { id: 'live', icon: Radio, title: 'Live Session', desc: 'Real-time AI companion', color: 'from-vox-accent/20 to-red-500/20' },
+  ];
+
+  return (
+    <div className="min-h-screen p-6 pt-24 max-w-6xl mx-auto pb-32">
+      <header className="flex items-center justify-between mb-16">
+        <button onClick={onBack} className="flex items-center gap-2 text-vox-paper/50 hover:text-vox-paper transition-colors">
+          <ChevronRight className="rotate-180" size={20} /> Home
+        </button>
+        <div className="text-right">
+          <h2 className="text-4xl font-light tracking-tighter">Your Space</h2>
+          <p className="text-vox-paper/40 text-xs uppercase tracking-widest mt-1">Explore Your Sanctuary</p>
+        </div>
+      </header>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {features.map((f, i) => (
+          <motion.button
+            key={f.id}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.05 }}
+            whileHover={{ scale: 1.02, y: -4 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => setView(f.id)}
+            className="group relative h-48 rounded-[3rem] overflow-hidden text-left p-8 border border-white/5 glass-dark"
+          >
+            <div className={`absolute inset-0 bg-gradient-to-br ${f.color} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
+            <div className="relative z-10 h-full flex flex-col justify-between">
+              <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center text-vox-paper/40 group-hover:bg-vox-accent group-hover:text-white transition-all duration-300">
+                <f.icon size={24} />
+              </div>
+              <div>
+                <h3 className="text-xl font-serif italic mb-1">{f.title}</h3>
+                <p className="text-xs text-vox-paper/40 group-hover:text-vox-paper/60 transition-colors uppercase tracking-widest font-bold">
+                  {f.desc}
+                </p>
+              </div>
+            </div>
+          </motion.button>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const Dashboard = ({ user, setView, setUser }: { user: User, setView: (v: AppState) => void, setUser: React.Dispatch<React.SetStateAction<User | null>> }) => {
+  return (
+    <div className="min-h-screen bg-vox-bg text-vox-paper selection:bg-vox-accent/30 overflow-x-hidden">
       <FloatingParticles />
       <BackgroundEffects />
       
-      <ThoughtOfTheDay />
-      
-      <div className="relative z-10 p-6 max-w-7xl mx-auto pt-12 pb-48">
-        {/* Immersive Hero Section */}
-        <header className="mb-24">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-start">
-            {/* Left Content */}
-            <div className="lg:col-span-7 flex flex-col pt-8">
-              <motion.div 
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                className="flex items-center gap-6 mb-8"
-              >
-                <motion.div
-                  animate={{ 
-                    scale: [1, 1.05, 1],
-                    filter: ["drop-shadow(0 0 15px rgba(45,212,191,0.2))", "drop-shadow(0 0 25px rgba(45,212,191,0.4))", "drop-shadow(0 0 15px rgba(45,212,191,0.2))"]
-                  }}
-                  transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                >
-                  <VoxaraLogo className="w-14 h-14" />
-                </motion.div>
-                <div className="flex items-center gap-4">
-                  <div className="h-px w-10 bg-vox-accent/40" />
-                  <div className="flex flex-col">
-                    <span className="text-[10px] uppercase tracking-[0.5em] text-vox-accent font-bold">VOXARA</span>
-                    <span className="text-[8px] uppercase tracking-[0.3em] text-vox-paper/40 font-bold">Courage Companion</span>
-                  </div>
-                </div>
-              </motion.div>
-              
-              <h2 className="text-[8vw] lg:text-[100px] font-light tracking-tighter mb-8 leading-[0.9] text-white">
-                Find your <br/>
-                <span className="text-[#2dd4bf] italic font-serif">courage.</span>
-              </h2>
-
-              <p className="text-vox-paper/40 font-serif italic text-lg lg:text-xl max-w-lg leading-relaxed mb-16">
-                "Courage is not the absence of fear, but the triumph over it. Every whisper today is a step toward your light."
-              </p>
-
-              <div className="flex flex-col gap-6 max-w-sm">
-                {/* Courage Index Card */}
-                <motion.div 
-                  whileHover={{ scale: 1.02, y: -5, boxShadow: "0 20px 40px rgba(0,0,0,0.4)" }}
-                  className="bg-[#0a0a0a]/60 backdrop-blur-xl p-6 rounded-[2rem] border border-white/5 flex items-center justify-between group cursor-pointer hover:border-vox-accent/20 transition-all shadow-2xl shadow-black/50"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-full bg-vox-accent/10 flex items-center justify-center border border-vox-accent/20 group-hover:bg-vox-accent/20 transition-all">
-                      <Activity size={20} className="text-vox-accent" />
-                    </div>
-                    <div>
-                      <div className="text-[9px] uppercase tracking-widest text-vox-paper/40 font-bold mb-0.5">Courage Index</div>
-                      <div className="text-2xl font-light">{user.courageLevel}%</div>
-                    </div>
-                  </div>
-                  <div className="text-vox-accent/40 group-hover:text-vox-accent transition-colors">
-                    <TrendingUp size={16} />
-                  </div>
-                </motion.div>
-
-                {/* Daily Intention Card */}
-                <motion.div 
-                  whileHover={{ scale: 1.02, y: -5, boxShadow: "0 20px 40px rgba(0,0,0,0.4)" }}
-                  className="bg-[#0a0a0a]/60 backdrop-blur-xl p-8 rounded-[2.5rem] border border-white/5 flex flex-col gap-4 relative overflow-hidden group shadow-2xl shadow-black/50"
-                >
-                  <div className="flex justify-between items-center">
-                    <div className="text-[9px] uppercase tracking-widest text-vox-accent font-bold">Daily Intention</div>
-                    <Settings size={14} className="text-vox-paper/20 hover:text-vox-accent cursor-pointer transition-colors" />
-                  </div>
-                  
-                  {isEditingIntention ? (
-                    <div className="flex flex-col gap-3">
-                      <input 
-                        autoFocus
-                        type="text"
-                        value={intentionInput}
-                        onChange={(e) => setIntentionInput(e.target.value)}
-                        onBlur={saveIntention}
-                        onKeyPress={(e) => e.key === 'Enter' && saveIntention()}
-                        className="bg-transparent border-b border-vox-accent/50 py-2 focus:outline-none text-xl font-serif italic w-full text-white"
-                        placeholder="Set your focus..."
-                      />
-                    </div>
-                  ) : (
-                    <button 
-                      onClick={() => setIsEditingIntention(true)}
-                      className="text-left"
-                    >
-                      <div className="text-2xl font-serif italic text-vox-paper/80 group-hover:text-vox-accent transition-colors leading-tight">
-                        {user.dailyIntention || "Set your focus for today..."}
-                      </div>
-                      <div className="mt-2 text-[10px] text-vox-paper/30 italic font-serif">What does courage look like today?</div>
-                    </button>
-                  )}
-                </motion.div>
-              </div>
-            </div>
-
-            {/* Right Content - Presence Panel */}
-            <div className="lg:col-span-5 h-full">
-              <motion.div 
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                whileHover={{ scale: 1.01 }}
-                className="bg-[#0a0a0a]/40 backdrop-blur-2xl rounded-[4rem] border border-white/5 aspect-[4/5] flex flex-col items-center justify-center relative overflow-hidden group shadow-[0_50px_100px_-20px_rgba(0,0,0,0.8)]"
-              >
-                {/* Animated Circles */}
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="relative w-64 h-64 flex items-center justify-center">
-                    <motion.div 
-                      animate={{ 
-                        scale: [1, 1.2 + (user.courageLevel / 200), 1], 
-                        opacity: [0.1, 0.3, 0.1],
-                        borderColor: user.courageLevel > 70 ? 'rgba(45,212,191,0.5)' : 'rgba(45,212,191,0.2)'
-                      }}
-                      transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                      className="absolute inset-0 border border-vox-accent/20 rounded-full"
-                    />
-                    <motion.div 
-                      animate={{ 
-                        scale: [1, 1.3 + (user.courageLevel / 200), 1], 
-                        opacity: [0.05, 0.2, 0.05] 
-                      }}
-                      transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-                      className="absolute -inset-8 border border-vox-accent/10 rounded-full"
-                    />
-                    <motion.div 
-                      animate={{ 
-                        scale: [1, 1.4 + (user.courageLevel / 200), 1], 
-                        opacity: [0.02, 0.1, 0.02] 
-                      }}
-                      transition={{ duration: 8, repeat: Infinity, ease: "easeInOut", delay: 2 }}
-                      className="absolute -inset-16 border border-vox-accent/5 rounded-full"
-                    />
-                    <motion.div 
-                      animate={{ 
-                        scale: [1, 1.5 + (user.courageLevel / 100), 1], 
-                        opacity: [0.4, 1, 0.4],
-                        boxShadow: [
-                          `0 0 20px rgba(45,212,191,${0.2 + user.courageLevel/200})`,
-                          `0 0 40px rgba(45,212,191,${0.5 + user.courageLevel/200})`,
-                          `0 0 20px rgba(45,212,191,${0.2 + user.courageLevel/200})`
-                        ]
-                      }}
-                      transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                      className="w-3 h-3 bg-[#2dd4bf] rounded-full" 
-                    />
-                  </div>
-                </div>
-
-                {/* Presence Status Info */}
-                <div className="absolute bottom-12 left-12 right-12">
-                  <div className="flex justify-between items-end mb-4">
-                    <div className="flex flex-col gap-4">
-                      <div className="flex items-center gap-3">
-                        <Users size={14} className="text-[#2dd4bf]" />
-                        <span className="text-[10px] uppercase tracking-[0.3em] text-[#2dd4bf] font-bold">Presence Status</span>
-                      </div>
-                      <h3 className="text-4xl font-serif italic text-white">Quiet Strength</h3>
-                    </div>
-                    <MicPermissionCheck />
-                  </div>
-                  <div className="flex items-center gap-2 text-vox-paper/30 text-xs font-serif">
-                    <div className="w-1 h-1 rounded-full bg-vox-accent/40" />
-                    ... 12 others are currently in silence.
-                  </div>
-                </div>
-
-                {/* Subtle Grid Overlay */}
-                <div className="absolute inset-0 pointer-events-none opacity-10" 
-                  style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(255,255,255,0.05) 1px, transparent 0)', backgroundSize: '40px 40px' }} 
-                />
-              </motion.div>
-            </div>
-          </div>
+      <div className="relative z-10 p-6 max-w-7xl mx-auto pt-24 pb-48">
+        <header className="mb-16">
+          <h2 className="text-5xl font-light tracking-tighter mb-2">Progress</h2>
+          <p className="text-vox-paper/40 font-serif italic text-xl">Your journey of courage and growth.</p>
         </header>
 
-        {/* Clean Grid Layout - Bento Style */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-8">
-          <FeatureCard 
-            title="Daily Rituals"
-            description="Speak your strength. Repeat the words that build your courage."
-            icon={Sparkles}
-            image="https://picsum.photos/seed/ritual/800/600"
-            accentColor="#10b981"
-            label="Rituals"
-            onClick={() => setView('rituals')}
-            className="md:col-span-2 lg:col-span-2"
-          />
-          <FeatureCard 
-            title="Calm Center"
-            description="Guided exercises for anxiety and panic moments."
-            icon={Wind}
-            image="https://picsum.photos/seed/calm/800/600"
-            accentColor="#60a5fa"
-            label="Calm"
-            onClick={() => setView('calm')}
-            className="md:col-span-2 lg:col-span-2"
-          />
-          <FeatureCard 
-            title="Whisper Ritual"
-            label="Vocal Release"
-            description="Practice finding your voice in a safe, guided space."
-            icon={Mic}
-            image="https://picsum.photos/seed/vocal/800/600"
-            accentColor="#2dd4bf"
-            onClick={() => setView('whisper')}
-            className="md:col-span-2 lg:col-span-3 min-h-[320px] md:h-[400px]"
-          />
-
-          <FeatureCard 
-            title="Live Session"
-            label="Real-time Voice"
-            description="Immersive, low-latency voice conversation with your companion."
-            icon={Zap}
-            image="https://picsum.photos/seed/live/800/600"
-            accentColor="#f27d26"
-            onClick={() => setView('live')}
-            className="md:col-span-2 lg:col-span-3 min-h-[320px] md:h-[400px]"
-          />
-
-          <FeatureCard 
-            title="AI Companion"
-            label="Deep Listening"
-            description="A trauma-informed space for your thoughts and feelings."
-            icon={MessageSquare}
-            image="https://picsum.photos/seed/companion/800/600"
-            accentColor="#10b981"
-            onClick={() => setView('companion')}
-            className="md:col-span-2 lg:col-span-3 min-h-[320px] md:h-[400px]"
-          />
-
-          <FeatureCard 
-            title="Voice Circles"
-            label="Shared Silence"
-            description="Anonymous presence with others on the same journey."
-            icon={Users}
-            image="https://picsum.photos/seed/circles/800/600"
-            accentColor="#fb923c"
-            onClick={() => setView('circles')}
-            className="md:col-span-2 lg:col-span-2 min-h-[280px] md:h-[320px]"
-          />
-
-          <FeatureCard 
-            title="Courage Lab"
-            label="Guided Practice"
-            description="Controlled scenarios for real-world resilience."
-            icon={Bridge}
-            image="https://picsum.photos/seed/lab/800/600"
-            accentColor="#a855f7"
-            onClick={() => setView('simulation')}
-            className="md:col-span-2 lg:col-span-2 min-h-[280px] md:h-[320px]"
-          />
-
-          <FeatureCard 
-            title="Courage Map"
-            label="Evolution"
-            description="Visualize your journey from fog to clarity."
-            icon={MapIcon}
-            image="https://picsum.photos/seed/map/800/600"
-            accentColor="#facc15"
-            onClick={() => setView('map')}
-            className="md:col-span-2 lg:col-span-2 min-h-[280px] md:h-[320px]"
-          />
-
-          <FeatureCard 
-            title="Mood Sanctuary"
-            label="Emotional Pulse"
-            description="Track your emotional journey with calendar and analysis."
-            icon={TrendingUp}
-            image="https://picsum.photos/seed/mood/800/600"
-            accentColor="#f27d26"
-            onClick={() => setView('mood')}
-            className="md:col-span-2 lg:col-span-2 min-h-[280px] md:h-[320px]"
-          />
-
-          <FeatureCard 
-            title="Guided Journal"
-            label="Inner Voice"
-            description="Reflect with AI-guided prompts and voice-to-text journaling."
-            icon={BookOpen}
-            image="https://picsum.photos/seed/journal/800/600"
-            accentColor="#2dd4bf"
-            onClick={() => setView('journal')}
-            className="md:col-span-2 lg:col-span-2 min-h-[280px] md:h-[320px]"
-          />
-
-          <FeatureCard 
-            title="Daily Affirmations"
-            label="Self-Confidence"
-            description="Record and listen to your own positive affirmations."
-            icon={Quote}
-            image="https://picsum.photos/seed/affirmation/800/600"
-            accentColor="#f472b6"
-            onClick={() => setView('affirmations')}
-            className="md:col-span-2 lg:col-span-2 min-h-[280px] md:h-[320px]"
-          />
-
-          <FeatureCard 
-            title="Guided Meditations"
-            label="Mental Well-being"
-            description="Focused sessions for courage and inner peace."
-            icon={Wind}
-            image="https://picsum.photos/seed/meditation/800/600"
-            accentColor="#60a5fa"
-            onClick={() => setView('meditations')}
-            className="md:col-span-2 lg:col-span-2 min-h-[280px] md:h-[320px]"
-          />
-        </div>
-
-        {/* Subtle Progress Section */}
-        <div className="mt-24 glass-dark p-12 rounded-[3rem] border border-white/5">
-          <div className="flex items-center justify-between mb-12">
-            <div>
-              <h3 className="text-2xl font-light tracking-tight mb-2">Growth Trajectory</h3>
-              <p className="text-vox-paper/40 text-sm">Your emotional evolution over the last 7 days.</p>
-            </div>
-            <div className="flex gap-4">
-              <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-vox-paper/40">
-                <div className="w-2 h-2 rounded-full bg-[#2dd4bf]" /> Rejection
-              </div>
-              <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-vox-paper/40">
-                <div className="w-2 h-2 rounded-full bg-[#fb923c]" /> Conflict
-              </div>
-            </div>
-          </div>
-          <div className="h-64">
-            <FearMapEvolution history={user.courageHistory || []} />
-          </div>
-        </div>
-
-        {/* Secondary Grid */}
-        <div className="mt-10 grid grid-cols-1 md:grid-cols-2 gap-10">
-          <FeatureCard 
-            title="Beloved Bridge"
-            label="Ghost Practice"
-            description="Practice real-world connection in a safe, simulated environment."
-            icon={Bridge}
-            image="https://picsum.photos/seed/misty-bridge/800/600"
-            accentColor="#a855f7"
-            onClick={() => setView('bridge')}
-          />
-
-          <FeatureCard 
-            title="Sanctuary Settings"
-            label="Safety First"
-            description="Configure your safe word, privacy levels, and sanctuary environment."
-            icon={Settings}
-            image="https://picsum.photos/seed/safety-settings/800/600"
-            accentColor="#94a3b8"
-            onClick={() => setView('settings')}
-          />
-        </div>
-
-        {/* Footer Actions */}
-        <div className="mt-32 grid grid-cols-1 md:grid-cols-2 gap-10">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+          {/* Maps Section */}
           <motion.div 
-            whileHover={{ y: -5 }}
-            className="glass-dark rounded-[4rem] p-12 flex flex-col sm:flex-row items-center justify-between border border-vox-accent/20 bg-vox-accent/5 gap-8 shadow-2xl"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="glass-dark p-12 rounded-[3rem] border border-white/5"
           >
-            <div className="flex items-center gap-8">
-              <div className="w-20 h-20 rounded-3xl bg-vox-accent/10 flex items-center justify-center border border-vox-accent/20 shadow-lg">
-                <Shield size={36} className="text-vox-accent" />
+            <div className="flex items-center justify-between mb-12">
+              <div>
+                <h3 className="text-2xl font-light tracking-tight mb-2">Courage Map</h3>
+                <p className="text-vox-paper/40 text-sm">Your emotional evolution over the last 7 days.</p>
               </div>
-              <div className="text-left">
-                <div className="text-xs text-vox-paper/40 uppercase tracking-[0.3em] mb-2 font-bold">Active Protection</div>
-                <div className="text-xl font-medium">Crisis Safe-Word: <span className="text-vox-accent italic">"{user.safeWord}"</span></div>
-              </div>
+              <MapIcon className="text-vox-accent" size={24} />
+            </div>
+            <div className="h-80">
+              <FearMapEvolution history={user.courageHistory || []} />
             </div>
             <button 
-              onClick={() => setView('anchor')} 
-              className="px-8 py-4 rounded-2xl bg-vox-accent/10 border border-vox-accent/30 text-[11px] font-bold uppercase tracking-[0.2em] text-vox-accent hover:bg-vox-accent hover:text-vox-bg transition-all whitespace-nowrap"
+              onClick={() => setView('map')} 
+              className="mt-12 w-full py-6 rounded-2xl bg-vox-accent/10 border border-vox-accent/30 text-sm font-bold uppercase tracking-[0.2em] text-vox-accent hover:bg-vox-accent hover:text-vox-bg transition-all"
             >
-              Test Trigger
+              Open Full Map
             </button>
           </motion.div>
 
+          {/* Echo Chamber Section */}
           <motion.div 
-            whileHover={{ y: -5 }}
-            className="glass-dark rounded-[4rem] p-12 flex flex-col sm:flex-row items-center justify-between border border-white/5 gap-8 shadow-2xl"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="glass-dark p-12 rounded-[3rem] border border-white/5 flex flex-col justify-between"
           >
-            <div className="flex items-center gap-8">
-              <div className="w-20 h-20 rounded-3xl bg-white/5 flex items-center justify-center border border-white/10 shadow-lg">
-                <History size={36} className="text-vox-paper/60" />
+            <div>
+              <div className="flex items-center justify-between mb-12">
+                <div>
+                  <h3 className="text-2xl font-light tracking-tight mb-2">Echo Chamber</h3>
+                  <p className="text-vox-paper/40 text-sm">Review your past voice notes and growth.</p>
+                </div>
+                <History className="text-vox-paper/60" size={24} />
               </div>
-              <div className="text-left">
-                <div className="text-xs text-vox-paper/40 uppercase tracking-[0.3em] mb-2 font-bold">Growth Proof</div>
-                <div className="text-xl font-medium">Echo Chamber</div>
+              <div className="space-y-6">
+                <div className="p-6 rounded-2xl bg-white/5 border border-white/10">
+                  <div className="text-xs text-vox-paper/40 uppercase tracking-widest mb-2">Recent Activity</div>
+                  <div className="text-lg font-medium">
+                    {user.voiceNotes?.length || 0} Voice Notes Recorded
+                  </div>
+                </div>
+                <div className="p-6 rounded-2xl bg-white/5 border border-white/10">
+                  <div className="text-xs text-vox-paper/40 uppercase tracking-widest mb-2">Current Level</div>
+                  <div className="text-lg font-medium">
+                    {user.courageLevel}% Courage Index
+                  </div>
+                </div>
               </div>
             </div>
             <button 
               onClick={() => setView('echo')} 
-              className="px-8 py-4 rounded-2xl bg-white/5 border border-white/10 text-[11px] font-bold uppercase tracking-[0.2em] hover:bg-white hover:text-vox-bg transition-all whitespace-nowrap"
+              className="mt-12 w-full py-6 rounded-2xl bg-vox-accent/10 border border-vox-accent/30 text-sm font-bold uppercase tracking-[0.2em] text-vox-accent hover:bg-vox-accent hover:text-vox-bg transition-all"
             >
               Open History
             </button>
           </motion.div>
-        </div>
 
-        {/* Exit Nudge */}
-        {user.courageLevel > 80 && (
+          {/* Fear Map Section */}
           <motion.div 
-            initial={{ opacity: 0, scale: 0.95 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-            className="mt-32 p-20 rounded-[5rem] glass-dark border border-emerald-500/20 flex flex-col items-center text-center relative overflow-hidden shadow-[0_50px_100px_-20px_rgba(16,185,129,0.1)]"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="glass-dark p-12 rounded-[3rem] border border-white/5 lg:col-span-2"
           >
-            <div className="absolute inset-0 bg-emerald-500/5 blur-[120px] rounded-full -translate-y-1/2" />
-            <div className="w-32 h-32 rounded-[3.5rem] bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20 mb-10 relative z-10 shadow-lg">
-              <DoorOpen className="text-emerald-400" size={64} />
+            <div className="flex items-center justify-between mb-12">
+              <div>
+                <h3 className="text-2xl font-light tracking-tight mb-2">Fear Map</h3>
+                <p className="text-vox-paper/40 text-sm">A breakdown of your current challenges.</p>
+              </div>
+              <Shield className="text-vox-accent" size={24} />
             </div>
-            <h4 className="text-7xl font-light tracking-tighter mb-6 relative z-10 text-white">You're sounding stronger today.</h4>
-            <p className="text-vox-paper/40 text-2xl font-serif italic mb-12 max-w-2xl relative z-10 leading-relaxed">
-              "The app is a bridge, not a destination. Maybe it's time to cross it and reach out to someone real?"
-            </p>
-            <button 
-              onClick={() => setView('exit')}
-              className="px-16 py-6 bg-emerald-500 text-white rounded-[2rem] font-bold text-lg hover:bg-emerald-600 hover:scale-105 transition-all shadow-2xl shadow-emerald-500/40 relative z-10"
-            >
-              Start Exit Ritual
-            </button>
+            <FearMap data={{
+              rejection: user.courageHistory?.[user.courageHistory.length - 1]?.rejection || 0,
+              conflict: user.courageHistory?.[user.courageHistory.length - 1]?.conflict || 0,
+              misunderstanding: user.courageHistory?.[user.courageHistory.length - 1]?.misunderstanding || 0,
+              vulnerability: user.courageHistory?.[user.courageHistory.length - 1]?.vulnerability || 0,
+            }} />
           </motion.div>
-        )}
+        </div>
       </div>
     </div>
   );
@@ -4315,7 +4141,7 @@ const FearStrengthMap = ({ user, onBack }: { user: User, onBack: () => void }) =
           <div className="glass-dark p-10 rounded-[3rem] border border-white/5">
             <h3 className="text-xl font-light tracking-widest uppercase mb-8 text-vox-paper/40">Evolution of Courage</h3>
             <div className="h-[300px] w-full min-h-[300px] min-w-[300px]">
-              <ResponsiveContainer width="99%" height={300} minWidth={0} minHeight={0} debounce={100}>
+              <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0} debounce={100} aspect={undefined}>
                 <AreaChart data={chartData}>
                   <defs>
                     <linearGradient id="colorLevel" x1="0" y1="0" x2="0" y2="1">
@@ -5021,7 +4847,7 @@ const MoodTracker = ({ user, setUser, onBack }: { user: User, setUser: React.Dis
             
             <div className="h-56 w-full mb-8 min-h-[224px] min-w-[300px]">
               {user.moodHistory && user.moodHistory.length > 0 ? (
-                <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+                <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0} debounce={100} aspect={undefined}>
                   <AreaChart data={moodData}>
                     <defs>
                       <linearGradient id="moodGradient" x1="0" y1="0" x2="0" y2="1">
@@ -5975,6 +5801,7 @@ const Affirmations = ({ onBack, user, setUser }: { onBack: () => void, user: Use
   const [recordedAudio, setRecordedAudio] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [micError, setMicError] = useState<string | null>(null);
+  const [newAffirmationText, setNewAffirmationText] = useState("");
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const [playingId, setPlayingId] = useState<string | null>(null);
@@ -6011,144 +5838,153 @@ const Affirmations = ({ onBack, user, setUser }: { onBack: () => void, user: Use
   };
 
   const saveAffirmation = () => {
-    if (!recordedAudio) return;
+    if (!newAffirmationText.trim() && !recordedAudio) return;
     setIsSaving(true);
-    const newNote: VoiceNote = {
+    
+    const newAffirmation: Affirmation = {
       id: Math.random().toString(36).substr(2, 9),
+      text: newAffirmationText || "Voice Affirmation",
       timestamp: Date.now(),
-      duration: 0,
-      type: 'voice',
-      isPrivate: true,
-      text: "Daily Affirmation",
-      audioData: recordedAudio
+      audioData: recordedAudio || undefined
     };
+
     setUser(prev => {
       if (!prev) return null;
       return {
         ...prev,
-        voiceNotes: [newNote, ...(prev.voiceNotes || [])]
+        affirmations: [newAffirmation, ...(prev.affirmations || [])]
       };
     });
+
     setRecordedAudio(null);
+    setNewAffirmationText("");
     setIsSaving(false);
   };
 
-  const playAffirmation = (note: VoiceNote) => {
-    if (playingId === note.id) {
+  const deleteAffirmation = (id: string) => {
+    setUser(prev => {
+      if (!prev) return null;
+      return {
+        ...prev,
+        affirmations: prev.affirmations?.filter(a => a.id !== id)
+      };
+    });
+  };
+
+  const playAffirmation = (aff: Affirmation) => {
+    if (!aff.audioData) return;
+    if (playingId === aff.id) {
       audioRef.current?.pause();
       setPlayingId(null);
       return;
     }
     if (audioRef.current) audioRef.current.pause();
-    const src = note.audioData?.startsWith('data:') ? note.audioData : `data:audio/webm;base64,${note.audioData}`;
+    const src = aff.audioData.startsWith('data:') ? aff.audioData : `data:audio/webm;base64,${aff.audioData}`;
     audioRef.current = new Audio(src);
     audioRef.current.play();
-    setPlayingId(note.id);
+    setPlayingId(aff.id);
     audioRef.current.onended = () => setPlayingId(null);
   };
 
-  const affirmations = user.voiceNotes.filter(n => n.text === "Daily Affirmation");
-
   return (
-    <div className="min-h-screen p-6 pt-24 max-w-4xl mx-auto flex flex-col items-center">
-      <div className="absolute inset-0 vox-gradient opacity-30 fixed" />
-      <button onClick={onBack} className="absolute top-10 left-10 z-20 flex items-center gap-2 text-vox-paper/50 hover:text-vox-paper">
-        <ChevronRight className="rotate-180" size={20} /> Dashboard
-      </button>
-
-      <div className="text-center mb-16 relative z-10">
-        <div className="w-24 h-24 rounded-[2.5rem] bg-vox-accent/10 flex items-center justify-center mx-auto mb-8 border border-vox-accent/20">
-          <Quote size={40} className="text-vox-accent" />
+    <div className="min-h-screen p-6 pt-24 max-w-4xl mx-auto pb-32">
+      <header className="flex items-center justify-between mb-16">
+        <button onClick={onBack} className="flex items-center gap-2 text-vox-paper/50 hover:text-vox-paper transition-colors">
+          <ChevronRight className="rotate-180" size={20} /> Back
+        </button>
+        <div className="text-right">
+          <h2 className="text-4xl font-light tracking-tighter">Affirmations</h2>
+          <p className="text-vox-paper/40 text-xs uppercase tracking-widest mt-1">Your Daily Strength</p>
         </div>
-        <h2 className="text-6xl font-light tracking-tighter mb-4">Daily Affirmations</h2>
-        <p className="text-vox-paper/40 font-serif italic text-xl">"Your voice is the most powerful tool for your own healing."</p>
-      </div>
+      </header>
 
-      <div className="w-full space-y-12 relative z-10">
-        <div className="glass-dark rounded-[3rem] p-12 border border-white/5 flex flex-col items-center gap-8">
-          <div className="text-center">
-            <h3 className="text-2xl mb-2">Record a New Affirmation</h3>
-            <p className="text-vox-paper/40 text-sm">Speak your truth with confidence and strength.</p>
-          </div>
-
-          <motion.button
-            whileHover={{ scale: 1.05, boxShadow: "0 0 30px rgba(45, 212, 191, 0.3)" }}
-            whileTap={{ scale: 0.95 }}
-            onClick={isRecording ? stopRecording : startRecording}
-            className={`w-32 h-32 rounded-full flex items-center justify-center transition-all shadow-2xl ${isRecording ? 'bg-red-500 animate-pulse' : 'bg-vox-accent text-vox-bg'}`}
-          >
-            {isRecording ? <Square size={32} fill="white" /> : <Mic size={32} />}
-          </motion.button>
-
-          {micError && (
-            <motion.div 
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="p-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-500 text-xs flex items-center gap-3"
-            >
-              <AlertCircle size={16} />
-              {micError}
-            </motion.div>
-          )}
-
-          {recordedAudio && !isRecording && (
-            <div className="flex gap-4 w-full max-w-xs">
-              <motion.button 
-                whileHover={{ scale: 1.05, backgroundColor: "rgba(45, 212, 191, 0.9)" }}
-                whileTap={{ scale: 0.95 }}
-                onClick={saveAffirmation}
-                disabled={isSaving}
-                className="flex-1 py-4 bg-vox-accent text-vox-bg rounded-2xl font-bold text-xs uppercase tracking-widest transition-all"
-              >
-                {isSaving ? "Saving..." : "Save Affirmation"}
-              </motion.button>
-              <motion.button 
-                whileHover={{ scale: 1.05, backgroundColor: "rgba(255, 255, 255, 0.1)" }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => setRecordedAudio(null)}
-                className="flex-1 py-4 bg-white/5 rounded-2xl font-bold text-xs uppercase tracking-widest transition-all"
-              >
-                Discard
-              </motion.button>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+        <div className="glass-dark p-10 rounded-[3rem] border border-white/5">
+          <h3 className="text-xs uppercase tracking-[0.3em] font-bold text-vox-paper/40 mb-8">Create New</h3>
+          
+          <div className="space-y-6">
+            <div>
+              <label className="text-[10px] uppercase tracking-widest text-vox-paper/30 font-bold mb-2 block">Affirmation Text</label>
+              <textarea
+                value={newAffirmationText}
+                onChange={(e) => setNewAffirmationText(e.target.value)}
+                placeholder="I am strong, I am heard..."
+                className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-sm font-serif italic focus:outline-none focus:border-vox-accent/50 transition-colors h-32 resize-none"
+              />
             </div>
-          )}
+
+            <div className="flex items-center gap-4">
+              <button
+                onClick={isRecording ? stopRecording : startRecording}
+                className={`flex-1 h-14 rounded-2xl flex items-center justify-center gap-3 transition-all ${isRecording ? 'bg-red-500/20 text-red-400 border border-red-500/30 animate-pulse' : 'bg-white/5 text-vox-paper/60 border border-white/10 hover:bg-white/10'}`}
+              >
+                {isRecording ? <Square size={18} /> : <Mic size={18} />}
+                <span className="text-xs font-bold uppercase tracking-widest">{isRecording ? 'Stop Recording' : 'Add Voice'}</span>
+              </button>
+
+              {recordedAudio && (
+                <div className="w-14 h-14 rounded-2xl bg-vox-accent/20 flex items-center justify-center text-vox-accent border border-vox-accent/30">
+                  <Check size={24} />
+                </div>
+              )}
+            </div>
+
+            {micError && (
+              <p className="text-[10px] text-red-400 italic">{micError}</p>
+            )}
+
+            <button
+              onClick={saveAffirmation}
+              disabled={isSaving || (!newAffirmationText.trim() && !recordedAudio)}
+              className="w-full h-16 rounded-3xl bg-vox-accent text-white font-serif italic text-lg shadow-lg shadow-vox-accent/20 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:scale-100"
+            >
+              Save Affirmation
+            </button>
+          </div>
         </div>
 
-        <div className="space-y-6">
-          <h3 className="text-xs uppercase tracking-[0.3em] font-bold text-vox-paper/30 ml-4">Your Recorded Affirmations</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {affirmations.length === 0 ? (
-              <div className="col-span-full py-12 text-center text-vox-paper/20 italic glass-dark rounded-3xl border border-white/5">
-                No affirmations recorded yet.
-              </div>
-            ) : (
-              affirmations.map(note => (
-                <motion.div 
-                  key={note.id} 
-                  whileHover={{ scale: 1.02, backgroundColor: "rgba(255, 255, 255, 0.08)" }}
-                  className="glass-dark p-6 rounded-3xl border border-white/5 flex items-center justify-between group"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-2xl bg-vox-accent/10 flex items-center justify-center">
-                      <Quote size={20} className="text-vox-accent" />
-                    </div>
-                    <div>
-                      <div className="text-sm font-medium">Affirmation</div>
-                      <div className="text-[10px] text-vox-paper/30 uppercase tracking-widest">
-                        {new Date(note.timestamp).toLocaleDateString()}
-                      </div>
-                    </div>
-                  </div>
-                  <motion.button 
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                    onClick={() => playAffirmation(note)}
-                    className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${playingId === note.id ? 'bg-vox-accent text-vox-bg' : 'bg-white/5 hover:bg-white/10'}`}
+        <div className="glass-dark p-10 rounded-[3rem] border border-white/5">
+          <h3 className="text-xs uppercase tracking-[0.3em] font-bold text-vox-paper/40 mb-8">Your Collection</h3>
+          
+          <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+            {user.affirmations?.map((aff) => (
+              <motion.div
+                key={aff.id}
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="p-6 bg-white/5 rounded-3xl border border-white/5 group"
+              >
+                <div className="flex justify-between items-start gap-4 mb-4">
+                  <p className="text-sm font-serif italic leading-relaxed text-vox-paper/80">"{aff.text}"</p>
+                  <button 
+                    onClick={() => deleteAffirmation(aff.id)}
+                    className="text-vox-paper/20 hover:text-red-400 transition-colors"
                   >
-                    {playingId === note.id ? <Square size={16} fill="currentColor" /> : <Play size={16} fill="currentColor" className="ml-1" />}
-                  </motion.button>
-                </motion.div>
-              ))
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <span className="text-[8px] uppercase tracking-widest text-vox-paper/20">
+                    {new Date(aff.timestamp).toLocaleDateString()}
+                  </span>
+                  
+                  {aff.audioData && (
+                    <button
+                      onClick={() => playAffirmation(aff)}
+                      className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${playingId === aff.id ? 'bg-vox-accent text-white' : 'bg-white/10 text-vox-paper/40 hover:bg-white/20'}`}
+                    >
+                      {playingId === aff.id ? <Square size={14} /> : <Play size={14} fill="currentColor" />}
+                    </button>
+                  )}
+                </div>
+              </motion.div>
+            ))}
+            {(!user.affirmations || user.affirmations.length === 0) && (
+              <div className="text-center py-12">
+                <Heart className="mx-auto text-vox-paper/10 mb-4" size={48} />
+                <p className="text-xs text-vox-paper/20 italic">No affirmations yet. Start by creating one.</p>
+              </div>
             )}
           </div>
         </div>
@@ -6348,7 +6184,7 @@ export default function App() {
             id: firebaseUser.uid,
             name: firebaseUser.displayName || 'Seeker',
             email: firebaseUser.email || '',
-            courageLevel: 15,
+            courageLevel: 30,
             safeWord: 'Blue Spruce',
             voiceNotes: [],
             journalEntries: [],
@@ -6385,7 +6221,7 @@ export default function App() {
           if (!currentUserData?.hasCompletedSafetyOnboarding) {
             setView('safety-onboarding');
           } else {
-            setView('dashboard');
+            setView('home');
           }
         }
       } else {
@@ -6450,7 +6286,7 @@ export default function App() {
             exit={{ opacity: 0, scale: 0.99 }}
             transition={pageTransition}
           >
-            <LandingPage onStart={() => setView(user ? 'dashboard' : 'auth')} isLoggedIn={!!user} />
+            <LandingPage onStart={() => setView(user ? 'home' : 'auth')} isLoggedIn={!!user} />
           </motion.div>
         )}
 
@@ -6474,7 +6310,31 @@ export default function App() {
             exit={{ opacity: 0, scale: 0.99 }}
             transition={pageTransition}
           >
-            <SafetyOnboarding user={user} setUser={setUser} onComplete={() => setView('dashboard')} />
+            <SafetyOnboarding user={user} setUser={setUser} onComplete={() => setView('home')} />
+          </motion.div>
+        )}
+
+        {view === 'home' && user && (
+          <motion.div 
+            key="home" 
+            initial={{ opacity: 0, scale: 0.99 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.99 }}
+            transition={pageTransition}
+          >
+            <Home user={user} setUser={setUser} setView={setView} />
+          </motion.div>
+        )}
+
+        {view === 'space' && user && (
+          <motion.div 
+            key="space" 
+            initial={{ opacity: 0, scale: 0.99 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.99 }}
+            transition={pageTransition}
+          >
+            <YourSpace onBack={() => setView('home')} setView={setView} />
           </motion.div>
         )}
 
@@ -6498,7 +6358,7 @@ export default function App() {
             exit={{ opacity: 0, x: -20 }}
             transition={pageTransition}
           >
-            <WhisperMode onBack={() => { stopAllAudio(); setView('dashboard'); }} user={user} setUser={setUser} safePlayPCM={safePlayPCM} stopAllAudio={stopAllAudio} setView={setView} />
+            <WhisperMode onBack={() => { stopAllAudio(); setView('space'); }} user={user} setUser={setUser} safePlayPCM={safePlayPCM} stopAllAudio={stopAllAudio} setView={setView} />
           </motion.div>
         )}
 
@@ -6510,7 +6370,7 @@ export default function App() {
             exit={{ opacity: 0, y: -20 }}
             transition={pageTransition}
           >
-            <EchoChamber onBack={() => { stopAllAudio(); setView('dashboard'); }} user={user} safePlayPCM={safePlayPCM} />
+            <EchoChamber onBack={() => { stopAllAudio(); setView('space'); }} user={user} safePlayPCM={safePlayPCM} />
           </motion.div>
         )}
 
@@ -6522,7 +6382,7 @@ export default function App() {
             exit={{ opacity: 0, y: -20 }}
             transition={pageTransition}
           >
-            <CompanionMode onBack={() => { stopAllAudio(); setView('dashboard'); }} user={user} setUser={setUser} safePlayPCM={safePlayPCM} stopAllAudio={stopAllAudio} />
+            <CompanionMode onBack={() => { stopAllAudio(); setView('space'); }} user={user} setUser={setUser} safePlayPCM={safePlayPCM} stopAllAudio={stopAllAudio} />
           </motion.div>
         )}
 
@@ -6534,7 +6394,7 @@ export default function App() {
             exit={{ opacity: 0, scale: 0.99 }}
             transition={pageTransition}
           >
-            <PresenceMode onBack={() => { stopAllAudio(); setView('dashboard'); }} />
+            <PresenceMode onBack={() => { stopAllAudio(); setView('space'); }} />
           </motion.div>
         )}
 
@@ -6546,7 +6406,7 @@ export default function App() {
             exit={{ opacity: 0, scale: 0.99 }}
             transition={pageTransition}
           >
-            <BelovedBridge onBack={() => { stopAllAudio(); setView('dashboard'); }} onExitToEmergency={() => setView('emergency')} safePlayPCM={safePlayPCM} stopAllAudio={stopAllAudio} />
+            <BelovedBridge onBack={() => { stopAllAudio(); setView('space'); }} onExitToEmergency={() => setView('emergency')} safePlayPCM={safePlayPCM} stopAllAudio={stopAllAudio} />
           </motion.div>
         )}
 
@@ -6558,7 +6418,7 @@ export default function App() {
             exit={{ opacity: 0, scale: 0.99 }}
             transition={pageTransition}
           >
-            <EmergencyScreen onBack={() => setView('landing')} onReturn={() => setView('dashboard')} />
+            <EmergencyScreen onBack={() => setView('landing')} onReturn={() => setView('home')} />
           </motion.div>
         )}
 
@@ -6570,7 +6430,7 @@ export default function App() {
             exit={{ opacity: 0, scale: 0.99 }}
             transition={pageTransition}
           >
-            <LiveSession onBack={() => setView('dashboard')} user={user} setUser={setUser} />
+            <LiveSession onBack={() => setView('space')} user={user} setUser={setUser} />
           </motion.div>
         )}
 
@@ -6582,7 +6442,7 @@ export default function App() {
             exit={{ opacity: 0, scale: 0.99 }}
             transition={pageTransition}
           >
-            <Journal onBack={() => setView('dashboard')} user={user} setUser={setUser} />
+            <Journal onBack={() => setView('space')} user={user} setUser={setUser} />
           </motion.div>
         )}
 
@@ -6594,7 +6454,7 @@ export default function App() {
             exit={{ opacity: 0, scale: 0.99 }}
             transition={pageTransition}
           >
-            <DailyRituals user={user} setUser={setUser} onBack={() => setView('dashboard')} />
+            <DailyRituals user={user} setUser={setUser} onBack={() => setView('space')} />
           </motion.div>
         )}
 
@@ -6606,7 +6466,7 @@ export default function App() {
             exit={{ opacity: 0, scale: 0.99 }}
             transition={pageTransition}
           >
-            <CalmCenter onBack={() => setView('dashboard')} />
+            <CalmCenter onBack={() => setView('space')} />
           </motion.div>
         )}
 
@@ -6618,7 +6478,7 @@ export default function App() {
             exit={{ opacity: 0, y: -20 }}
             transition={pageTransition}
           >
-            <Affirmations onBack={() => setView('dashboard')} user={user} setUser={setUser} />
+            <Affirmations onBack={() => setView('space')} user={user} setUser={setUser} />
           </motion.div>
         )}
 
@@ -6726,7 +6586,7 @@ export default function App() {
             exit={{ opacity: 0, scale: 0.99 }}
             transition={pageTransition}
           >
-            <SettingsView onBack={() => setView('dashboard')} user={user} setUser={setUser} />
+            <SettingsView onBack={() => setView('home')} user={user} setUser={setUser} />
           </motion.div>
         )}
       </AnimatePresence>
@@ -6735,14 +6595,10 @@ export default function App() {
       {user && view !== 'landing' && view !== 'auth' && (
         <nav className="fixed bottom-8 left-1/2 -translate-x-1/2 glass px-4 py-2 rounded-full flex gap-2 z-50 shadow-2xl border border-white/10">
           {[
-            { id: 'dashboard', icon: MapIcon, label: 'Home' },
+            { id: 'home', icon: HomeIcon, label: 'Home' },
+            { id: 'dashboard', icon: MapIcon, label: 'Progress' },
             { id: 'mood', icon: TrendingUp, label: 'Mood' },
-            { id: 'rituals', icon: Sparkles, label: 'Rituals' },
-            { id: 'calm', icon: Wind, label: 'Calm' },
-            { id: 'journal', icon: BookOpen, label: 'Journal' },
             { id: 'companion', icon: Sparkles, label: 'AI' },
-            { id: 'live', icon: Volume2, label: 'Live' },
-            { id: 'whisper', icon: Mic, label: 'Whisper' },
             { id: 'settings', icon: Settings, label: 'Settings' },
           ].map((item) => (
             <motion.button 
@@ -6761,13 +6617,13 @@ export default function App() {
           ))}
           <div className="w-px h-8 bg-white/10 self-center mx-1" />
           <button 
-            onClick={() => logOut()}
+            onClick={() => setView('exit')}
             className="w-12 h-12 rounded-full flex items-center justify-center text-vox-paper/50 hover:bg-white/5 group relative"
-            title="Logout"
+            title="Exit"
           >
             <LogOut size={20} />
             <span className="absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-vox-bg border border-white/10 rounded text-[10px] uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
-              Logout
+              Exit
             </span>
           </button>
         </nav>

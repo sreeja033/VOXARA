@@ -1,77 +1,60 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=JetBrains+Mono:wght@400;500&family=Outfit:wght@300;400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=JetBrains+Mono:wght@400;500&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Outfit", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-serif: "Cormorant Garamond", serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
 
-  --color-vox-bg: #E6D5B8;
-  --color-vox-accent: #8BA888; /* Sage Green */
-  --color-vox-secondary: #4A5D4E; /* Dark Sage */
-  --color-vox-paper: #F5F2E8; /* Cream */
-  --color-vox-ink: #2D3436; /* Dark Text */
-}
-
-@layer utilities {
-  .glass {
-    background: rgba(245, 242, 232, 0.7);
-    backdrop-filter: blur(24px);
-    border: 1px solid rgba(139, 168, 136, 0.2);
-    box-shadow: 0 8px 32px 0 rgba(74, 93, 78, 0.1);
-  }
-
-  .glass-dark {
-    background: rgba(74, 93, 78, 0.1);
-    backdrop-filter: blur(40px);
-    border: 1px solid rgba(139, 168, 136, 0.1);
-    position: relative;
-    overflow: hidden;
-  }
+  --color-vox-bg: #050505;
+  --color-vox-accent: #2DD4BF;
+  --color-vox-secondary: #0EA5E9;
+  --color-vox-paper: #F8FAFC;
+  --color-vox-ink: #0A0A0A;
+  
+  /* Atmospheric colors */
+  --color-vox-deep: #0A0502;
+  --color-vox-glow: rgba(45, 212, 191, 0.15);
 }
 
 @layer base {
   body {
-    @apply bg-vox-bg text-vox-ink font-sans antialiased selection:bg-vox-accent/30 selection:text-vox-ink;
-    background: linear-gradient(135deg, #E6D5B8 0%, #F5F2E8 100%);
+    @apply bg-vox-bg text-vox-paper font-sans antialiased selection:bg-vox-accent/30 selection:text-white;
+    background: radial-gradient(circle at 50% 30%, #111827 0%, #050505 100%);
   }
 
   h1, h2, h3, .serif {
-    @apply font-serif font-light tracking-tight text-vox-secondary;
-  }
-
-  /* Rounded everything */
-  button, input, textarea, .card, .glass, .glass-dark {
-    @apply rounded-[2rem];
+    @apply font-serif font-light tracking-tight;
   }
 }
 
-.vox-orb {
-  @apply rounded-full;
-  background: radial-gradient(circle at 30% 30%, var(--color-vox-accent), transparent);
-  box-shadow: 0 0 60px rgba(139, 168, 136, 0.3), inset 0 0 20px rgba(255, 255, 255, 0.1);
-  filter: blur(1px);
+.glass {
+  background: rgba(255, 255, 255, 0.01);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.03);
 }
 
-.vox-orb-purple {
-  background: radial-gradient(circle at 30% 30%, #D9C5A3, transparent);
-  box-shadow: 0 0 60px rgba(217, 197, 163, 0.3), inset 0 0 20px rgba(255, 255, 255, 0.1);
+.glass-dark {
+  background: rgba(10, 10, 10, 0.6);
+  backdrop-filter: blur(32px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  position: relative;
+  overflow: hidden;
 }
 
-.vox-orb-glow {
-  animation: orb-glow 6s ease-in-out infinite;
-}
-
-@keyframes orb-glow {
-  0%, 100% { transform: scale(1); opacity: 0.6; filter: blur(2px); }
-  50% { transform: scale(1.1); opacity: 0.9; filter: blur(4px); }
+.glass-dark::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, transparent 100%);
+  pointer-events: none;
 }
 
 .vox-gradient {
   background: 
-    radial-gradient(circle at 50% -20%, rgba(139, 168, 136, 0.2) 0%, transparent 60%),
-    radial-gradient(circle at 0% 100%, rgba(74, 93, 78, 0.05) 0%, transparent 50%),
-    radial-gradient(circle at 100% 100%, rgba(139, 168, 136, 0.1) 0%, transparent 50%);
+    radial-gradient(circle at 50% -20%, var(--color-vox-glow) 0%, transparent 60%),
+    radial-gradient(circle at 0% 100%, rgba(14, 165, 233, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 100% 100%, rgba(45, 212, 191, 0.05) 0%, transparent 50%);
 }
 
 .grain-overlay {
@@ -82,31 +65,26 @@
 }
 
 .text-reveal {
-  background: linear-gradient(to right, var(--color-vox-secondary) 20%, rgba(74, 93, 78, 0.6) 80%);
+  background: linear-gradient(to right, #fff 20%, rgba(255,255,255,0.2) 80%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
-.vox-card {
-  @apply bg-vox-paper/80 backdrop-blur-xl p-8 rounded-[2.5rem] transition-all duration-500 hover:bg-vox-paper border border-vox-accent/10 hover:border-vox-accent/30 shadow-sm hover:shadow-md;
+.mask-fade-bottom {
+  mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
 }
 
-.vox-button-primary {
-  @apply px-8 py-4 bg-vox-secondary text-vox-paper rounded-full font-medium text-sm tracking-wide shadow-lg hover:scale-105 active:scale-95 transition-all;
-}
-
-.vox-button-secondary {
-  @apply px-8 py-4 bg-vox-accent/20 text-vox-secondary rounded-full font-medium text-sm tracking-wide hover:bg-vox-accent/30 transition-all border border-vox-accent/10;
+.mask-fade-top {
+  mask-image: linear-gradient(to top, black 60%, transparent 100%);
 }
 
 @keyframes float {
-  0%, 100% { transform: translateY(0) rotate(0); }
-  33% { transform: translateY(-15px) rotate(2deg); }
-  66% { transform: translateY(5px) rotate(-1deg); }
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-20px); }
 }
 
 .animate-float {
-  animation: float 12s ease-in-out infinite;
+  animation: float 10s ease-in-out infinite;
 }
 
 .radar-ring {
@@ -115,22 +93,11 @@
   left: 50%;
   border: 1px solid var(--color-vox-accent);
   border-radius: 50%;
-  animation: radar-pulse 6s linear infinite;
+  animation: radar-pulse 4s linear infinite;
 }
 
 @keyframes radar-pulse {
-  0% { transform: translate(-50%, -50%) scale(0.4); opacity: 0; }
-  50% { opacity: 0.2; }
-  100% { transform: translate(-50%, -50%) scale(2.5); opacity: 0; }
-}
-
-/* Custom Waveform Animation */
-.waveform-bar {
-  @apply w-1 bg-vox-accent/40 rounded-full;
-  animation: waveform-grow 1.5s ease-in-out infinite;
-}
-
-@keyframes waveform-grow {
-  0%, 100% { height: 4px; }
-  50% { height: 24px; }
+  0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+  50% { opacity: 0.3; }
+  100% { transform: translate(-50%, -50%) scale(2); opacity: 0; }
 }

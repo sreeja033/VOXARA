@@ -54,6 +54,13 @@ export interface MoodEntry {
   note?: string;
 }
 
+export interface Affirmation {
+  id: string;
+  text: string;
+  timestamp: number;
+  audioData?: string; // Optional base64 audio
+}
+
 export interface User {
   id: string;
   name: string;
@@ -74,15 +81,10 @@ export interface User {
   dailyRituals?: DailyRitual[];
   moodHistory?: MoodEntry[];
   hasCompletedSafetyOnboarding?: boolean;
-  courageStats?: {
-    rejection: number;
-    conflict: number;
-    misunderstanding: number;
-    vulnerability: number;
-  };
+  affirmations?: Affirmation[];
 }
 
-export type AppState = 'onboarding' | 'auth' | 'dashboard' | 'whisper' | 'companion' | 'map' | 'circles' | 'presence' | 'bridge' | 'simulation' | 'echo' | 'live' | 'anchor' | 'exit' | 'emergency' | 'connections' | 'journal' | 'settings' | 'affirmations' | 'meditations' | 'rituals' | 'calm' | 'mood' | 'safety-onboarding' | 'ghost' | 'explore';
+export type AppState = 'landing' | 'auth' | 'home' | 'space' | 'dashboard' | 'whisper' | 'companion' | 'map' | 'circles' | 'presence' | 'bridge' | 'simulation' | 'echo' | 'live' | 'anchor' | 'exit' | 'emergency' | 'connections' | 'journal' | 'settings' | 'affirmations' | 'meditations' | 'rituals' | 'calm' | 'mood' | 'safety-onboarding';
 
 export interface VoiceNote {
   id: string;

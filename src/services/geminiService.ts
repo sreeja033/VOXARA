@@ -52,7 +52,7 @@ const FALLBACK_PROMPTS = [
 export const generateCompanionResponse = async (message: string, history: { role: 'user' | 'model', parts: { text: string }[] }[]) => {
   try {
     const response = await withRetry(() => ai.models.generateContent({
-      model: "gemini-3.1-flash-lite-preview",
+      model: "gemini-3-flash-preview",
       contents: [
         ...history.map(h => ({ role: h.role, parts: h.parts })),
         { role: 'user', parts: [{ text: message }] }
@@ -90,7 +90,7 @@ export const generateSpeech = async (text: string, voiceName: string = 'Zephyr')
   
   try {
     const response = await withRetry(() => ai.models.generateContent({
-      model: "gemini-2.5-flash-preview-tts",
+      model: "gemini-3-flash-preview",
       contents: [{ parts: [{ text: text.trim() }] }],
       config: {
         responseModalities: [Modality.AUDIO],
@@ -180,7 +180,7 @@ export const generateVoiceInsight = async (text: string, base64Audio: string, mi
   try {
     const normalizedMimeType = mimeType.split(';')[0];
     const response = await withRetry(() => ai.models.generateContent({
-      model: "gemini-3.1-flash-lite-preview",
+      model: "gemini-3-flash-preview",
       contents: [{
         role: 'user',
         parts: [
@@ -235,7 +235,7 @@ export const transcribeAudio = async (base64Audio: string, mimeType: string) => 
     const normalizedMimeType = mimeType.split(';')[0];
     
     const response = await withRetry(() => ai.models.generateContent({
-      model: "gemini-3.1-flash-lite-preview",
+      model: "gemini-3-flash-preview",
       contents: [
         {
           role: 'user',
@@ -261,7 +261,7 @@ export const transcribeAudio = async (base64Audio: string, mimeType: string) => 
 export const generateJournalPrompt = async (userContext?: string) => {
   try {
     const response = await withRetry(() => ai.models.generateContent({
-      model: "gemini-3.1-flash-lite-preview",
+      model: "gemini-3-flash-preview",
       contents: [{ role: 'user', parts: [{ text: userContext ? `Based on my recent experiences: ${userContext}, generate a unique journaling prompt.` : "Generate a unique journaling prompt for self-reflection and courage building." }] }],
       config: {
         systemInstruction: `You are the VOXARA Courage Guide. 
