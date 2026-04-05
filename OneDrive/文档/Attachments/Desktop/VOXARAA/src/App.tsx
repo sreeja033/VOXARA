@@ -2190,14 +2190,24 @@ const LandingPage = ({ onStart, isLoggedIn }: { onStart: () => void, isLoggedIn:
           <span className="text-[8px] uppercase tracking-[0.4em] text-vox-accent font-bold mt-1">Courage Companion</span>
         </div>
       </div>
-      <motion.button
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-        onClick={onStart}
-        className="px-6 py-2 rounded-full border border-vox-accent/30 bg-vox-accent/5 text-vox-accent text-xs font-bold uppercase tracking-widest hover:bg-vox-accent/20 transition-all"
-      >
-        {isLoggedIn ? 'Dashboard' : 'Sign In'}
-      </motion.button>
+      <div className="flex items-center gap-4">
+        {isLoggedIn && (
+          <button
+            onClick={logOut}
+            className="text-vox-paper/50 hover:text-white uppercase text-[10px] font-bold tracking-widest transition-colors mr-2"
+          >
+            Sign Out
+          </button>
+        )}
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={onStart}
+          className="px-6 py-2 rounded-full border border-vox-accent/30 bg-vox-accent/5 text-vox-accent text-xs font-bold uppercase tracking-widest hover:bg-vox-accent/20 transition-all"
+        >
+          {isLoggedIn ? 'Dashboard' : 'Sign In'}
+        </motion.button>
+      </div>
     </nav>
 
     {/* Hero Section */}
