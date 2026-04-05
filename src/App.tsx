@@ -1,18 +1,18 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import {
+import { 
   Check,
   Quote,
-  Mic,
-  Heart,
-  Map as MapIcon,
-  Users,
-  Waypoints as Bridge,
-  Shield,
-  Wind,
-  Activity,
-  ArrowRight,
-  Volume2,
+  Mic, 
+  Heart, 
+  Map as MapIcon, 
+  Users, 
+  Waypoints as Bridge, 
+  Shield, 
+  Wind, 
+  Activity, 
+  ArrowRight, 
+  Volume2, 
   VolumeX,
   X,
   MessageSquare,
@@ -62,23 +62,22 @@ import {
   HelpCircle,
   BarChart2,
   Hand,
-  Utensils,
-  Mail
+  Utensils
 } from 'lucide-react';
 import { AppState, User, VoiceNote, JournalEntry, UserGoal, EmergencyContact, CourageHistoryEntry, MoodEntry, SocialEnergyEntry, AvoidanceEntry, FutureSelfDialogueEntry } from './types';
 import { generateCompanionResponse, ghostModePractice, generateSpeech, transcribeAudio, generateJournalPrompt, generateVoiceInsight, analyzePracticeAudio, generateFutureSelfDialogue } from './services/geminiService';
 import { playPCM } from './utils/audioUtils';
-import { signUp, logIn, logOut, subscribeToAuthChanges, signInWithGoogle } from './services/authService';
-import { getUserData, saveUserData, subscribeToUserData } from './services/userService';
+import { signUp, logIn, logOut, subscribeToAuthChanges } from './services/authService';
+import { getUserData, saveUserData } from './services/userService';
 import { GoogleGenAI, Modality, LiveServerMessage } from "@google/genai";
-import { useMotionValue, useTransform, useSpring } from 'motion/react';
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
+import { useMotionValue, useTransform, useSpring } from 'framer-motion';
+import { 
+  LineChart, 
+  Line, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
   ResponsiveContainer,
   AreaChart,
   Area
@@ -122,12 +121,13 @@ const MicPermissionCheck = () => {
   }
 
   return (
-    <button
+    <button 
       onClick={requestPermission}
-      className={`flex items-center gap-2 text-[10px] uppercase tracking-widest font-bold px-3 py-1.5 rounded-full border transition-all ${status === 'denied'
-        ? 'text-red-400 bg-red-400/10 border-red-400/20'
-        : 'text-vox-paper/40 bg-white/5 border-white/10 hover:bg-vox-accent/10 hover:text-vox-accent hover:border-vox-accent/20'
-        }`}
+      className={`flex items-center gap-2 text-[10px] uppercase tracking-widest font-bold px-3 py-1.5 rounded-full border transition-all ${
+        status === 'denied' 
+          ? 'text-red-400 bg-red-400/10 border-red-400/20' 
+          : 'text-vox-paper/40 bg-white/5 border-white/10 hover:bg-vox-accent/10 hover:text-vox-accent hover:border-vox-accent/20'
+      }`}
     >
       {status === 'denied' ? <MicOff size={12} /> : <Mic size={12} />}
       <span>{status === 'denied' ? 'Mic Blocked' : 'Enable Mic'}</span>
@@ -143,7 +143,7 @@ const DailyRituals = ({ user, setUser, onBack }: { user: User, setUser: React.Di
   const toggleRitual = (id: string) => {
     const updated = rituals.map(r => r.id === id ? { ...r, completed: !r.completed, timestamp: Date.now() } : r);
     setUser(prev => prev ? ({ ...prev, dailyRituals: updated }) : null);
-
+    
     // If all completed, maybe give a small courage boost
     if (updated.every(r => r.completed)) {
       setUser(prev => prev ? ({ ...prev, courageLevel: Math.min(100, prev.courageLevel + 2) }) : null);
@@ -160,7 +160,7 @@ const DailyRituals = ({ user, setUser, onBack }: { user: User, setUser: React.Di
   return (
     <div className="min-h-screen bg-vox-bg text-vox-paper p-6 relative overflow-hidden">
       <div className="absolute inset-0 vox-gradient opacity-20" />
-
+      
       <header className="max-w-4xl mx-auto flex justify-between items-center mb-16 relative z-10">
         <button onClick={onBack} className="p-3 hover:bg-white/5 rounded-full transition-colors text-vox-paper/50 hover:text-white">
           <ChevronRight className="rotate-180" size={24} />
@@ -173,7 +173,7 @@ const DailyRituals = ({ user, setUser, onBack }: { user: User, setUser: React.Di
             <div className="h-px w-8 bg-vox-accent/30" />
           </div>
         </div>
-        <button
+        <button 
           onClick={resetRituals}
           className="p-3 hover:bg-white/5 rounded-full transition-colors text-vox-paper/30 hover:text-vox-accent"
           title="Reset Rituals"
@@ -188,7 +188,7 @@ const DailyRituals = ({ user, setUser, onBack }: { user: User, setUser: React.Di
             {completedCount === rituals.length ? "Your spirit is fortified." : `${completedCount} of ${rituals.length} rituals observed.`}
           </div>
           <div className="w-32 h-1 bg-white/5 rounded-full overflow-hidden">
-            <motion.div
+            <motion.div 
               initial={{ width: 0 }}
               animate={{ width: `${(completedCount / rituals.length) * 100}%` }}
               className="h-full bg-vox-accent shadow-[0_0_10px_rgba(45,212,191,0.5)]"
@@ -198,23 +198,25 @@ const DailyRituals = ({ user, setUser, onBack }: { user: User, setUser: React.Di
 
         <div className="space-y-6">
           {rituals.map((ritual, idx) => (
-            <motion.div
+            <motion.div 
               key={ritual.id}
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: idx * 0.1 }}
-              className={`p-8 rounded-[2.5rem] border transition-all cursor-pointer group relative overflow-hidden ${ritual.completed
-                ? 'bg-vox-accent/5 border-vox-accent/20'
-                : 'bg-[#0a0a0a]/40 border-white/5 hover:border-vox-accent/20'
-                }`}
+              className={`p-8 rounded-[2.5rem] border transition-all cursor-pointer group relative overflow-hidden ${
+                ritual.completed 
+                  ? 'bg-vox-accent/5 border-vox-accent/20' 
+                  : 'bg-[#0a0a0a]/40 border-white/5 hover:border-vox-accent/20'
+              }`}
               onClick={() => toggleRitual(ritual.id)}
             >
               <div className="flex items-center justify-between relative z-10">
                 <div className="flex items-center gap-8">
-                  <div className={`w-14 h-14 rounded-full flex items-center justify-center border transition-all duration-500 ${ritual.completed
-                    ? 'bg-vox-accent text-vox-bg border-vox-accent scale-110 shadow-[0_0_20px_rgba(45,212,191,0.3)]'
-                    : 'bg-white/5 border-white/10 group-hover:border-vox-accent/40'
-                    }`}>
+                  <div className={`w-14 h-14 rounded-full flex items-center justify-center border transition-all duration-500 ${
+                    ritual.completed 
+                      ? 'bg-vox-accent text-vox-bg border-vox-accent scale-110 shadow-[0_0_20px_rgba(45,212,191,0.3)]' 
+                      : 'bg-white/5 border-white/10 group-hover:border-vox-accent/40'
+                  }`}>
                     {ritual.completed ? <Check size={24} strokeWidth={3} /> : <Mic size={24} className="text-vox-paper/20 group-hover:text-vox-accent transition-colors" />}
                   </div>
                   <div className="flex flex-col">
@@ -227,10 +229,10 @@ const DailyRituals = ({ user, setUser, onBack }: { user: User, setUser: React.Di
                   </div>
                 </div>
               </div>
-
+              
               {/* Subtle animated background for completed items */}
               {ritual.completed && (
-                <motion.div
+                <motion.div 
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   className="absolute inset-0 bg-gradient-to-r from-vox-accent/10 via-transparent to-transparent pointer-events-none"
@@ -311,9 +313,9 @@ const SafetyOnboarding = ({ user, setUser, onComplete }: { user: User, setUser: 
   return (
     <div className="min-h-screen bg-vox-bg text-vox-paper flex items-center justify-center p-6 relative overflow-hidden">
       <div className="absolute inset-0 vox-gradient opacity-30" />
-
+      
       <AnimatePresence mode="wait">
-        <motion.div
+        <motion.div 
           key={step}
           initial={{ opacity: 0, y: 20, scale: 0.95 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -322,7 +324,7 @@ const SafetyOnboarding = ({ user, setUser, onComplete }: { user: User, setUser: 
           className="max-w-xl w-full glass-dark p-12 rounded-[3rem] border border-white/10 relative z-10 shadow-2xl"
         >
           <div className="flex flex-col items-center text-center">
-            <motion.div
+            <motion.div 
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ delay: 0.2 }}
@@ -330,13 +332,13 @@ const SafetyOnboarding = ({ user, setUser, onComplete }: { user: User, setUser: 
             >
               {React.createElement(steps[step].icon, { size: 40 })}
             </motion.div>
-
+            
             <h2 className="text-4xl font-light tracking-tighter mb-4 text-white">{steps[step].title}</h2>
             <p className="text-vox-paper/60 font-serif italic text-lg mb-6 leading-relaxed">
               {steps[step].description}
             </p>
 
-            <motion.div
+            <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.4 }}
@@ -349,7 +351,7 @@ const SafetyOnboarding = ({ user, setUser, onComplete }: { user: User, setUser: 
             {step === 1 && (
               <div className="w-full space-y-4 mb-10">
                 <label className="block text-[10px] uppercase tracking-widest text-vox-paper/40 text-left ml-4">Your Safe Word</label>
-                <input
+                <input 
                   type="text"
                   value={safeWord}
                   onChange={(e) => setSafeWord(e.target.value)}
@@ -376,14 +378,14 @@ const SafetyOnboarding = ({ user, setUser, onComplete }: { user: User, setUser: 
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <input
+                  <input 
                     type="text"
                     placeholder="Name"
                     value={newContactName}
                     onChange={(e) => setNewContactName(e.target.value)}
                     className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-vox-accent"
                   />
-                  <input
+                  <input 
                     type="text"
                     placeholder="Phone"
                     value={newContactPhone}
@@ -391,7 +393,7 @@ const SafetyOnboarding = ({ user, setUser, onComplete }: { user: User, setUser: 
                     className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-vox-accent"
                   />
                 </div>
-                <button
+                <button 
                   onClick={handleAddContact}
                   disabled={!newContactName || !newContactPhone}
                   className="w-full py-3 bg-white/5 border border-white/10 rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-white/10 transition-all disabled:opacity-30"
@@ -403,14 +405,14 @@ const SafetyOnboarding = ({ user, setUser, onComplete }: { user: User, setUser: 
 
             <div className="flex gap-4 w-full">
               {step > 0 && (
-                <button
+                <button 
                   onClick={() => setStep(step - 1)}
                   className="flex-1 py-4 border border-white/10 rounded-2xl font-bold text-xs uppercase tracking-widest hover:bg-white/5 transition-all"
                 >
                   Back
                 </button>
               )}
-              <button
+              <button 
                 onClick={() => step < steps.length - 1 ? setStep(step + 1) : handleFinish()}
                 disabled={step === 1 && !safeWord}
                 className="flex-[2] py-4 bg-vox-accent text-white rounded-2xl font-bold text-xs uppercase tracking-widest hover:scale-[1.02] transition-all shadow-xl shadow-vox-accent/20"
@@ -435,7 +437,7 @@ const VoxaraLogo = ({ className = "w-12 h-12" }: { className?: string }) => (
   <svg viewBox="0 0 100 100" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
     {/* Curved Base */}
     <path d="M10 90C30 75 70 75 90 90" stroke="url(#logoGradient)" strokeWidth="4" strokeLinecap="round" />
-
+    
     {/* Left Person */}
     <g transform="translate(15, 45) scale(0.8)">
       <circle cx="10" cy="5" r="5" fill="#3b82f6" />
@@ -458,7 +460,7 @@ const VoxaraLogo = ({ className = "w-12 h-12" }: { className?: string }) => (
       <path d="M0 10C0 20 20 20 20 10" stroke="#d97706" strokeWidth="2" fill="none" />
       <line x1="10" y1="20" x2="10" y2="25" stroke="#d97706" strokeWidth="2" />
       <line x1="5" y1="25" x2="15" y2="25" stroke="#d97706" strokeWidth="2" />
-
+      
       {/* Sound Waves */}
       <path d="M-5 5C-8 8 -8 12 -5 15" stroke="#d97706" strokeWidth="1.5" strokeLinecap="round" opacity="0.6">
         <animate attributeName="opacity" values="0.2;1;0.2" dur="2s" repeatCount="indefinite" />
@@ -466,7 +468,7 @@ const VoxaraLogo = ({ className = "w-12 h-12" }: { className?: string }) => (
       <path d="M-10 0C-15 5 -15 15 -10 20" stroke="#d97706" strokeWidth="1.5" strokeLinecap="round" opacity="0.4">
         <animate attributeName="opacity" values="0.1;0.8;0.1" dur="2s" repeatCount="indefinite" begin="0.5s" />
       </path>
-
+      
       <path d="M25 5C28 8 28 12 25 15" stroke="#d97706" strokeWidth="1.5" strokeLinecap="round" opacity="0.6">
         <animate attributeName="opacity" values="0.2;1;0.2" dur="2s" repeatCount="indefinite" />
       </path>
@@ -510,7 +512,7 @@ const BoxBreathing = () => {
         {/* Pulsating Ring */}
         <AnimatePresence>
           {isActive && (
-            <motion.div
+            <motion.div 
               key={phase + timeLeft}
               initial={{ scale: 0.8, opacity: 0.5 }}
               animate={{ scale: 1.2, opacity: 0 }}
@@ -522,14 +524,14 @@ const BoxBreathing = () => {
 
         {/* Outer Circle (Progress) */}
         <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 200 200">
-          <circle
-            cx="100" cy="100" r="90"
-            className="stroke-white/5 fill-none"
+          <circle 
+            cx="100" cy="100" r="90" 
+            className="stroke-white/5 fill-none" 
             strokeWidth="4"
           />
-          <motion.circle
-            cx="100" cy="100" r="90"
-            className="stroke-vox-accent fill-none"
+          <motion.circle 
+            cx="100" cy="100" r="90" 
+            className="stroke-vox-accent fill-none" 
             strokeWidth="4"
             strokeDasharray="565.48"
             animate={{ strokeDashoffset: 565.48 * (1 - timeLeft / 4) }}
@@ -538,15 +540,15 @@ const BoxBreathing = () => {
           />
         </svg>
 
-        <motion.div
-          animate={{
+        <motion.div 
+          animate={{ 
             scale: phase === 'Inhale' ? [1, 1.3] : phase === 'Exhale' ? [1.3, 1] : phase === 'Hold' ? 1.3 : 1
           }}
           transition={{ duration: 4, ease: "linear" }}
           className="absolute inset-4 rounded-full border-2 border-vox-accent/30 bg-vox-accent/5 flex items-center justify-center"
         >
           <div className="text-center z-10">
-            <motion.div
+            <motion.div 
               key={timeLeft}
               initial={{ scale: 1.2, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
@@ -558,7 +560,7 @@ const BoxBreathing = () => {
           </div>
         </motion.div>
       </div>
-      <button
+      <button 
         onClick={(e) => { e.stopPropagation(); setIsActive(!isActive); }}
         className="mt-8 px-6 py-2 rounded-full bg-vox-accent/20 border border-vox-accent/30 text-vox-accent text-xs font-bold uppercase tracking-widest hover:bg-vox-accent/30 transition-all"
       >
@@ -623,10 +625,10 @@ const MuscleRelaxation = () => {
         <div className="text-vox-paper/40 text-[10px] uppercase tracking-widest mb-2">Current Area</div>
         <div className="text-xl font-serif italic text-white">{steps[currentStep]}</div>
       </div>
-
+      
       <div className="relative w-full h-12 bg-white/5 rounded-full overflow-hidden border border-white/10">
-        <motion.div
-          animate={{
+        <motion.div 
+          animate={{ 
             width: `${(timeLeft / 5) * 100}%`,
             backgroundColor: isTense ? 'rgba(242, 125, 38, 0.4)' : 'rgba(16, 185, 129, 0.4)'
           }}
@@ -637,7 +639,7 @@ const MuscleRelaxation = () => {
         </div>
       </div>
 
-      <button
+      <button 
         onClick={(e) => { e.stopPropagation(); setIsActive(!isActive); }}
         className="mt-8 px-6 py-2 rounded-full bg-vox-accent/20 border border-vox-accent/30 text-vox-accent text-xs font-bold uppercase tracking-widest hover:bg-vox-accent/30 transition-all"
       >
@@ -713,11 +715,12 @@ const CalmCenter = ({ onBack }: { onBack: () => void }) => {
 
       <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
         {exercises.map((ex) => (
-          <motion.div
+          <motion.div 
             key={ex.id}
             whileHover={{ y: -10 }}
-            className={`p-8 rounded-[3rem] border transition-all cursor-pointer flex flex-col items-center text-center ${activeExercise === ex.id ? 'bg-vox-accent/10 border-vox-accent/30' : 'bg-[#0a0a0a]/40 border-white/5 hover:border-vox-accent/20'
-              }`}
+            className={`p-8 rounded-[3rem] border transition-all cursor-pointer flex flex-col items-center text-center ${
+              activeExercise === ex.id ? 'bg-vox-accent/10 border-vox-accent/30' : 'bg-[#0a0a0a]/40 border-white/5 hover:border-vox-accent/20'
+            }`}
             onClick={() => setActiveExercise(ex.id)}
           >
             <div className="w-16 h-16 rounded-full bg-vox-accent/10 flex items-center justify-center mb-6 border border-vox-accent/20">
@@ -725,10 +728,10 @@ const CalmCenter = ({ onBack }: { onBack: () => void }) => {
             </div>
             <h3 className="text-xl font-serif italic text-white mb-4">{ex.title}</h3>
             <p className="text-vox-paper/40 text-sm mb-8 leading-relaxed">{ex.description}</p>
-
+            
             <AnimatePresence>
               {activeExercise === ex.id && (
-                <motion.div
+                <motion.div 
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: 'auto' }}
                   exit={{ opacity: 0, height: 0 }}
@@ -753,7 +756,7 @@ const CalmCenter = ({ onBack }: { onBack: () => void }) => {
         <AlertCircle className="text-red-400 mx-auto mb-4" size={32} />
         <h4 className="text-white font-serif italic text-xl mb-2">Need immediate help?</h4>
         <p className="text-vox-paper/40 text-sm mb-6">If you are in immediate danger or a crisis, please reach out to emergency services.</p>
-        <button
+        <button 
           onClick={() => window.location.href = 'tel:988'} // US Suicide & Crisis Lifeline
           className="px-8 py-3 bg-red-500/20 text-red-400 rounded-full border border-red-500/30 hover:bg-red-500/30 transition-all font-bold tracking-widest text-xs uppercase"
         >
@@ -806,21 +809,21 @@ const FloatingParticles = () => {
       {[...Array(10)].map((_, i) => (
         <motion.div
           key={i}
-          initial={{
-            x: Math.random() * window.innerWidth,
+          initial={{ 
+            x: Math.random() * window.innerWidth, 
             y: Math.random() * window.innerHeight,
             opacity: Math.random() * 0.3,
             scale: Math.random() * 0.3 + 0.3
           }}
-          animate={{
+          animate={{ 
             y: [null, Math.random() * -100 - 50],
             x: [null, (Math.random() - 0.5) * 50],
             opacity: [null, 0]
           }}
-          transition={{
-            duration: Math.random() * 15 + 15,
-            repeat: Infinity,
-            ease: "linear"
+          transition={{ 
+            duration: Math.random() * 15 + 15, 
+            repeat: Infinity, 
+            ease: "linear" 
           }}
           className="absolute w-1 h-1 bg-vox-accent/50 rounded-full blur-[1px]"
         />
@@ -829,21 +832,21 @@ const FloatingParticles = () => {
   );
 };
 
-const FeatureCard = ({
-  title,
-  description,
-  icon: Icon,
-  image,
-  accentColor,
-  onClick,
+const FeatureCard = ({ 
+  title, 
+  description, 
+  icon: Icon, 
+  image, 
+  accentColor, 
+  onClick, 
   label,
   className = ""
-}: {
-  title: string;
-  description: string;
-  icon: any;
-  image: string;
-  accentColor: string;
+}: { 
+  title: string; 
+  description: string; 
+  icon: any; 
+  image: string; 
+  accentColor: string; 
   onClick: () => void;
   label: string;
   className?: string;
@@ -860,10 +863,10 @@ const FeatureCard = ({
     const rect = event.currentTarget.getBoundingClientRect();
     const centerX = rect.left + rect.width / 2;
     const centerY = rect.top + rect.height / 2;
-
+    
     x.set(event.clientX - centerX);
     y.set(event.clientY - centerY);
-
+    
     mouseX.set(event.clientX - rect.left);
     mouseY.set(event.clientY - rect.top);
   }
@@ -880,21 +883,21 @@ const FeatureCard = ({
     >
       {/* Background Image */}
       <div className="absolute inset-0 z-0">
-        <img
-          src={image}
-          alt={title}
+        <img 
+          src={image} 
+          alt={title} 
           className="w-full h-full object-cover opacity-10 transition-all duration-1000 grayscale"
           referrerPolicy="no-referrer"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-vox-bg via-vox-bg/40 to-transparent" />
       </div>
-
+      
       {/* Dynamic Overlays */}
       <div className="absolute inset-0 bg-gradient-to-t from-vox-bg via-vox-bg/80 to-transparent z-10" />
       <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-vox-bg/40 z-10" />
-
+      
       {/* Spotlight Effect */}
-      <motion.div
+      <motion.div 
         className="absolute inset-0 z-20 pointer-events-none"
         style={{
           background: useTransform(
@@ -906,10 +909,10 @@ const FeatureCard = ({
 
       <div className="relative z-30 w-full">
         {/* Icon Container */}
-        <motion.div
+        <motion.div 
           whileHover={{ scale: 1.1, rotate: 12 }}
           className="w-16 h-16 rounded-[2rem] flex items-center justify-center border mb-10 transition-all duration-500 shadow-lg"
-          style={{
+          style={{ 
             backgroundColor: `${accentColor}15`,
             borderColor: `${accentColor}30`,
             boxShadow: `0 0 20px ${accentColor}10`
@@ -917,21 +920,21 @@ const FeatureCard = ({
         >
           <Icon size={32} style={{ color: accentColor }} />
         </motion.div>
-
+        
         <div className="mb-4">
           <span className="text-[11px] uppercase tracking-[0.4em] font-bold opacity-60 group-hover:opacity-100 transition-opacity" style={{ color: accentColor }}>
             {label}
           </span>
         </div>
-
+        
         <h3 className="text-5xl font-light tracking-tighter mb-4 group-hover:text-white transition-colors leading-none">
           {title}
         </h3>
-
+        
         <p className="text-vox-paper/40 text-base leading-relaxed mb-10 max-w-[300px] group-hover:text-vox-paper/70 transition-colors font-serif italic">
           {description}
         </p>
-
+        
         <div className="flex items-center gap-4">
           <div className="h-[1px] w-8 bg-white/10 group-hover:w-16 transition-all duration-500" style={{ backgroundColor: `${accentColor}40` }} />
           <span className="text-xs uppercase tracking-[0.2em] font-bold transition-all group-hover:translate-x-2" style={{ color: accentColor }}>
@@ -978,7 +981,7 @@ const Magnetic = ({ children, strength = 0.5 }: { children: React.ReactNode, str
 };
 
 const QuickActions = ({ setView }: { setView: (v: AppState) => void }) => (
-  <motion.div
+  <motion.div 
     initial={{ y: 100, opacity: 0 }}
     animate={{ y: 0, opacity: 1 }}
     className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 p-2 glass-dark rounded-full border border-white/10 shadow-2xl"
@@ -1045,7 +1048,7 @@ const SocialEnergyMeter = ({ user, setUser, onBack }: { user: User, setUser: Rea
     <div className="min-h-screen bg-vox-bg text-vox-paper p-6 relative overflow-hidden">
       <FloatingParticles />
       <div className="absolute inset-0 vox-gradient opacity-20" />
-
+      
       <header className="max-w-4xl mx-auto flex justify-between items-center mb-16 relative z-10">
         <button onClick={onBack} className="p-3 hover:bg-white/5 rounded-full transition-colors text-vox-paper/50 hover:text-white">
           <ChevronRight className="rotate-180" size={24} />
@@ -1061,22 +1064,22 @@ const SocialEnergyMeter = ({ user, setUser, onBack }: { user: User, setUser: Rea
         <div className="space-y-8">
           <div className="glass-dark p-10 rounded-[3rem] border border-white/5">
             <h3 className="text-2xl font-serif italic text-white mb-8">How do you feel now?</h3>
-
+            
             <div className="space-y-12">
               <div className="relative pt-10">
                 <div className="flex justify-between text-[10px] uppercase tracking-widest text-vox-paper/40 mb-4 font-bold">
                   <span>Drained</span>
                   <span>Radiant</span>
                 </div>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={energy}
+                <input 
+                  type="range" 
+                  min="0" 
+                  max="100" 
+                  value={energy} 
                   onChange={(e) => setEnergy(parseInt(e.target.value))}
                   className="w-full h-1.5 bg-white/5 rounded-full appearance-none cursor-pointer accent-vox-accent"
                 />
-                <motion.div
+                <motion.div 
                   style={{ left: `${energy}%` }}
                   className="absolute top-0 -translate-x-1/2 flex flex-col items-center"
                 >
@@ -1086,14 +1089,14 @@ const SocialEnergyMeter = ({ user, setUser, onBack }: { user: User, setUser: Rea
               </div>
 
               <div className="space-y-4">
-                <input
-                  type="text"
+                <input 
+                  type="text" 
                   placeholder="What drained/charged you? (e.g. Work meeting)"
                   value={activity}
                   onChange={(e) => setActivity(e.target.value)}
                   className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 focus:outline-none focus:border-vox-accent transition-colors"
                 />
-                <textarea
+                <textarea 
                   placeholder="Any specific notes..."
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
@@ -1101,7 +1104,7 @@ const SocialEnergyMeter = ({ user, setUser, onBack }: { user: User, setUser: Rea
                 />
               </div>
 
-              <button
+              <button 
                 onClick={handleLogEnergy}
                 className="w-full py-4 bg-vox-accent text-vox-bg rounded-2xl font-bold text-xs uppercase tracking-widest hover:scale-[1.02] transition-all shadow-xl shadow-vox-accent/20"
               >
@@ -1110,7 +1113,7 @@ const SocialEnergyMeter = ({ user, setUser, onBack }: { user: User, setUser: Rea
             </div>
           </div>
 
-          <motion.div
+          <motion.div 
             key={energy}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -1133,21 +1136,21 @@ const SocialEnergyMeter = ({ user, setUser, onBack }: { user: User, setUser: Rea
         <div className="space-y-8">
           <div className="glass-dark p-10 rounded-[3rem] border border-white/5 h-full">
             <h3 className="text-2xl font-serif italic text-white mb-8">Energy Trends</h3>
-
+            
             {chartData.length > 0 ? (
               <div className="h-[300px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={chartData}>
                     <defs>
                       <linearGradient id="energyGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#2dd4bf" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="#2dd4bf" stopOpacity={0} />
+                        <stop offset="5%" stopColor="#2dd4bf" stopOpacity={0.3}/>
+                        <stop offset="95%" stopColor="#2dd4bf" stopOpacity={0}/>
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
                     <XAxis dataKey="time" hide />
                     <YAxis hide domain={[0, 100]} />
-                    <Tooltip
+                    <Tooltip 
                       contentStyle={{ backgroundColor: '#0a0a0a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '1rem' }}
                       itemStyle={{ color: '#2dd4bf' }}
                     />
@@ -1158,7 +1161,7 @@ const SocialEnergyMeter = ({ user, setUser, onBack }: { user: User, setUser: Rea
             ) : (
               <div className="h-[300px] flex flex-col items-center justify-center text-vox-paper/20 text-center">
                 <Zap size={48} className="mb-4 opacity-10" />
-                <p className="font-serif italic">No energy data yet.<br />Start logging to see your patterns.</p>
+                <p className="font-serif italic">No energy data yet.<br/>Start logging to see your patterns.</p>
               </div>
             )}
 
@@ -1202,7 +1205,7 @@ const AvoidanceLoopBreaker = ({ user, setUser, onBack }: { user: User, setUser: 
     if (!textToLog.trim()) return;
 
     const existing = (user.avoidanceHistory || []).find(e => e.situation.toLowerCase() === textToLog.toLowerCase());
-
+    
     let updatedHistory: AvoidanceEntry[];
     let newEntry: AvoidanceEntry;
 
@@ -1264,7 +1267,7 @@ const AvoidanceLoopBreaker = ({ user, setUser, onBack }: { user: User, setUser: 
   return (
     <div className="min-h-screen bg-vox-bg text-vox-paper p-6 relative overflow-hidden">
       <div className="absolute inset-0 vox-gradient opacity-20" />
-
+      
       <header className="max-w-4xl mx-auto flex justify-between items-center mb-16 relative z-10">
         <button onClick={onBack} className="p-3 hover:bg-white/5 rounded-full transition-colors text-vox-paper/50 hover:text-white">
           <ChevronRight className="rotate-180" size={24} />
@@ -1281,14 +1284,14 @@ const AvoidanceLoopBreaker = ({ user, setUser, onBack }: { user: User, setUser: 
           <h3 className="text-2xl font-serif italic text-white mb-8">What did you skip today?</h3>
           <div className="space-y-6">
             <div className="relative">
-              <input
-                type="text"
+              <input 
+                type="text" 
                 placeholder="e.g. That phone call to the bank"
                 value={situation}
                 onChange={(e) => setSituation(e.target.value)}
                 className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-5 text-lg focus:outline-none focus:border-vox-accent transition-colors"
               />
-              <button
+              <button 
                 onClick={() => handleLogAvoidance()}
                 className="absolute right-3 top-1/2 -translate-y-1/2 p-3 bg-vox-accent text-vox-bg rounded-xl hover:scale-105 transition-all"
               >
@@ -1303,7 +1306,7 @@ const AvoidanceLoopBreaker = ({ user, setUser, onBack }: { user: User, setUser: 
               <div className="text-[10px] uppercase tracking-widest text-vox-paper/40 font-bold mb-4">Common Patterns</div>
               <div className="flex flex-wrap gap-2">
                 {commonPatterns.map(pattern => (
-                  <button
+                  <button 
                     key={pattern}
                     onClick={() => handleLogAvoidance(pattern)}
                     className="px-4 py-2 bg-white/5 border border-white/10 rounded-full text-xs text-vox-paper/60 hover:bg-vox-accent/10 hover:text-vox-accent hover:border-vox-accent/20 transition-all"
@@ -1318,7 +1321,7 @@ const AvoidanceLoopBreaker = ({ user, setUser, onBack }: { user: User, setUser: 
 
         <AnimatePresence>
           {detectedLoop && (
-            <motion.div
+            <motion.div 
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -1327,17 +1330,17 @@ const AvoidanceLoopBreaker = ({ user, setUser, onBack }: { user: User, setUser: 
               <div className="absolute top-0 right-0 p-8 opacity-10">
                 <RotateCcw size={120} className="animate-spin-slow" />
               </div>
-
+              
               <div className="relative z-10">
                 <div className="flex items-center gap-3 text-vox-accent mb-6">
                   <AlertTriangle size={24} />
                   <span className="text-[10px] uppercase tracking-[0.3em] font-bold">Pattern Detected</span>
                 </div>
-
+                
                 <h3 className="text-3xl font-light tracking-tighter text-white mb-4">
                   You've avoided <span className="text-vox-accent italic">"{detectedLoop.situation}"</span> {detectedLoop.count} times.
                 </h3>
-
+                
                 <p className="text-vox-paper/60 text-lg font-serif italic mb-10 leading-relaxed">
                   The loop is getting stronger. Let's break it with the smallest possible step today.
                 </p>
@@ -1349,7 +1352,7 @@ const AvoidanceLoopBreaker = ({ user, setUser, onBack }: { user: User, setUser: 
                   </p>
                 </div>
 
-                <button
+                <button 
                   onClick={() => setDetectedLoop(null)}
                   className="w-full py-4 bg-vox-accent text-vox-bg rounded-2xl font-bold text-xs uppercase tracking-widest hover:scale-[1.02] transition-all"
                 >
@@ -1375,7 +1378,7 @@ const AvoidanceLoopBreaker = ({ user, setUser, onBack }: { user: User, setUser: 
                   <div className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${entry.count >= 3 ? 'bg-red-500/20 text-red-400' : 'bg-white/5 text-vox-paper/40'}`}>
                     {entry.count} {entry.count === 1 ? 'time' : 'times'}
                   </div>
-                  <button
+                  <button 
                     onClick={() => handleDeleteEntry(entry.id)}
                     className="p-2 text-vox-paper/20 hover:text-red-400 transition-colors"
                   >
@@ -1403,7 +1406,7 @@ const FutureSelfDialogue = ({ user, setUser, onBack, setView }: { user: User, se
     return (
       <div className="min-h-screen bg-vox-bg text-vox-paper p-6 relative overflow-hidden flex flex-col">
         <div className="absolute inset-0 vox-gradient opacity-20" />
-
+        
         <header className="max-w-4xl mx-auto w-full flex justify-between items-center mb-16 relative z-10">
           <button onClick={onBack} className="p-3 hover:bg-white/5 rounded-full transition-colors text-vox-paper/50 hover:text-white">
             <ChevronRight className="rotate-180" size={24} />
@@ -1482,7 +1485,7 @@ const FutureSelfChat = ({ user, setUser, onBack, setView }: { user: User, setUse
     const history = user.courageHistory ? `Recent courage growth: ${JSON.stringify(user.courageHistory.slice(-5))}` : '';
     const avoidance = user.avoidanceHistory ? `Avoidance patterns: ${user.avoidanceHistory.map(e => `${e.situation} avoided ${e.count} times`).join(', ')}` : '';
     const energy = user.socialEnergyHistory ? `Recent social energy levels: ${user.socialEnergyHistory.slice(-5).map(e => `${e.energyLevel}%`).join(', ')}` : '';
-
+    
     return `${courage}. ${history}. ${avoidance}. ${energy}.`;
   };
 
@@ -1499,7 +1502,7 @@ const FutureSelfChat = ({ user, setUser, onBack, setView }: { user: User, setUse
       const growthData = summarizeGrowth(user);
       const history = messages.map(m => ({ role: m.role, parts: [{ text: m.text }] }));
       const aiResponse = await generateFutureSelfDialogue(textToSend, history, growthData);
-
+      
       const modelMessage = { role: 'model' as const, text: aiResponse, timestamp: Date.now() };
       setMessages(prev => [...prev, modelMessage]);
 
@@ -1532,12 +1535,12 @@ const FutureSelfChat = ({ user, setUser, onBack, setView }: { user: User, setUse
   const startListening = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-
+      
       // Determine supported mime type
-      const mimeType = MediaRecorder.isTypeSupported('audio/webm')
-        ? 'audio/webm'
-        : MediaRecorder.isTypeSupported('audio/ogg')
-          ? 'audio/ogg'
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm') 
+        ? 'audio/webm' 
+        : MediaRecorder.isTypeSupported('audio/ogg') 
+          ? 'audio/ogg' 
           : 'audio/mp4';
 
       const mediaRecorder = new MediaRecorder(stream, { mimeType });
@@ -1552,7 +1555,7 @@ const FutureSelfChat = ({ user, setUser, onBack, setView }: { user: User, setUse
 
       mediaRecorder.onstop = async () => {
         if (audioChunksRef.current.length === 0) return;
-
+        
         setIsTranscribing(true);
         const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
         const reader = new FileReader();
@@ -1561,7 +1564,7 @@ const FutureSelfChat = ({ user, setUser, onBack, setView }: { user: User, setUse
           try {
             const base64Audio = (reader.result as string).split(',')[1];
             const transcription = await transcribeAudio(base64Audio, mimeType);
-
+            
             // Check for safe word
             if (user.safeWord && transcription?.toLowerCase().includes(user.safeWord.toLowerCase())) {
               setView('anchor');
@@ -1570,7 +1573,7 @@ const FutureSelfChat = ({ user, setUser, onBack, setView }: { user: User, setUse
 
             // Filter out silence/noise indicators
             const cleanTranscription = transcription?.replace(/\[.*?\]/g, '').trim();
-
+            
             if (cleanTranscription && cleanTranscription.length > 1) {
               handleSendMessage(cleanTranscription);
             }
@@ -1601,7 +1604,7 @@ const FutureSelfChat = ({ user, setUser, onBack, setView }: { user: User, setUse
   return (
     <div className="min-h-screen bg-vox-bg text-vox-paper p-6 relative overflow-hidden flex flex-col">
       <div className="absolute inset-0 vox-gradient opacity-20" />
-
+      
       <header className="max-w-4xl mx-auto w-full flex justify-between items-center mb-8 relative z-10">
         <button onClick={onBack} className="p-3 hover:bg-white/5 rounded-full transition-colors text-vox-paper/50 hover:text-white">
           <ChevronRight className="rotate-180" size={24} />
@@ -1610,7 +1613,7 @@ const FutureSelfChat = ({ user, setUser, onBack, setView }: { user: User, setUse
           <h2 className="text-4xl font-light tracking-tighter text-white">Future Self Dialogue</h2>
           <p className="text-vox-paper/40 text-[10px] uppercase tracking-widest mt-2 font-bold">Talk to the confident you (1 year later)</p>
         </div>
-        <button
+        <button 
           onClick={() => setIsVoiceEnabled(!isVoiceEnabled)}
           className={`p-3 rounded-full transition-all ${isVoiceEnabled ? 'bg-vox-accent/20 text-vox-accent' : 'bg-white/5 text-vox-paper/30'}`}
         >
@@ -1645,7 +1648,7 @@ const FutureSelfChat = ({ user, setUser, onBack, setView }: { user: User, setUse
           )}
 
           {messages.map((m, i) => (
-            <motion.div
+            <motion.div 
               key={i}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -1683,7 +1686,7 @@ const FutureSelfChat = ({ user, setUser, onBack, setView }: { user: User, setUse
 
         <div className="p-6 bg-white/5 border-t border-white/5">
           <div className="relative flex items-center gap-4">
-            <button
+            <button 
               onMouseDown={startListening}
               onMouseUp={stopListening}
               onMouseLeave={stopListening}
@@ -1693,8 +1696,8 @@ const FutureSelfChat = ({ user, setUser, onBack, setView }: { user: User, setUse
             >
               {isListening ? <Mic size={20} /> : <MicOff size={20} />}
             </button>
-            <input
-              type="text"
+            <input 
+              type="text" 
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => {
@@ -1708,10 +1711,11 @@ const FutureSelfChat = ({ user, setUser, onBack, setView }: { user: User, setUse
               disabled={isTyping || isTranscribing}
               maxLength={1000}
               placeholder={isTyping ? "Future self is thinking..." : "Ask your future self anything..."}
-              className={`flex-1 bg-vox-bg/50 border rounded-2xl px-6 py-4 focus:outline-none transition-colors ${isTyping || isTranscribing ? 'opacity-50 cursor-not-allowed border-white/5' : 'border-white/10 focus:border-vox-accent'
-                }`}
+              className={`flex-1 bg-vox-bg/50 border rounded-2xl px-6 py-4 focus:outline-none transition-colors ${
+                isTyping || isTranscribing ? 'opacity-50 cursor-not-allowed border-white/5' : 'border-white/10 focus:border-vox-accent'
+              }`}
             />
-            <button
+            <button 
               onClick={() => handleSendMessage()}
               disabled={!input.trim() || isTyping}
               className="p-4 bg-vox-accent text-vox-bg rounded-2xl disabled:opacity-20 hover:scale-105 transition-all"
@@ -1736,7 +1740,7 @@ const FutureSelfCall = ({ user, setUser, onBack, setView }: { user: User, setUse
   const [isModelSpeaking, setIsModelSpeaking] = useState(false);
   const [isUserSpeaking, setIsUserSpeaking] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
+  
   const sessionRef = useRef<any>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const inputContextRef = useRef<AudioContext | null>(null);
@@ -1776,7 +1780,7 @@ const FutureSelfCall = ({ user, setUser, onBack, setView }: { user: User, setUse
       if (audioQueueRef.current.length === 0) setIsModelSpeaking(false);
       return;
     }
-
+    
     if (audioContextRef.current.state === 'suspended') {
       await audioContextRef.current.resume();
     }
@@ -1806,7 +1810,7 @@ const FutureSelfCall = ({ user, setUser, onBack, setView }: { user: User, setUse
       for (let i = 0; i < len; i++) {
         bytes[i] = binaryString.charCodeAt(i);
       }
-
+      
       const pcmData = new Int16Array(bytes.buffer, 0, Math.floor(len / 2));
       const floatData = new Float32Array(pcmData.length);
       for (let i = 0; i < pcmData.length; i++) {
@@ -1827,7 +1831,7 @@ const FutureSelfCall = ({ user, setUser, onBack, setView }: { user: User, setUse
   const startSession = async () => {
     setIsConnecting(true);
     setError(null);
-
+    
     if (!audioContextRef.current) {
       audioContextRef.current = new AudioContext({ sampleRate: 24000 });
     }
@@ -1836,12 +1840,12 @@ const FutureSelfCall = ({ user, setUser, onBack, setView }: { user: User, setUse
     }
 
     const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
-
+    
     try {
       const growthData = `Current Courage: ${user.courageLevel}%. History: ${JSON.stringify(user.courageHistory?.slice(-5))}. Avoidance: ${user.avoidanceHistory?.map(e => e.situation).join(', ')}.`;
-
+      
       const sessionPromise = ai.live.connect({
-        model: "gemini-2.0-flash-live",
+        model: "gemini-3.1-flash-live-preview",
         callbacks: {
           onopen: () => {
             setIsConnected(true);
@@ -1906,7 +1910,7 @@ const FutureSelfCall = ({ user, setUser, onBack, setView }: { user: User, setUse
           Keep your responses concise and focused on maintaining a supportive, comforting presence.`,
         },
       });
-
+      
       sessionPromise.then(s => {
         sessionRef.current = s;
       });
@@ -1920,11 +1924,11 @@ const FutureSelfCall = ({ user, setUser, onBack, setView }: { user: User, setUse
   const setupAudio = async (session: any) => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-
+      
       if (!inputContextRef.current) {
         inputContextRef.current = new AudioContext({ sampleRate: 16000 });
       }
-
+      
       if (inputContextRef.current.state === 'suspended') {
         await inputContextRef.current.resume();
       }
@@ -1934,7 +1938,7 @@ const FutureSelfCall = ({ user, setUser, onBack, setView }: { user: User, setUse
       analyser.fftSize = 256;
       source.connect(analyser);
       const dataArray = new Uint8Array(analyser.frequencyBinCount);
-
+      
       const checkVolume = () => {
         if (!sessionActiveRef.current) return;
         analyser.getByteFrequencyData(dataArray);
@@ -1964,7 +1968,7 @@ const FutureSelfCall = ({ user, setUser, onBack, setView }: { user: User, setUse
           await inputContextRef.current.audioWorklet.addModule(url);
           isWorkletLoadedRef.current = true;
         }
-
+        
         const workletNode = new AudioWorkletNode(inputContextRef.current, 'audio-processor');
         workletNode.port.onmessage = (event) => {
           if (!sessionActiveRef.current || !sessionRef.current) return;
@@ -1978,7 +1982,7 @@ const FutureSelfCall = ({ user, setUser, onBack, setView }: { user: User, setUse
             audio: { data: base64Data, mimeType: 'audio/pcm;rate=16000' }
           });
         };
-
+        
         source.connect(workletNode);
         processorRef.current = workletNode;
       } catch (workletErr) {
@@ -2007,7 +2011,7 @@ const FutureSelfCall = ({ user, setUser, onBack, setView }: { user: User, setUse
   return (
     <div className="min-h-screen bg-vox-bg text-vox-paper p-6 relative overflow-hidden flex flex-col">
       <div className="absolute inset-0 vox-gradient opacity-20" />
-
+      
       <header className="max-w-4xl mx-auto w-full flex justify-between items-center mb-16 relative z-10">
         <button onClick={onBack} className="p-3 hover:bg-white/5 rounded-full transition-colors text-vox-paper/50 hover:text-white">
           <ChevronRight className="rotate-180" size={24} />
@@ -2021,23 +2025,23 @@ const FutureSelfCall = ({ user, setUser, onBack, setView }: { user: User, setUse
 
       <div className="flex-1 max-w-4xl mx-auto w-full relative z-10 flex flex-col items-center justify-center pb-32">
         <div className="relative mb-20">
-          <motion.div
-            animate={{
+          <motion.div 
+            animate={{ 
               scale: isModelSpeaking ? [1, 1.1, 1] : 1,
               opacity: isModelSpeaking ? [0.5, 1, 0.5] : 0.5
             }}
             transition={{ repeat: Infinity, duration: 2 }}
             className="absolute -inset-12 bg-vox-accent/20 rounded-full blur-3xl"
           />
-          <motion.div
-            animate={{
+          <motion.div 
+            animate={{ 
               scale: isUserSpeaking ? [1, 1.2, 1] : 1,
             }}
             className="w-48 h-48 rounded-full bg-vox-accent/10 border-2 border-vox-accent/30 flex items-center justify-center relative z-10 overflow-hidden"
           >
             <UserIcon size={80} className="text-vox-accent" />
             {isConnected && (
-              <motion.div
+              <motion.div 
                 animate={{ height: isUserSpeaking ? '60%' : '10%' }}
                 className="absolute bottom-0 left-0 right-0 bg-vox-accent/20"
               />
@@ -2050,8 +2054,8 @@ const FutureSelfCall = ({ user, setUser, onBack, setView }: { user: User, setUse
             {!isConnected ? (isConnecting ? "Establishing Connection..." : "Ready to Connect") : "On Call with Future You"}
           </h3>
           <p className="text-vox-paper/50 max-w-sm mx-auto leading-relaxed">
-            {!isConnected
-              ? "Your future self is waiting to hear your voice. This is an emotional space for encouragement."
+            {!isConnected 
+              ? "Your future self is waiting to hear your voice. This is an emotional space for encouragement." 
               : "I'm here. I can hear you. Tell me what's on your heart today."}
           </p>
           {error && <p className="text-red-400 text-sm">{error}</p>}
@@ -2059,7 +2063,7 @@ const FutureSelfCall = ({ user, setUser, onBack, setView }: { user: User, setUse
 
         <div className="flex items-center gap-8">
           {!isConnected ? (
-            <button
+            <button 
               onClick={startSession}
               disabled={isConnecting}
               className="px-12 py-6 bg-vox-accent text-vox-bg rounded-full font-bold uppercase tracking-[0.2em] text-sm hover:scale-105 active:scale-95 transition-all shadow-xl shadow-vox-accent/20 disabled:opacity-50"
@@ -2067,7 +2071,7 @@ const FutureSelfCall = ({ user, setUser, onBack, setView }: { user: User, setUse
               {isConnecting ? "Connecting..." : "Start Call"}
             </button>
           ) : (
-            <button
+            <button 
               onClick={onBack}
               className="p-8 bg-red-500 text-white rounded-full hover:scale-110 active:scale-90 transition-all shadow-xl shadow-red-500/20"
             >
@@ -2123,7 +2127,7 @@ const SanctuaryGuide = ({ onBack }: { onBack: () => void }) => {
   return (
     <div className="min-h-screen bg-vox-bg text-vox-paper p-6 relative overflow-hidden flex flex-col">
       <div className="absolute inset-0 vox-gradient opacity-20" />
-
+      
       <header className="max-w-4xl mx-auto w-full flex justify-between items-center mb-12 relative z-10">
         <button onClick={onBack} className="p-3 hover:bg-white/5 rounded-full transition-colors text-vox-paper/50 hover:text-white">
           <ChevronRight className="rotate-180" size={24} />
@@ -2138,7 +2142,7 @@ const SanctuaryGuide = ({ onBack }: { onBack: () => void }) => {
       <div className="flex-1 max-w-4xl mx-auto w-full relative z-10 overflow-y-auto scrollbar-hide pb-24">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {faqs.map((faq, idx) => (
-            <motion.div
+            <motion.div 
               key={idx}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -2166,7 +2170,7 @@ const SanctuaryGuide = ({ onBack }: { onBack: () => void }) => {
           <p className="text-vox-paper/60 max-w-md mx-auto mb-8">
             Your journey is unique. If you need more specific guidance, our AI Companion is always available to discuss your progress and challenges.
           </p>
-          <button
+          <button 
             onClick={() => onBack()}
             className="px-8 py-3 bg-vox-accent text-vox-bg rounded-full font-bold uppercase tracking-widest text-xs hover:scale-105 transition-all"
           >
@@ -2190,32 +2194,22 @@ const LandingPage = ({ onStart, isLoggedIn }: { onStart: () => void, isLoggedIn:
           <span className="text-[8px] uppercase tracking-[0.4em] text-vox-accent font-bold mt-1">Courage Companion</span>
         </div>
       </div>
-      <div className="flex items-center gap-4">
-        {isLoggedIn && (
-          <button
-            onClick={logOut}
-            className="text-vox-paper/50 hover:text-white uppercase text-[10px] font-bold tracking-widest transition-colors mr-2"
-          >
-            Sign Out
-          </button>
-        )}
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={onStart}
-          className="px-6 py-2 rounded-full border border-vox-accent/30 bg-vox-accent/5 text-vox-accent text-xs font-bold uppercase tracking-widest hover:bg-vox-accent/20 transition-all"
-        >
-          {isLoggedIn ? 'Dashboard' : 'Sign In'}
-        </motion.button>
-      </div>
+      <motion.button 
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        onClick={onStart}
+        className="px-6 py-2 rounded-full border border-vox-accent/30 bg-vox-accent/5 text-vox-accent text-xs font-bold uppercase tracking-widest hover:bg-vox-accent/20 transition-all"
+      >
+        {isLoggedIn ? 'Dashboard' : 'Sign In'}
+      </motion.button>
     </nav>
 
     {/* Hero Section */}
     <section className="relative min-h-screen flex flex-col items-center justify-center px-6 overflow-hidden">
       <div className="absolute inset-0 vox-gradient opacity-60" />
       <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-5 pointer-events-none" />
-
-      <motion.div
+      
+      <motion.div 
         initial={{ opacity: 0, y: 30 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
@@ -2230,17 +2224,17 @@ const LandingPage = ({ onStart, isLoggedIn }: { onStart: () => void, isLoggedIn:
         >
           The Future of Emotional Courage
         </motion.div>
-
+        
         <h1 className="text-8xl md:text-[12rem] mb-6 tracking-tighter leading-none font-serif">
           VOXARA
         </h1>
-
+        
         <p className="text-xl md:text-3xl font-serif italic text-vox-paper/80 mb-12 max-w-3xl mx-auto leading-relaxed">
           "From silence to strength — at your pace, with real people by your side."
         </p>
-
+        
         <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
-          <button
+          <button 
             onClick={onStart}
             className="group relative px-10 py-5 bg-vox-accent text-vox-bg rounded-full font-bold text-lg overflow-hidden transition-all hover:scale-105 active:scale-95 shadow-[0_0_40px_rgba(45,212,191,0.3)]"
           >
@@ -2248,8 +2242,8 @@ const LandingPage = ({ onStart, isLoggedIn }: { onStart: () => void, isLoggedIn:
               {isLoggedIn ? 'Enter Your Sanctuary' : 'Begin Your Journey'} <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
             </span>
           </button>
-
-          <motion.button
+          
+          <motion.button 
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             className="px-10 py-5 rounded-full border border-white/10 bg-white/5 font-bold text-lg hover:bg-white/10 transition-all"
@@ -2259,14 +2253,14 @@ const LandingPage = ({ onStart, isLoggedIn }: { onStart: () => void, isLoggedIn:
         </div>
       </motion.div>
 
-      <motion.div
+      <motion.div 
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 2, duration: 1 }}
         className="absolute bottom-12 left-1/2 -translate-x-1/2 flex flex-col items-center gap-4"
       >
         <div className="text-vox-paper/30 text-[10px] uppercase tracking-[0.5em]">Explore the Silence</div>
-        <motion.div
+        <motion.div 
           animate={{ y: [0, 10, 0] }}
           transition={{ repeat: Infinity, duration: 2 }}
           className="w-px h-12 bg-gradient-to-b from-vox-accent to-transparent"
@@ -2358,7 +2352,7 @@ const LandingPage = ({ onStart, isLoggedIn }: { onStart: () => void, isLoggedIn:
           <div className="relative">
             <div className="aspect-square rounded-[3rem] overflow-hidden glass-dark border border-white/10 flex items-center justify-center">
               <div className="absolute inset-0 vox-gradient opacity-20" />
-              <motion.div
+              <motion.div 
                 animate={{ scale: [1, 1.1, 1], rotate: [0, 5, 0] }}
                 transition={{ repeat: Infinity, duration: 10 }}
                 className="relative z-10"
@@ -2374,7 +2368,7 @@ const LandingPage = ({ onStart, isLoggedIn }: { onStart: () => void, isLoggedIn:
     {/* Final CTA */}
     <section className="py-40 text-center px-6">
       <h2 className="text-6xl md:text-8xl mb-12 font-serif italic">Ready to be heard?</h2>
-      <button
+      <button 
         onClick={onStart}
         className="px-12 py-6 bg-vox-paper text-vox-ink rounded-full font-bold text-2xl hover:scale-105 active:scale-95 transition-all"
       >
@@ -2396,7 +2390,6 @@ const AuthPage = () => {
   const [name, setName] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -2415,181 +2408,77 @@ const AuthPage = () => {
     }
   };
 
-  const handleGoogleSignIn = async () => {
-    setError('');
-    setLoading(true);
-    try {
-      await signInWithGoogle();
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
-    <div className="min-h-screen flex items-center justify-center p-6 relative overflow-hidden bg-[#020202]">
-      {/* Dynamic Background */}
-      <div className="absolute inset-0 z-0">
-        <motion.div
-          animate={{ opacity: [0.1, 0.3, 0.1], scale: [1, 1.1, 1] }}
-          transition={{ duration: 15, repeat: Infinity, ease: 'linear' }}
-          className="absolute -top-[20%] -left-[10%] w-[60%] h-[80%] bg-vox-accent/20 blur-[150px] rounded-full"
-        />
-        <motion.div
-          animate={{ opacity: [0.1, 0.2, 0.1], scale: [1, 1.2, 1] }}
-          transition={{ duration: 20, repeat: Infinity, ease: 'linear', delay: 5 }}
-          className="absolute top-[20%] -right-[10%] w-[50%] h-[70%] bg-blue-500/20 blur-[150px] rounded-full"
-        />
-        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-[0.03] pointer-events-none" />
-      </div>
-
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={isLogin ? 'login' : 'signup'}
-          initial={{ opacity: 0, y: 30, filter: 'blur(10px)' }}
-          animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-          exit={{ opacity: 0, y: -30, filter: 'blur(10px)' }}
-          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-          className="w-full max-w-md relative z-10"
-        >
-          {/* Logo & Header */}
-          <div className="flex flex-col items-center mb-10">
-            <motion.div
-              initial={{ scale: 0.8 }}
-              animate={{ scale: 1 }}
-              transition={{ type: 'spring', damping: 15 }}
-              className="w-20 h-20 rounded-3xl bg-white/5 border border-white/10 flex items-center justify-center mb-6 shadow-2xl backdrop-blur-xl"
-            >
-              <VoxaraLogo className="w-12 h-12" />
-            </motion.div>
-            <h2 className="text-4xl text-center text-white font-light tracking-tighter mb-2">
-              {isLogin ? 'Welcome Back.' : 'Begin Your Journey.'}
-            </h2>
-            <p className="text-vox-paper/50 italic font-serif text-center text-lg">
-              {isLogin ? 'The sanctuary is ready for you.' : 'Step out of the silence.'}
-            </p>
+    <div className="min-h-screen flex items-center justify-center px-6 relative">
+      <div className="absolute inset-0 vox-gradient opacity-20" />
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="glass-dark p-10 rounded-3xl w-full max-w-md relative z-10"
+      >
+        <h2 className="text-4xl mb-8 text-center">{isLogin ? 'Welcome Back' : 'Join the Circle'}</h2>
+        
+        {error && (
+          <div className="mb-6 p-4 bg-red-500/20 border border-red-500/50 rounded-xl text-red-200 text-sm">
+            {error}
           </div>
+        )}
 
-          <div className="p-8 sm:p-12 rounded-[2.5rem] bg-white/5 backdrop-blur-2xl border border-white/10 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.5)]">
-            {error && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                className="mb-8 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-start gap-3"
-              >
-                <AlertCircle className="text-red-400 shrink-0 mt-0.5" size={18} />
-                <p className="text-red-200 text-sm leading-relaxed">{error}</p>
-              </motion.div>
-            )}
-
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {!isLogin && (
-                <div className="space-y-2">
-                  <label className="text-[10px] uppercase tracking-[0.2em] font-bold text-vox-paper/40 ml-1">Preferred Name</label>
-                  <div className="relative group">
-                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-vox-paper/30 group-focus-within:text-vox-accent transition-colors">
-                      <UserIcon size={18} />
-                    </div>
-                    <input
-                      type="text"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      className="w-full bg-white/[0.03] border border-white/10 rounded-2xl pl-12 pr-4 py-4 text-white focus:outline-none focus:border-vox-accent hover:border-white/20 transition-all placeholder:text-white/20"
-                      placeholder="How should we call you?"
-                      required={!isLogin}
-                    />
-                  </div>
-                </div>
-              )}
-
-              <div className="space-y-2">
-                <label className="text-[10px] uppercase tracking-[0.2em] font-bold text-vox-paper/40 ml-1">Email Address</label>
-                <div className="relative group">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-vox-paper/30 group-focus-within:text-vox-accent transition-colors">
-                    <Mail size={18} />
-                  </div>
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full bg-white/[0.03] border border-white/10 rounded-2xl pl-12 pr-4 py-4 text-white focus:outline-none focus:border-vox-accent hover:border-white/20 transition-all placeholder:text-white/20"
-                    placeholder="your@email.com"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-[10px] uppercase tracking-[0.2em] font-bold text-vox-paper/40 ml-1">Password</label>
-                <div className="relative group">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-vox-paper/30 group-focus-within:text-vox-accent transition-colors">
-                    <Lock size={18} />
-                  </div>
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="w-full bg-white/[0.03] border border-white/10 rounded-2xl pl-12 pr-12 py-4 text-white focus:outline-none focus:border-vox-accent hover:border-white/20 transition-all placeholder:text-white/20"
-                    placeholder="••••••••"
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-0 pr-4 flex items-center text-vox-paper/30 hover:text-white transition-colors"
-                  >
-                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                  </button>
-                </div>
-              </div>
-
-              <motion.button
-                whileHover={{ scale: 1.01, backgroundColor: 'rgba(45, 212, 191, 0.9)' }}
-                whileTap={{ scale: 0.98 }}
-                disabled={loading}
-                className="w-full py-4 bg-vox-accent text-vox-bg rounded-2xl font-bold text-sm tracking-widest uppercase shadow-[0_0_30px_rgba(45,212,191,0.2)] disabled:opacity-50 transition-all flex items-center justify-center gap-2 mt-4"
-              >
-                {loading ? <Activity className="animate-spin" size={18} /> : (isLogin ? 'Enter Sanctuary' : 'Create Account')}
-              </motion.button>
-            </form>
-
-            <div className="mt-8 flex items-center gap-4">
-              <div className="h-px bg-white/10 flex-1" />
-              <span className="text-[10px] text-vox-paper/30 uppercase tracking-[0.2em] font-bold">OR</span>
-              <div className="h-px bg-white/10 flex-1" />
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {!isLogin && (
+            <div>
+              <label className="block text-xs uppercase tracking-widest text-vox-paper/50 mb-2">Full Name</label>
+              <motion.input 
+                whileFocus={{ scale: 1.01, borderColor: "rgba(45, 212, 191, 0.5)" }}
+                type="text" 
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-vox-accent transition-all"
+                placeholder="How should we call you?"
+                required={!isLogin}
+              />
             </div>
-
-            <motion.button
-              type="button"
-              whileHover={{ scale: 1.01, backgroundColor: 'rgba(255, 255, 255, 0.1)' }}
-              whileTap={{ scale: 0.98 }}
-              onClick={handleGoogleSignIn}
-              disabled={loading}
-              className="mt-8 w-full py-4 bg-white/5 border border-white/10 text-white rounded-2xl font-medium transition-all flex items-center justify-center gap-3 disabled:opacity-50 hover:border-white/20"
-            >
-              <svg viewBox="0 0 24 24" className="w-5 h-5" xmlns="http://www.w3.org/2000/svg">
-                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
-                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
-                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
-                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
-              </svg>
-              Continue with Google
-            </motion.button>
+          )}
+          <div>
+            <label className="block text-xs uppercase tracking-widest text-vox-paper/50 mb-2">Email Address</label>
+            <motion.input 
+              whileFocus={{ scale: 1.01, borderColor: "rgba(45, 212, 191, 0.5)" }}
+              type="email" 
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-vox-accent transition-all"
+              placeholder="your@email.com"
+              required
+            />
           </div>
-
-          <div className="mt-8 text-center text-vox-paper/50">
-            {isLogin ? "Don't have an account?" : "Already have an account?"}{' '}
-            <button
-              type="button"
-              onClick={() => setIsLogin(!isLogin)}
-              className="text-white hover:text-vox-accent font-bold transition-colors uppercase text-xs tracking-widest ml-2"
-            >
-              {isLogin ? 'Sign Up' : 'Sign In'}
-            </button>
+          <div>
+            <label className="block text-xs uppercase tracking-widest text-vox-paper/50 mb-2">Password</label>
+            <motion.input 
+              whileFocus={{ scale: 1.01, borderColor: "rgba(45, 212, 191, 0.5)" }}
+              type="password" 
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-vox-accent transition-all"
+              placeholder="••••••••"
+              required
+            />
           </div>
-        </motion.div>
-      </AnimatePresence>
+          <motion.button 
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            disabled={loading}
+            className="w-full py-4 bg-vox-accent text-white rounded-xl font-semibold hover:bg-vox-accent/90 transition-colors disabled:opacity-50 shadow-lg shadow-vox-accent/20"
+          >
+            {loading ? 'Processing...' : (isLogin ? 'Sign In' : 'Create Account')}
+          </motion.button>
+        </form>
+        <p className="mt-8 text-center text-vox-paper/40 text-sm">
+          {isLogin ? "Don't have an account?" : "Already have an account?"}{' '}
+          <button onClick={() => setIsLogin(!isLogin)} className="text-vox-accent font-medium">
+            {isLogin ? 'Sign Up' : 'Sign In'}
+          </button>
+        </p>
+      </motion.div>
     </div>
   );
 };
@@ -2601,15 +2490,15 @@ const BackgroundEffects = () => {
       <div className="absolute inset-0 grain-overlay opacity-[0.03] z-50" />
 
       {/* Dynamic Gradient Orbs */}
-      <motion.div
+      <motion.div 
         initial={{ opacity: 0, scale: 0.8 }}
-        animate={{
+        animate={{ 
           opacity: 1,
           scale: [1, 1.2, 1],
           x: [0, 100, 0],
           y: [0, 50, 0],
         }}
-        transition={{
+        transition={{ 
           opacity: { duration: 2 },
           scale: { duration: 20, repeat: Infinity, ease: "linear" },
           x: { duration: 20, repeat: Infinity, ease: "linear" },
@@ -2617,15 +2506,15 @@ const BackgroundEffects = () => {
         }}
         className="absolute -top-1/4 -left-1/4 w-1/2 h-1/2 bg-vox-accent/10 rounded-full blur-[120px]"
       />
-      <motion.div
+      <motion.div 
         initial={{ opacity: 0, scale: 0.8 }}
-        animate={{
+        animate={{ 
           opacity: 1,
           scale: [1, 1.3, 1],
           x: [0, -80, 0],
           y: [0, 100, 0],
         }}
-        transition={{
+        transition={{ 
           opacity: { duration: 2.5 },
           scale: { duration: 25, repeat: Infinity, ease: "linear" },
           x: { duration: 25, repeat: Infinity, ease: "linear" },
@@ -2633,9 +2522,9 @@ const BackgroundEffects = () => {
         }}
         className="absolute -bottom-1/4 -right-1/4 w-1/2 h-1/2 bg-blue-500/10 rounded-full blur-[120px]"
       />
-
+      
       {/* Vocal Waves Background */}
-      <motion.div
+      <motion.div 
         initial={{ opacity: 0 }}
         animate={{ opacity: 0.2 }}
         transition={{ duration: 3 }}
@@ -2673,8 +2562,8 @@ const BackgroundEffects = () => {
         </svg>
       </motion.div>
 
-      <motion.div
-        animate={{
+      <motion.div 
+        animate={{ 
           opacity: [0.1, 0.3, 0.1],
         }}
         transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
@@ -2686,20 +2575,20 @@ const BackgroundEffects = () => {
         {[...Array(25)].map((_, i) => (
           <motion.div
             key={i}
-            initial={{
-              x: Math.random() * 100 + "%",
+            initial={{ 
+              x: Math.random() * 100 + "%", 
               y: Math.random() * 100 + "%",
               opacity: 0,
               scale: Math.random() * 0.5 + 0.5
             }}
-            animate={{
+            animate={{ 
               y: [null, "-40px", "40px", null],
               opacity: [0, 0.4, 0],
               scale: [null, 1.2, 0.8, null]
             }}
-            transition={{
-              duration: 8 + Math.random() * 12,
-              repeat: Infinity,
+            transition={{ 
+              duration: 8 + Math.random() * 12, 
+              repeat: Infinity, 
               delay: Math.random() * 10,
               ease: "easeInOut"
             }}
@@ -2714,13 +2603,13 @@ const BackgroundEffects = () => {
           <motion.div
             key={i}
             initial={{ scale: 0.8, opacity: 0 }}
-            animate={{
+            animate={{ 
               scale: [0.8, 1.5],
               opacity: [0, 0.1, 0]
             }}
-            transition={{
-              duration: 8,
-              repeat: Infinity,
+            transition={{ 
+              duration: 8, 
+              repeat: Infinity, 
               delay: i * 2.5,
               ease: "easeOut"
             }}
@@ -2730,14 +2619,14 @@ const BackgroundEffects = () => {
       </div>
 
       {/* Silence to Strength: Light Beam */}
-      <motion.div
+      <motion.div 
         initial={{ opacity: 0, x: 100 }}
-        animate={{
+        animate={{ 
           opacity: [0.05, 0.2, 0.05],
           rotate: [0, 5, 0],
           x: 0
         }}
-        transition={{
+        transition={{ 
           opacity: { duration: 15, repeat: Infinity, ease: "easeInOut" },
           rotate: { duration: 15, repeat: Infinity, ease: "easeInOut" },
           x: { duration: 2, ease: "easeOut" }
@@ -2768,26 +2657,26 @@ const StrengthMap = ({ history }: { history: CourageHistoryEntry[] }) => {
         <AreaChart data={data} margin={{ top: 20, right: 20, left: -20, bottom: 20 }}>
           <defs>
             <linearGradient id="colorLevel" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#2dd4bf" stopOpacity={0.4} />
-              <stop offset="95%" stopColor="#2dd4bf" stopOpacity={0} />
+              <stop offset="5%" stopColor="#2dd4bf" stopOpacity={0.4}/>
+              <stop offset="95%" stopColor="#2dd4bf" stopOpacity={0}/>
             </linearGradient>
           </defs>
           <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
-          <XAxis
-            dataKey="name"
+          <XAxis 
+            dataKey="name" 
             axisLine={false}
             tickLine={false}
             tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 10, fontWeight: 600 }}
             dy={15}
           />
-          <YAxis
-            domain={[0, 100]}
+          <YAxis 
+            domain={[0, 100]} 
             axisLine={false}
             tickLine={false}
             tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 10, fontWeight: 600 }}
             dx={-10}
           />
-          <Tooltip
+          <Tooltip 
             cursor={{ stroke: '#2dd4bf', strokeWidth: 1, strokeDasharray: '4 4' }}
             content={({ active, payload }) => {
               if (active && payload && payload.length) {
@@ -2805,12 +2694,12 @@ const StrengthMap = ({ history }: { history: CourageHistoryEntry[] }) => {
               return null;
             }}
           />
-          <Area
-            type="monotone"
-            dataKey="level"
-            stroke="#2dd4bf"
-            fillOpacity={1}
-            fill="url(#colorLevel)"
+          <Area 
+            type="monotone" 
+            dataKey="level" 
+            stroke="#2dd4bf" 
+            fillOpacity={1} 
+            fill="url(#colorLevel)" 
             strokeWidth={4}
             animationDuration={2000}
             activeDot={{ r: 6, fill: '#2dd4bf', stroke: '#020617', strokeWidth: 2 }}
@@ -2824,7 +2713,7 @@ const StrengthMap = ({ history }: { history: CourageHistoryEntry[] }) => {
 const ExitPrompt = ({ onConfirm, onCancel }: { onConfirm: () => void, onCancel: () => void }) => {
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-vox-bg/90 backdrop-blur-xl">
-      <motion.div
+      <motion.div 
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         className="glass-dark p-12 rounded-[3rem] border border-vox-accent/30 max-w-lg w-full text-center space-y-8 shadow-2xl"
@@ -2839,13 +2728,13 @@ const ExitPrompt = ({ onConfirm, onCancel }: { onConfirm: () => void, onCancel: 
           </p>
         </div>
         <div className="flex flex-col gap-4">
-          <button
+          <button 
             onClick={onConfirm}
             className="w-full py-5 bg-vox-accent text-vox-bg rounded-2xl font-bold uppercase tracking-widest hover:bg-vox-accent/80 transition-all"
           >
             Yes, I am ready to exit
           </button>
-          <button
+          <button 
             onClick={onCancel}
             className="w-full py-5 bg-white/5 text-vox-paper/40 rounded-2xl font-bold uppercase tracking-widest hover:bg-white/10 transition-all"
           >
@@ -2868,7 +2757,7 @@ const ExitScreen = ({ onRestart }: { onRestart: () => void }) => {
         <h1 className="text-6xl font-light tracking-tighter">Farewell, Seeker</h1>
         <p className="text-xl text-vox-paper/40 font-serif italic">The sanctuary will always be here, but your strength is now your own.</p>
       </motion.div>
-
+      
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -2918,21 +2807,21 @@ const FearMapEvolution = ({ history }: { history: CourageHistoryEntry[] }) => {
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={data} margin={{ top: 20, right: 20, left: -20, bottom: 20 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
-          <XAxis
-            dataKey="name"
+          <XAxis 
+            dataKey="name" 
             axisLine={false}
             tickLine={false}
             tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 10, fontWeight: 600 }}
             dy={15}
           />
-          <YAxis
-            domain={[0, 100]}
+          <YAxis 
+            domain={[0, 100]} 
             axisLine={false}
             tickLine={false}
             tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 10, fontWeight: 600 }}
             dx={-10}
           />
-          <Tooltip
+          <Tooltip 
             content={({ active, payload, label }) => {
               if (active && payload && payload.length) {
                 return (
@@ -2958,13 +2847,13 @@ const FearMapEvolution = ({ history }: { history: CourageHistoryEntry[] }) => {
             }}
           />
           {categories.map(cat => (
-            <Area
+            <Area 
               key={cat.key}
-              type="monotone"
-              dataKey={cat.key}
-              stroke={cat.color}
-              fillOpacity={0.05}
-              fill={cat.color}
+              type="monotone" 
+              dataKey={cat.key} 
+              stroke={cat.color} 
+              fillOpacity={0.05} 
+              fill={cat.color} 
               strokeWidth={2}
               stackId="1"
               animationDuration={2000}
@@ -2972,7 +2861,7 @@ const FearMapEvolution = ({ history }: { history: CourageHistoryEntry[] }) => {
           ))}
         </AreaChart>
       </ResponsiveContainer>
-
+      
       <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 flex gap-6">
         {categories.map(cat => (
           <div key={cat.key} className="flex items-center gap-2">
@@ -2998,12 +2887,12 @@ const ThoughtOfTheDay = () => {
     "Your story matters, even the parts you haven't whispered yet.",
     "Healing is not linear, but every step counts."
   ];
-
+  
   const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000);
   const thought = thoughts[dayOfYear % thoughts.length];
 
   return (
-    <motion.div
+    <motion.div 
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       className="w-full pt-20 pb-12 px-6 text-center border-b border-white/5 bg-gradient-to-b from-vox-accent/5 to-transparent relative overflow-hidden"
@@ -3073,14 +2962,14 @@ const Home = ({ user, setView }: { user: User, setView: (v: AppState) => void })
   ];
 
   return (
-    <div
-      className="min-h-screen bg-vox-bg text-vox-paper overflow-hidden relative"
+    <div 
+      className="min-h-screen bg-vox-bg text-vox-paper overflow-hidden relative" 
       onClick={() => setActiveNode(null)}
       onMouseMove={handleMouseMove}
     >
       <Starfield />
       <FloatingParticles />
-
+      
       {/* Dynamic Nebula Background */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         {/* Glows centered around priority nodes */}
@@ -3099,7 +2988,7 @@ const Home = ({ user, setView }: { user: User, setView: (v: AppState) => void })
           <h1 className="text-5xl font-light tracking-tighter">
             Your voice exists. <span className="text-vox-accent font-serif italic">Even in the quiet.</span>
           </h1>
-          <motion.p
+          <motion.p 
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.5 }}
@@ -3112,7 +3001,7 @@ const Home = ({ user, setView }: { user: User, setView: (v: AppState) => void })
       </div>
 
       {/* Constellation Container */}
-      <motion.div
+      <motion.div 
         className="absolute inset-0 flex items-center justify-center pt-20"
         animate={{ x: mousePos.x, y: mousePos.y }}
         transition={{ type: 'spring', stiffness: 50, damping: 20 }}
@@ -3156,18 +3045,18 @@ const Home = ({ user, setView }: { user: User, setView: (v: AppState) => void })
               key={node.id}
               initial={{ opacity: 0, scale: 0 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{
+              transition={{ 
                 type: 'spring',
                 stiffness: 100,
                 damping: 15,
-                delay: 0.3 + idx * 0.04
+                delay: 0.3 + idx * 0.04 
               }}
               style={{ left: `${node.x}%`, top: `${node.y}%` }}
               className="absolute -translate-x-1/2 -translate-y-1/2 group z-20"
             >
               {/* Star Glow Effect */}
               <div className={`absolute inset-0 bg-white blur-2xl transition-all duration-700 rounded-full ${node.size === 'xl' ? 'scale-[5] opacity-20' : node.size === 'large' ? 'scale-[4] opacity-15' : node.priority ? 'scale-[3.5] opacity-10' : 'scale-[2.5] opacity-0'} ${activeNode === node.id ? 'opacity-30 scale-[5.5]' : ''}`} />
-
+              
               {/* Node Interaction Area */}
               <button
                 onClick={(e) => {
@@ -3211,7 +3100,7 @@ const Home = ({ user, setView }: { user: User, setView: (v: AppState) => void })
                           {node.desc}
                         </p>
                       </div>
-                      <button
+                      <button 
                         onClick={() => setView(node.id as AppState)}
                         className="w-full py-4 bg-white text-vox-bg rounded-2xl text-[10px] font-bold uppercase tracking-[0.3em] active:scale-[0.98] transition-all shadow-lg shadow-white/10 flex items-center justify-center gap-2"
                       >
@@ -3239,7 +3128,7 @@ const Dashboard = ({ user, setView, setUser }: { user: User, setView: (v: AppSta
     <div className="min-h-screen bg-vox-bg text-vox-paper selection:bg-vox-accent/30 overflow-x-hidden">
       <FloatingParticles />
       <BackgroundEffects />
-
+      
       <div className="relative z-10 p-6 max-w-7xl mx-auto pt-24 pb-48">
         <header className="mb-20 flex flex-col md:flex-row md:items-end justify-between gap-8">
           <div>
@@ -3261,7 +3150,7 @@ const Dashboard = ({ user, setView, setUser }: { user: User, setView: (v: AppSta
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
           {/* Strength Map Section */}
-          <motion.div
+          <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="lg:col-span-8 glass-dark p-12 rounded-[4rem] border border-white/5 relative overflow-hidden group"
@@ -3284,7 +3173,7 @@ const Dashboard = ({ user, setView, setUser }: { user: User, setView: (v: AppSta
           {/* Quick Stats Sidebar */}
           <div className="lg:col-span-4 space-y-12">
             {/* Echo Chamber Section */}
-            <motion.div
+            <motion.div 
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.1 }}
@@ -3314,8 +3203,8 @@ const Dashboard = ({ user, setView, setUser }: { user: User, setView: (v: AppSta
                   </div>
                 </div>
               </div>
-              <button
-                onClick={() => setView('echo')}
+              <button 
+                onClick={() => setView('echo')} 
                 className="mt-12 w-full py-5 rounded-2xl bg-vox-accent text-vox-bg text-xs font-bold uppercase tracking-[0.3em] hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-vox-accent/10"
               >
                 Open History
@@ -3324,7 +3213,7 @@ const Dashboard = ({ user, setView, setUser }: { user: User, setView: (v: AppSta
           </div>
 
           {/* Maps Section */}
-          <motion.div
+          <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
@@ -3343,8 +3232,8 @@ const Dashboard = ({ user, setView, setUser }: { user: User, setView: (v: AppSta
             <div className="h-[350px] relative z-10">
               <FearMapEvolution history={user.courageHistory || []} />
             </div>
-            <button
-              onClick={() => setView('map')}
+            <button 
+              onClick={() => setView('map')} 
               className="mt-16 w-full py-5 rounded-2xl bg-white/5 border border-white/10 text-xs font-bold uppercase tracking-[0.3em] text-vox-paper/60 hover:bg-vox-accent hover:text-vox-bg hover:border-vox-accent transition-all"
             >
               Open Full Map
@@ -3352,7 +3241,7 @@ const Dashboard = ({ user, setView, setUser }: { user: User, setView: (v: AppSta
           </motion.div>
 
           {/* Fear Map Section */}
-          <motion.div
+          <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
@@ -3445,49 +3334,49 @@ const WhisperMode = ({ onBack, user, setUser, safePlayPCM, stopAllAudio, setView
     setMicError(null);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
-        ? 'audio/webm;codecs=opus'
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') 
+        ? 'audio/webm;codecs=opus' 
         : 'audio/webm';
       mediaRecorderRef.current = new MediaRecorder(stream, { mimeType });
       audioChunksRef.current = [];
 
       mediaRecorderRef.current.ondataavailable = (e) => audioChunksRef.current.push(e.data);
       mediaRecorderRef.current.onstop = async () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
-        const reader = new FileReader();
-        reader.readAsDataURL(audioBlob);
-        reader.onloadend = async () => {
-          const dataUrl = reader.result as string;
-          const base64Audio = dataUrl.split(',')[1];
-          setRecordedAudio(dataUrl);
-          setIsTranscribing(true);
-
-          try {
-            if (practiceWord) {
-              const feedback = await analyzePracticeAudio(practiceWord, base64Audio, mimeType, mode);
-              setPracticeFeedback(feedback);
-            } else {
-              const text = await transcribeAudio(base64Audio, mimeType);
-              setTranscription(text);
-
-              // Check for safe word
-              if (user.safeWord && text.toLowerCase().includes(user.safeWord.toLowerCase())) {
-                setView('anchor');
-                return;
-              }
-
-              // Get AI Insight for standard recording
-              const insight = await generateVoiceInsight(text, base64Audio, mimeType, mode);
-              setPracticeFeedback(insight); // Reuse practiceFeedback for the insight
+      const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
+      const reader = new FileReader();
+      reader.readAsDataURL(audioBlob);
+      reader.onloadend = async () => {
+        const dataUrl = reader.result as string;
+        const base64Audio = dataUrl.split(',')[1];
+        setRecordedAudio(dataUrl);
+        setIsTranscribing(true);
+        
+        try {
+          if (practiceWord) {
+            const feedback = await analyzePracticeAudio(practiceWord, base64Audio, mimeType, mode);
+            setPracticeFeedback(feedback);
+          } else {
+            const text = await transcribeAudio(base64Audio, mimeType);
+            setTranscription(text);
+            
+            // Check for safe word
+            if (user.safeWord && text.toLowerCase().includes(user.safeWord.toLowerCase())) {
+              setView('anchor');
+              return;
             }
-          } catch (err) {
-            console.error("Whisper recording error:", err);
-            setTranscription("[Error processing audio. Please try again.]");
-          } finally {
-            setIsTranscribing(false);
+
+            // Get AI Insight for standard recording
+            const insight = await generateVoiceInsight(text, base64Audio, mimeType, mode);
+            setPracticeFeedback(insight); // Reuse practiceFeedback for the insight
           }
-        };
+        } catch (err) {
+          console.error("Whisper recording error:", err);
+          setTranscription("[Error processing audio. Please try again.]");
+        } finally {
+          setIsTranscribing(false);
+        }
       };
+    };
 
       mediaRecorderRef.current.start();
       setIsRecording(true);
@@ -3557,14 +3446,14 @@ const WhisperMode = ({ onBack, user, setUser, safePlayPCM, stopAllAudio, setView
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-6 relative overflow-hidden">
       <div className="absolute inset-0 vox-gradient opacity-30" />
-
+      
       <button onClick={() => { stopAllAudio(); onBack(); }} className="absolute top-10 left-10 z-20 flex items-center gap-2 text-vox-paper/50 hover:text-vox-paper">
         <ChevronRight className="rotate-180" size={20} /> Dashboard
       </button>
 
       {!sessionActive ? (
         <div className="text-center relative z-10 max-w-2xl">
-          <motion.div
+          <motion.div 
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
           >
@@ -3573,7 +3462,7 @@ const WhisperMode = ({ onBack, user, setUser, safePlayPCM, stopAllAudio, setView
             </div>
             <h2 className="text-6xl font-light tracking-tighter mb-6">Whisper Ritual</h2>
             <p className="text-vox-paper/40 mb-12 font-serif italic text-xl leading-relaxed">
-              "In the silence of the sanctuary, your voice finds its true resonance.
+              "In the silence of the sanctuary, your voice finds its true resonance. 
               Breath by breath, whisper by whisper, we reclaim our strength."
             </p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
@@ -3593,7 +3482,7 @@ const WhisperMode = ({ onBack, user, setUser, safePlayPCM, stopAllAudio, setView
                 <p className="text-[10px] text-vox-paper/30">Full resonance and emotional clarity.</p>
               </div>
             </div>
-            <button
+            <button 
               onClick={startSession}
               className="px-12 py-5 bg-vox-accent text-vox-bg rounded-full font-bold text-sm uppercase tracking-widest shadow-2xl shadow-vox-accent/20 hover:scale-105 transition-all"
             >
@@ -3606,7 +3495,7 @@ const WhisperMode = ({ onBack, user, setUser, safePlayPCM, stopAllAudio, setView
           <div className="text-center mb-12 relative z-10">
             <div className="flex items-center justify-center gap-4 mb-4">
               <h2 className="text-6xl font-light tracking-tighter capitalize">{mode} Mode</h2>
-              <button
+              <button 
                 onClick={endSession}
                 className="px-4 py-1.5 rounded-full bg-red-500/10 text-red-400 border border-red-500/20 text-[10px] uppercase tracking-widest font-bold hover:bg-red-500/20 transition-all"
               >
@@ -3620,210 +3509,211 @@ const WhisperMode = ({ onBack, user, setUser, safePlayPCM, stopAllAudio, setView
             </p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 w-full max-w-7xl relative z-10">
-            {/* Main Recorder */}
-            <div className="lg:col-span-2 glass-dark rounded-[4rem] p-12 flex flex-col items-center justify-center border border-white/5">
-              <div className="relative flex items-center justify-center mb-12">
-                <AnimatePresence>
-                  {isRecording && (
-                    <motion.div
-                      initial={{ scale: 0.8, opacity: 0 }}
-                      animate={{ scale: 1.8, opacity: 0.1 }}
-                      exit={{ scale: 0.8, opacity: 0 }}
-                      transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
-                      className="absolute w-64 h-64 rounded-full bg-vox-accent"
-                    />
-                  )}
-                </AnimatePresence>
-
-                <motion.button
-                  whileTap={{ scale: 0.9 }}
-                  onClick={isRecording ? stopRecording : startRecording}
-                  className={`relative z-10 w-40 h-40 rounded-full flex items-center justify-center transition-all shadow-2xl ${isRecording ? 'bg-red-500 shadow-red-500/20' : 'bg-vox-accent shadow-vox-accent/20'}`}
-                >
-                  {isRecording ? <Square size={48} fill="white" /> : <Mic size={48} fill="white" />}
-                </motion.button>
-              </div>
-
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 w-full max-w-7xl relative z-10">
+        {/* Main Recorder */}
+        <div className="lg:col-span-2 glass-dark rounded-[4rem] p-12 flex flex-col items-center justify-center border border-white/5">
+          <div className="relative flex items-center justify-center mb-12">
+            <AnimatePresence>
               {isRecording && (
-                <div className="mb-8">
-                  <Waveform isActive={true} color={mode === 'breath' ? '#60a5fa' : '#2DD4BF'} barCount={30} />
-                  <div className="text-center mt-4 text-[10px] uppercase tracking-[0.3em] text-vox-paper/40 font-bold">
-                    Capturing your {mode}...
-                  </div>
-                </div>
+                <motion.div 
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1.8, opacity: 0.1 }}
+                  exit={{ scale: 0.8, opacity: 0 }}
+                  transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
+                  className="absolute w-64 h-64 rounded-full bg-vox-accent"
+                />
               )}
+            </AnimatePresence>
+            
+            <motion.button 
+              whileTap={{ scale: 0.9 }}
+              onClick={isRecording ? stopRecording : startRecording}
+              className={`relative z-10 w-40 h-40 rounded-full flex items-center justify-center transition-all shadow-2xl ${isRecording ? 'bg-red-500 shadow-red-500/20' : 'bg-vox-accent shadow-vox-accent/20'}`}
+            >
+              {isRecording ? <Square size={48} fill="white" /> : <Mic size={48} fill="white" />}
+            </motion.button>
+          </div>
 
-              {micError && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="mb-8 p-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-500 text-xs flex items-center gap-3"
-                >
-                  <AlertCircle size={16} />
-                  {micError}
-                </motion.div>
-              )}
-
-              <div className="flex flex-col items-center gap-4 mb-12">
-                <div className="text-7xl font-mono tracking-tighter text-vox-paper flex items-baseline gap-3">
-                  <span className="text-vox-accent tabular-nums">{formatTime(timer)}</span>
-                  <span className="text-xs font-sans uppercase tracking-[0.3em] text-vox-paper/20 font-bold">Duration</span>
-                </div>
-
-                <AnimatePresence>
-                  {timer > 0 && (
-                    <motion.button
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: 10 }}
-                      onClick={resetRecording}
-                      className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-[10px] uppercase tracking-widest text-vox-paper/40 hover:text-vox-paper hover:bg-white/10 transition-all"
-                    >
-                      <RotateCcw size={12} /> {isRecording ? 'Cancel Recording' : 'Reset Session'}
-                    </motion.button>
-                  )}
-                </AnimatePresence>
+          {isRecording && (
+            <div className="mb-8">
+              <Waveform isActive={true} color={mode === 'breath' ? '#60a5fa' : '#2DD4BF'} barCount={30} />
+              <div className="text-center mt-4 text-[10px] uppercase tracking-[0.3em] text-vox-paper/40 font-bold">
+                Capturing your {mode}...
               </div>
+            </div>
+          )}
 
-              {isTranscribing && (
-                <div className="text-vox-accent text-sm animate-pulse mb-8 font-bold tracking-widest uppercase">Analyzing your voice...</div>
-              )}
+          {micError && (
+            <motion.div 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-8 p-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-500 text-xs flex items-center gap-3"
+            >
+              <AlertCircle size={16} />
+              {micError}
+            </motion.div>
+          )}
 
-              {(transcription || practiceFeedback) && !isRecording && (
-                <motion.div
+          <div className="flex flex-col items-center gap-4 mb-12">
+            <div className="text-7xl font-mono tracking-tighter text-vox-paper flex items-baseline gap-3">
+              <span className="text-vox-accent tabular-nums">{formatTime(timer)}</span>
+              <span className="text-xs font-sans uppercase tracking-[0.3em] text-vox-paper/20 font-bold">Duration</span>
+            </div>
+            
+            <AnimatePresence>
+              {timer > 0 && (
+                <motion.button 
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className={`w-full glass p-8 rounded-3xl text-center border mb-8 ${practiceFeedback ? 'border-emerald-500/30 bg-emerald-500/5' : 'border-vox-accent/10'}`}
+                  exit={{ opacity: 0, y: 10 }}
+                  onClick={resetRecording}
+                  className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-[10px] uppercase tracking-widest text-vox-paper/40 hover:text-vox-paper hover:bg-white/10 transition-all"
                 >
-                  <div className="flex items-center justify-center gap-2 mb-4">
-                    {practiceFeedback ? <Sparkles className="text-emerald-400" size={16} /> : <Activity className="text-vox-accent" size={16} />}
-                    <div className={`text-[10px] uppercase tracking-widest font-bold ${practiceFeedback ? 'text-emerald-400' : 'text-vox-accent'}`}>
-                      {practiceFeedback ? 'AI Courage Analysis' : 'Transcription'}
-                    </div>
-                  </div>
-                  <p className="font-serif italic text-2xl leading-relaxed mb-6">
-                    "{transcription || practiceFeedback}"
-                  </p>
-
-                  <button
-                    onClick={saveNote}
-                    disabled={isSaving}
-                    className="flex items-center gap-2 mx-auto px-8 py-3 bg-vox-accent text-vox-bg rounded-full font-bold hover:scale-105 transition-all disabled:opacity-50 shadow-xl shadow-vox-accent/20"
-                  >
-                    {isSaving ? <Activity className="animate-spin" size={20} /> : <Heart size={20} />}
-                    {isSaving ? 'Saving to Echo Chamber...' : 'Save to Echo Chamber'}
-                  </button>
-                </motion.div>
+                  <RotateCcw size={12} /> {isRecording ? 'Cancel Recording' : 'Reset Session'}
+                </motion.button>
               )}
+            </AnimatePresence>
+          </div>
 
-              <div className="flex gap-4 glass p-2 rounded-full mt-8">
-                {(['breath', 'whisper', 'voice'] as const).map((m) => (
-                  <button
-                    key={m}
-                    onClick={() => {
-                      setMode(m);
-                      setTranscription(null);
-                      setPracticeWord('');
-                      setPracticeFeedback(null);
-                      setTimer(0);
-                    }}
-                    className={`px-8 py-3 rounded-full text-sm font-bold transition-all ${mode === m ? 'bg-vox-accent text-vox-bg' : 'text-vox-paper/40 hover:bg-white/5'}`}
-                  >
-                    {m.charAt(0).toUpperCase() + m.slice(1)}
-                  </button>
-                ))}
+          {isTranscribing && (
+            <div className="text-vox-accent text-sm animate-pulse mb-8 font-bold tracking-widest uppercase">Analyzing your voice...</div>
+          )}
+
+          {(transcription || practiceFeedback) && !isRecording && (
+            <motion.div 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className={`w-full glass p-8 rounded-3xl text-center border mb-8 ${practiceFeedback ? 'border-emerald-500/30 bg-emerald-500/5' : 'border-vox-accent/10'}`}
+            >
+              <div className="flex items-center justify-center gap-2 mb-4">
+                {practiceFeedback ? <Sparkles className="text-emerald-400" size={16} /> : <Activity className="text-vox-accent" size={16} />}
+                <div className={`text-[10px] uppercase tracking-widest font-bold ${practiceFeedback ? 'text-emerald-400' : 'text-vox-accent'}`}>
+                  {practiceFeedback ? 'AI Courage Analysis' : 'Transcription'}
+                </div>
+              </div>
+              <p className="font-serif italic text-2xl leading-relaxed mb-6">
+                "{transcription || practiceFeedback}"
+              </p>
+              
+              <button 
+                onClick={saveNote}
+                disabled={isSaving}
+                className="flex items-center gap-2 mx-auto px-8 py-3 bg-vox-accent text-vox-bg rounded-full font-bold hover:scale-105 transition-all disabled:opacity-50 shadow-xl shadow-vox-accent/20"
+              >
+                {isSaving ? <Activity className="animate-spin" size={20} /> : <Heart size={20} />}
+                {isSaving ? 'Saving to Echo Chamber...' : 'Save to Echo Chamber'}
+              </button>
+            </motion.div>
+          )}
+
+          <div className="flex gap-4 glass p-2 rounded-full mt-8">
+            {(['breath', 'whisper', 'voice'] as const).map((m) => (
+              <button 
+                key={m}
+                onClick={() => {
+                  setMode(m);
+                  setTranscription(null);
+                  setPracticeWord('');
+                  setPracticeFeedback(null);
+                  setTimer(0);
+                }}
+                className={`px-8 py-3 rounded-full text-sm font-bold transition-all ${mode === m ? 'bg-vox-accent text-vox-bg' : 'text-vox-paper/40 hover:bg-white/5'}`}
+              >
+                {m.charAt(0).toUpperCase() + m.slice(1)}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Sidebar: Practice & Recent */}
+        <div className="space-y-8">
+          {/* Practice Feature */}
+          <div className="glass-dark rounded-[3rem] p-10 border border-white/5 flex flex-col">
+            <div className="flex items-center gap-4 mb-8">
+              <div className="w-12 h-12 rounded-2xl bg-vox-accent/10 flex items-center justify-center border border-vox-accent/20">
+                <Sparkles size={24} className="text-vox-accent" />
+              </div>
+              <div className="text-left">
+                <h3 className="text-xl font-light tracking-tighter">Practice Ritual</h3>
+                <p className="text-vox-paper/40 text-[10px] uppercase tracking-widest">Master specific sounds</p>
               </div>
             </div>
 
-            {/* Sidebar: Practice & Recent */}
-            <div className="space-y-8">
-              {/* Practice Feature */}
-              <div className="glass-dark rounded-[3rem] p-10 border border-white/5 flex flex-col">
-                <div className="flex items-center gap-4 mb-8">
-                  <div className="w-12 h-12 rounded-2xl bg-vox-accent/10 flex items-center justify-center border border-vox-accent/20">
-                    <Sparkles size={24} className="text-vox-accent" />
-                  </div>
-                  <div className="text-left">
-                    <h3 className="text-xl font-light tracking-tighter">Practice Ritual</h3>
-                    <p className="text-vox-paper/40 text-[10px] uppercase tracking-widest">Master specific sounds</p>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <label className="text-[10px] uppercase tracking-widest text-vox-paper/30 font-bold">Target Word</label>
-                    <input
-                      type="text"
-                      value={practiceWord}
-                      onChange={(e) => setPracticeWord(e.target.value)}
-                      placeholder="e.g. 'I am brave'"
-                      className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 focus:outline-none focus:border-vox-accent transition-colors text-sm"
-                    />
-                    <p className="text-[10px] text-vox-paper/30 italic">Write a sentence, then hold the record button and speak it. I'll analyze your courage.</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Recent Notes */}
-              <div className="glass-dark rounded-[3rem] p-10 border border-white/5 flex flex-col flex-1">
-                <div className="flex items-center justify-between mb-8">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-2xl bg-vox-paper/5 flex items-center justify-center border border-white/10">
-                      <History size={24} className="text-vox-paper/50" />
-                    </div>
-                    <div className="text-left">
-                      <h3 className="text-xl font-light tracking-tighter">Recent Notes</h3>
-                      <p className="text-vox-paper/40 text-[10px] uppercase tracking-widest">Your journey</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
-                  {user.voiceNotes.length === 0 ? (
-                    <div className="text-center py-12 border-2 border-dashed border-white/5 rounded-3xl">
-                      <p className="text-vox-paper/20 text-xs italic font-serif">No notes saved yet.</p>
-                    </div>
-                  ) : (
-                    user.voiceNotes.slice(0, 5).map((note) => (
-                      <div key={note.id} className="glass p-4 rounded-2xl border border-white/5 flex items-center justify-between group hover:border-vox-accent/30 transition-all">
-                        <div className="flex items-center gap-4">
-                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${note.type === 'breath' ? 'bg-blue-500/10 text-blue-400' :
-                            note.type === 'whisper' ? 'bg-vox-accent/10 text-vox-accent' :
-                              'bg-emerald-500/10 text-emerald-400'
-                            }`}>
-                            {note.type === 'breath' ? <Wind size={18} /> :
-                              note.type === 'whisper' ? <Mic size={18} /> :
-                                <Activity size={18} />}
-                          </div>
-                          <div>
-                            <div className="text-xs font-bold capitalize">{note.type}</div>
-                            <div className="text-[10px] text-vox-paper/40">{formatTime(note.duration)} • {new Date(note.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
-                          </div>
-                        </div>
-                        <button
-                          onClick={() => {
-                            if (note.audioData) {
-                              stopAllAudio();
-                              const audio = new Audio(note.audioData);
-                              audio.play().catch(err => console.error("Playback error:", err));
-                            }
-                          }}
-                          className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:bg-vox-accent hover:text-vox-bg"
-                        >
-                          <Play size={14} />
-                        </button>
-                      </div>
-                    ))
-                  )}
-                </div>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-[10px] uppercase tracking-widest text-vox-paper/30 font-bold">Target Word</label>
+                <input 
+                  type="text"
+                  value={practiceWord}
+                  onChange={(e) => setPracticeWord(e.target.value)}
+                  placeholder="e.g. 'I am brave'"
+                  className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 focus:outline-none focus:border-vox-accent transition-colors text-sm"
+                />
+                <p className="text-[10px] text-vox-paper/30 italic">Write a sentence, then hold the record button and speak it. I'll analyze your courage.</p>
               </div>
             </div>
           </div>
-        </>
-      )}
-    </div>
-  );
+
+          {/* Recent Notes */}
+          <div className="glass-dark rounded-[3rem] p-10 border border-white/5 flex flex-col flex-1">
+            <div className="flex items-center justify-between mb-8">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-vox-paper/5 flex items-center justify-center border border-white/10">
+                  <History size={24} className="text-vox-paper/50" />
+                </div>
+                <div className="text-left">
+                  <h3 className="text-xl font-light tracking-tighter">Recent Notes</h3>
+                  <p className="text-vox-paper/40 text-[10px] uppercase tracking-widest">Your journey</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+              {user.voiceNotes.length === 0 ? (
+                <div className="text-center py-12 border-2 border-dashed border-white/5 rounded-3xl">
+                  <p className="text-vox-paper/20 text-xs italic font-serif">No notes saved yet.</p>
+                </div>
+              ) : (
+                user.voiceNotes.slice(0, 5).map((note) => (
+                  <div key={note.id} className="glass p-4 rounded-2xl border border-white/5 flex items-center justify-between group hover:border-vox-accent/30 transition-all">
+                    <div className="flex items-center gap-4">
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                        note.type === 'breath' ? 'bg-blue-500/10 text-blue-400' :
+                        note.type === 'whisper' ? 'bg-vox-accent/10 text-vox-accent' :
+                        'bg-emerald-500/10 text-emerald-400'
+                      }`}>
+                        {note.type === 'breath' ? <Wind size={18} /> : 
+                         note.type === 'whisper' ? <Mic size={18} /> : 
+                         <Activity size={18} />}
+                      </div>
+                      <div>
+                        <div className="text-xs font-bold capitalize">{note.type}</div>
+                        <div className="text-[10px] text-vox-paper/40">{formatTime(note.duration)} • {new Date(note.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                      </div>
+                    </div>
+                    <button 
+                      onClick={() => {
+                        if (note.audioData) {
+                          stopAllAudio();
+                          const audio = new Audio(note.audioData);
+                          audio.play().catch(err => console.error("Playback error:", err));
+                        }
+                      }}
+                      className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:bg-vox-accent hover:text-vox-bg"
+                    >
+                      <Play size={14} />
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+    )}
+  </div>
+);
 };
 
 const CompanionMode = ({ onBack, user, setUser, safePlayPCM, stopAllAudio, setView }: { onBack: () => void, user: User, setUser: React.Dispatch<React.SetStateAction<User | null>>, safePlayPCM: any, stopAllAudio: () => void, setView: (v: AppState) => void }) => {
@@ -3839,7 +3729,7 @@ const CompanionMode = ({ onBack, user, setUser, safePlayPCM, stopAllAudio, setVi
   const [avatar, setAvatar] = useState('serenity');
   const [sessionActive, setSessionActive] = useState(false);
   const [isUserTyping, setIsUserTyping] = useState(false);
-  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -3892,7 +3782,7 @@ const CompanionMode = ({ onBack, user, setUser, safePlayPCM, stopAllAudio, setVi
 
   const saveFullConversation = () => {
     if (messages.length === 0) return;
-
+    
     // Also save as a long voice note/journal entry if preferred
     const fullText = messages.map(m => `${m.role === 'user' ? 'Me' : 'Companion'}: ${m.text}`).join('\n\n');
     const newJournalEntry: JournalEntry = {
@@ -3992,12 +3882,12 @@ const CompanionMode = ({ onBack, user, setUser, safePlayPCM, stopAllAudio, setVi
 
     const history = messages.slice(-10).map(m => ({ role: m.role, parts: [{ text: m.text }] }));
     const response = await generateCompanionResponse(userMsg, history);
-
+    
     if (response) {
       const modelMsg = { role: 'model' as const, text: response, id: Math.random().toString(36).substr(2, 9) };
       setMessages(prev => [...prev, modelMsg]);
       setIsLoading(false);
-
+      
       // Save to history automatically
       setUser(prev => {
         if (!prev) return null;
@@ -4034,13 +3924,13 @@ const CompanionMode = ({ onBack, user, setUser, safePlayPCM, stopAllAudio, setVi
         <div className="flex items-center gap-6">
           {sessionActive && (
             <div className="flex items-center gap-2">
-              <button
+              <button 
                 onClick={saveFullConversation}
                 className="px-4 py-1.5 rounded-full bg-vox-accent/10 text-vox-accent border border-vox-accent/20 text-[10px] uppercase tracking-widest font-bold hover:bg-vox-accent/20 transition-all flex items-center gap-2"
               >
                 <Save size={12} /> Save Session
               </button>
-              <button
+              <button 
                 onClick={endSession}
                 className="px-4 py-1.5 rounded-full bg-red-500/10 text-red-400 border border-red-500/20 text-[10px] uppercase tracking-widest font-bold hover:bg-red-500/20 transition-all"
               >
@@ -4049,7 +3939,7 @@ const CompanionMode = ({ onBack, user, setUser, safePlayPCM, stopAllAudio, setVi
             </div>
           )}
           <div className="flex items-center gap-4">
-            <button
+            <button 
               onClick={() => setUseVoice(!useVoice)}
               className={`flex items-center gap-2 px-3 py-1.5 rounded-full transition-all text-[10px] uppercase tracking-widest font-bold ${useVoice ? 'bg-vox-accent/20 text-vox-accent border border-vox-accent/30' : 'bg-white/5 text-vox-paper/30 border border-white/10'}`}
             >
@@ -4059,12 +3949,12 @@ const CompanionMode = ({ onBack, user, setUser, safePlayPCM, stopAllAudio, setVi
             {useVoice && (
               <div className="flex items-center gap-2">
                 <Volume2 size={10} className="text-vox-paper/30" />
-                <input
-                  type="range"
-                  min="0"
-                  max="1"
-                  step="0.01"
-                  value={voiceVolume}
+                <input 
+                  type="range" 
+                  min="0" 
+                  max="1" 
+                  step="0.01" 
+                  value={voiceVolume} 
                   onChange={(e) => setVoiceVolume(parseFloat(e.target.value))}
                   className="w-16 h-1 bg-white/10 rounded-full appearance-none cursor-pointer accent-vox-accent"
                 />
@@ -4073,7 +3963,7 @@ const CompanionMode = ({ onBack, user, setUser, safePlayPCM, stopAllAudio, setVi
           </div>
           <div className="flex gap-2 items-center">
             {soundscapes.map(s => (
-              <button
+              <button 
                 key={s.id}
                 onClick={() => setSoundscape(s.id as any)}
                 className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${soundscape === s.id ? 'bg-vox-accent text-vox-bg' : 'bg-white/5 text-vox-paper/40 hover:bg-white/10'}`}
@@ -4085,12 +3975,12 @@ const CompanionMode = ({ onBack, user, setUser, safePlayPCM, stopAllAudio, setVi
             {soundscape !== 'none' && (
               <div className="flex items-center gap-2 ml-2">
                 <Volume2 size={10} className="text-vox-paper/30" />
-                <input
-                  type="range"
-                  min="0"
-                  max="1"
-                  step="0.01"
-                  value={soundscapeVolume}
+                <input 
+                  type="range" 
+                  min="0" 
+                  max="1" 
+                  step="0.01" 
+                  value={soundscapeVolume} 
                   onChange={(e) => setSoundscapeVolume(parseFloat(e.target.value))}
                   className="w-16 h-1 bg-white/10 rounded-full appearance-none cursor-pointer accent-vox-accent"
                 />
@@ -4108,7 +3998,7 @@ const CompanionMode = ({ onBack, user, setUser, safePlayPCM, stopAllAudio, setVi
 
       {!sessionActive ? (
         <div className="flex-1 flex flex-col items-center justify-center text-center">
-          <motion.div
+          <motion.div 
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             className="max-w-md"
@@ -4120,7 +4010,7 @@ const CompanionMode = ({ onBack, user, setUser, safePlayPCM, stopAllAudio, setVi
             <p className="text-vox-paper/40 mb-12 font-serif italic">
               Your Courage Companion is ready to listen. Start a session to enter the digital sanctuary.
             </p>
-            <button
+            <button 
               onClick={startSession}
               className="px-12 py-5 bg-vox-accent text-vox-bg rounded-full font-bold text-sm uppercase tracking-widest shadow-2xl shadow-vox-accent/20 hover:scale-105 transition-all"
             >
@@ -4130,157 +4020,157 @@ const CompanionMode = ({ onBack, user, setUser, safePlayPCM, stopAllAudio, setVi
         </div>
       ) : (
         <div className="flex-1 flex gap-8 overflow-hidden mb-8">
-          {/* Chat Area */}
-          <div className="flex-1 flex flex-col glass-dark rounded-[3rem] p-8 relative overflow-hidden">
-            <div ref={scrollRef} className="flex-1 overflow-y-auto space-y-8 mb-4 pr-4 scrollbar-hide">
-              {messages.map((m, i) => (
-                <motion.div
-                  key={m.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                >
-                  <motion.div
-                    animate={isSpeaking && i === messages.length - 1 && m.role === 'model' ? {
-                      boxShadow: ['0 0 0px rgba(255,78,0,0)', '0 0 20px rgba(255,78,0,0.3)', '0 0 0px rgba(255,78,0,0)'],
-                      borderColor: ['rgba(255,255,255,0.05)', 'rgba(255,78,0,0.4)', 'rgba(255,255,255,0.05)']
-                    } : {}}
-                    transition={{ repeat: Infinity, duration: 1.5 }}
-                    className={`relative group max-w-[85%] p-6 rounded-3xl border ${m.role === 'user' ? 'bg-vox-accent text-vox-bg font-medium rounded-tr-none shadow-lg shadow-vox-accent/20 border-transparent' : 'bg-white/5 rounded-tl-none font-serif text-lg italic border-white/5'}`}
-                  >
-                    {m.text}
-                    {m.role === 'model' && (
-                      <button
-                        onClick={() => saveToEcho(m.text)}
-                        className="absolute -right-12 top-0 w-10 h-10 rounded-full bg-white/5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:bg-vox-accent hover:text-vox-bg border border-white/10"
-                        title="Save to Echo Chamber"
-                      >
-                        <Heart size={16} />
-                      </button>
-                    )}
-                  </motion.div>
-                </motion.div>
-              ))}
-              {isLoading && (
-                <div className="flex justify-start">
-                  <div className="bg-white/5 p-6 rounded-3xl rounded-tl-none border border-white/5">
-                    <div className="flex gap-1">
-                      <div className="w-1.5 h-1.5 bg-vox-accent rounded-full animate-bounce" />
-                      <div className="w-1.5 h-1.5 bg-vox-accent rounded-full animate-bounce [animation-delay:0.2s]" />
-                      <div className="w-1.5 h-1.5 bg-vox-accent rounded-full animate-bounce [animation-delay:0.4s]" />
-                    </div>
-                  </div>
-                </div>
-              )}
-              {isUserTyping && (
-                <div className="flex justify-end">
-                  <div className="bg-vox-accent/10 p-4 rounded-2xl rounded-tr-none border border-vox-accent/20">
-                    <div className="flex gap-1">
-                      <div className="w-1 h-1 bg-vox-accent rounded-full animate-bounce" />
-                      <div className="w-1 h-1 bg-vox-accent rounded-full animate-bounce [animation-delay:0.2s]" />
-                      <div className="w-1 h-1 bg-vox-accent rounded-full animate-bounce [animation-delay:0.4s]" />
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="relative">
-              <input
-                type="text"
-                value={input}
-                onChange={(e) => {
-                  setInput(e.target.value);
-                  setIsUserTyping(true);
-                  if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-                  typingTimeoutRef.current = setTimeout(() => setIsUserTyping(false), 1500);
-                }}
-                onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-                placeholder="Type your feelings..."
-                className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-5 pr-16 focus:outline-none focus:border-vox-accent transition-colors"
-              />
-              <button
-                onClick={handleSend}
-                className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-vox-accent text-vox-bg rounded-xl flex items-center justify-center hover:scale-105 active:scale-95 transition-all"
+        {/* Chat Area */}
+        <div className="flex-1 flex flex-col glass-dark rounded-[3rem] p-8 relative overflow-hidden">
+          <div ref={scrollRef} className="flex-1 overflow-y-auto space-y-8 mb-4 pr-4 scrollbar-hide">
+            {messages.map((m, i) => (
+              <motion.div 
+                key={m.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
-                <Send size={20} />
-              </button>
+                <motion.div 
+                  animate={isSpeaking && i === messages.length - 1 && m.role === 'model' ? {
+                    boxShadow: ['0 0 0px rgba(255,78,0,0)', '0 0 20px rgba(255,78,0,0.3)', '0 0 0px rgba(255,78,0,0)'],
+                    borderColor: ['rgba(255,255,255,0.05)', 'rgba(255,78,0,0.4)', 'rgba(255,255,255,0.05)']
+                  } : {}}
+                  transition={{ repeat: Infinity, duration: 1.5 }}
+                  className={`relative group max-w-[85%] p-6 rounded-3xl border ${m.role === 'user' ? 'bg-vox-accent text-vox-bg font-medium rounded-tr-none shadow-lg shadow-vox-accent/20 border-transparent' : 'bg-white/5 rounded-tl-none font-serif text-lg italic border-white/5'}`}
+                >
+                  {m.text}
+                  {m.role === 'model' && (
+                    <button 
+                      onClick={() => saveToEcho(m.text)}
+                      className="absolute -right-12 top-0 w-10 h-10 rounded-full bg-white/5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:bg-vox-accent hover:text-vox-bg border border-white/10"
+                      title="Save to Echo Chamber"
+                    >
+                      <Heart size={16} />
+                    </button>
+                  )}
+                </motion.div>
+              </motion.div>
+            ))}
+            {isLoading && (
+              <div className="flex justify-start">
+                <div className="bg-white/5 p-6 rounded-3xl rounded-tl-none border border-white/5">
+                  <div className="flex gap-1">
+                    <div className="w-1.5 h-1.5 bg-vox-accent rounded-full animate-bounce" />
+                    <div className="w-1.5 h-1.5 bg-vox-accent rounded-full animate-bounce [animation-delay:0.2s]" />
+                    <div className="w-1.5 h-1.5 bg-vox-accent rounded-full animate-bounce [animation-delay:0.4s]" />
+                  </div>
+                </div>
+              </div>
+            )}
+            {isUserTyping && (
+              <div className="flex justify-end">
+                <div className="bg-vox-accent/10 p-4 rounded-2xl rounded-tr-none border border-vox-accent/20">
+                  <div className="flex gap-1">
+                    <div className="w-1 h-1 bg-vox-accent rounded-full animate-bounce" />
+                    <div className="w-1 h-1 bg-vox-accent rounded-full animate-bounce [animation-delay:0.2s]" />
+                    <div className="w-1 h-1 bg-vox-accent rounded-full animate-bounce [animation-delay:0.4s]" />
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="relative">
+            <input 
+              type="text"
+              value={input}
+              onChange={(e) => {
+                setInput(e.target.value);
+                setIsUserTyping(true);
+                if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+                typingTimeoutRef.current = setTimeout(() => setIsUserTyping(false), 1500);
+              }}
+              onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+              placeholder="Type your feelings..."
+              className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-5 pr-16 focus:outline-none focus:border-vox-accent transition-colors"
+            />
+            <button 
+              onClick={handleSend}
+              className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-vox-accent text-vox-bg rounded-xl flex items-center justify-center hover:scale-105 active:scale-95 transition-all"
+            >
+              <Send size={20} />
+            </button>
+          </div>
+        </div>
+
+        {/* Sidebar: Avatar & Settings */}
+        <div className="w-64 flex flex-col gap-6">
+          <div className="glass-dark rounded-[2.5rem] p-6 text-center border border-white/5">
+            <div className="text-[10px] uppercase tracking-widest text-vox-paper/30 mb-4 font-bold">Companion Avatar</div>
+            <div className="relative w-32 h-32 mx-auto mb-6">
+              <motion.div
+                animate={isSpeaking ? { scale: [1, 1.15, 1], opacity: [0.3, 0.6, 0.3] } : { opacity: 0 }}
+                transition={{ repeat: Infinity, duration: 1.5 }}
+                className="absolute inset-0 rounded-full bg-vox-accent blur-xl"
+              />
+              <motion.img 
+                key={avatar}
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={isSpeaking ? { 
+                  opacity: 1, 
+                  scale: [1, 1.05, 1],
+                  borderColor: ['rgba(255,78,0,0.2)', 'rgba(255,78,0,0.8)', 'rgba(255,78,0,0.2)']
+                } : { opacity: 1, scale: 1 }}
+                transition={isSpeaking ? { repeat: Infinity, duration: 1.5 } : { duration: 0.5 }}
+                src={avatars.find(a => a.id === avatar)?.img} 
+                className="relative z-10 w-full h-full rounded-full object-cover border-4 border-vox-accent/20 shadow-2xl"
+                referrerPolicy="no-referrer"
+              />
+              {isUserTyping && (
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="absolute -bottom-2 -right-2 bg-vox-accent text-vox-bg p-2 rounded-full shadow-lg z-20"
+                >
+                  <div className="flex gap-1">
+                    <div className="w-1 h-1 bg-vox-bg rounded-full animate-bounce" />
+                    <div className="w-1 h-1 bg-vox-bg rounded-full animate-bounce [animation-delay:0.2s]" />
+                    <div className="w-1 h-1 bg-vox-bg rounded-full animate-bounce [animation-delay:0.4s]" />
+                  </div>
+                </motion.div>
+              )}
+              <div className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full bg-vox-accent flex items-center justify-center border-4 border-vox-bg z-10">
+                <Sparkles size={12} className="text-vox-bg" />
+              </div>
+            </div>
+            <div className="flex justify-center gap-2">
+              {avatars.map(a => (
+                <button 
+                  key={a.id}
+                  onClick={() => setAvatar(a.id)}
+                  className={`w-10 h-10 rounded-full overflow-hidden border-2 transition-all ${avatar === a.id ? 'border-vox-accent scale-110' : 'border-transparent opacity-40 hover:opacity-100'}`}
+                >
+                  <img src={a.img} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                </button>
+              ))}
             </div>
           </div>
 
-          {/* Sidebar: Avatar & Settings */}
-          <div className="w-64 flex flex-col gap-6">
-            <div className="glass-dark rounded-[2.5rem] p-6 text-center border border-white/5">
-              <div className="text-[10px] uppercase tracking-widest text-vox-paper/30 mb-4 font-bold">Companion Avatar</div>
-              <div className="relative w-32 h-32 mx-auto mb-6">
-                <motion.div
-                  animate={isSpeaking ? { scale: [1, 1.15, 1], opacity: [0.3, 0.6, 0.3] } : { opacity: 0 }}
-                  transition={{ repeat: Infinity, duration: 1.5 }}
-                  className="absolute inset-0 rounded-full bg-vox-accent blur-xl"
-                />
-                <motion.img
-                  key={avatar}
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={isSpeaking ? {
-                    opacity: 1,
-                    scale: [1, 1.05, 1],
-                    borderColor: ['rgba(255,78,0,0.2)', 'rgba(255,78,0,0.8)', 'rgba(255,78,0,0.2)']
-                  } : { opacity: 1, scale: 1 }}
-                  transition={isSpeaking ? { repeat: Infinity, duration: 1.5 } : { duration: 0.5 }}
-                  src={avatars.find(a => a.id === avatar)?.img}
-                  className="relative z-10 w-full h-full rounded-full object-cover border-4 border-vox-accent/20 shadow-2xl"
-                  referrerPolicy="no-referrer"
-                />
-                {isUserTyping && (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="absolute -bottom-2 -right-2 bg-vox-accent text-vox-bg p-2 rounded-full shadow-lg z-20"
-                  >
-                    <div className="flex gap-1">
-                      <div className="w-1 h-1 bg-vox-bg rounded-full animate-bounce" />
-                      <div className="w-1 h-1 bg-vox-bg rounded-full animate-bounce [animation-delay:0.2s]" />
-                      <div className="w-1 h-1 bg-vox-bg rounded-full animate-bounce [animation-delay:0.4s]" />
-                    </div>
-                  </motion.div>
-                )}
-                <div className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full bg-vox-accent flex items-center justify-center border-4 border-vox-bg z-10">
-                  <Sparkles size={12} className="text-vox-bg" />
-                </div>
+          <div className="glass-dark rounded-[2.5rem] p-6 border border-white/5">
+            <div className="text-[10px] uppercase tracking-widest text-vox-paper/30 mb-4 font-bold">Sentiment Focus</div>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-vox-paper/60">Empathy Level</span>
+                <span className="text-vox-accent font-bold">High</span>
               </div>
-              <div className="flex justify-center gap-2">
-                {avatars.map(a => (
-                  <button
-                    key={a.id}
-                    onClick={() => setAvatar(a.id)}
-                    className={`w-10 h-10 rounded-full overflow-hidden border-2 transition-all ${avatar === a.id ? 'border-vox-accent scale-110' : 'border-transparent opacity-40 hover:opacity-100'}`}
-                  >
-                    <img src={a.img} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                  </button>
-                ))}
+              <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden">
+                <div className="w-[90%] h-full bg-vox-accent" />
               </div>
-            </div>
-
-            <div className="glass-dark rounded-[2.5rem] p-6 border border-white/5">
-              <div className="text-[10px] uppercase tracking-widest text-vox-paper/30 mb-4 font-bold">Sentiment Focus</div>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-vox-paper/60">Empathy Level</span>
-                  <span className="text-vox-accent font-bold">High</span>
-                </div>
-                <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden">
-                  <div className="w-[90%] h-full bg-vox-accent" />
-                </div>
-                <p className="text-[10px] text-vox-paper/30 leading-relaxed italic">
-                  The AI is currently tailoring responses to a "Vulnerable" mood state.
-                </p>
-              </div>
+              <p className="text-[10px] text-vox-paper/30 leading-relaxed italic">
+                The AI is currently tailoring responses to a "Vulnerable" mood state.
+              </p>
             </div>
           </div>
         </div>
-      )}
-    </div>
-  );
+      </div>
+    )}
+  </div>
+);
 };
 
 const PresenceMode = ({ onBack }: { onBack: () => void }) => {
@@ -4301,7 +4191,7 @@ const PresenceMode = ({ onBack }: { onBack: () => void }) => {
 
       // Challenge completion after 10 seconds of holding
       holdTimerRef.current = setTimeout(() => {
-        // Breath complete
+      // Breath complete
       }, 10000);
     } else {
       if (navigator.vibrate) {
@@ -4322,14 +4212,14 @@ const PresenceMode = ({ onBack }: { onBack: () => void }) => {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-6 relative overflow-hidden">
       <div className="absolute inset-0 vox-gradient opacity-40" />
-
+      
       <button onClick={onBack} className="absolute top-10 left-10 z-20 flex items-center gap-2 text-vox-paper/50 hover:text-vox-paper">
         <ChevronRight className="rotate-180" size={20} /> Exit Presence
       </button>
 
       <div className="relative z-10 text-center max-w-md">
-        <motion.div
-          animate={{
+        <motion.div 
+          animate={{ 
             scale: isHolding ? [1, 1.05, 1] : 1,
             opacity: isHolding ? [0.6, 1, 0.6] : 0.6
           }}
@@ -4338,13 +4228,13 @@ const PresenceMode = ({ onBack }: { onBack: () => void }) => {
         >
           <Wind size={80} className="mx-auto text-blue-400/50" />
         </motion.div>
-
+        
         <h2 className="text-4xl mb-6">Just Be</h2>
         <p className="text-vox-paper/50 font-serif italic mb-16">
           No tasks. No questions. Hold the button to feel a shared heartbeat with someone else in the silence.
         </p>
 
-        <motion.button
+        <motion.button 
           onMouseDown={() => setIsHolding(true)}
           onMouseUp={() => setIsHolding(false)}
           onTouchStart={() => setIsHolding(true)}
@@ -4385,7 +4275,7 @@ const FearMap = ({ data }: { data: { rejection: number, conflict: number, misund
               <span className="text-[10px] font-bold text-vox-paper/30 uppercase tracking-widest">{label}</span>
             </div>
             <div className="relative h-1.5 bg-white/5 rounded-full overflow-hidden">
-              <motion.div
+              <motion.div 
                 initial={{ width: 0 }}
                 animate={{ width: `${value}%` }}
                 className="absolute inset-0 bg-vox-accent"
@@ -4402,7 +4292,7 @@ const FearMap = ({ data }: { data: { rejection: number, conflict: number, misund
 const EmergencyScreen = ({ onBack, onReturn }: { onBack: () => void, onReturn: () => void }) => (
   <div className="min-h-screen flex flex-col items-center justify-center p-6 relative overflow-hidden">
     <div className="absolute inset-0 bg-red-500/5 vox-gradient opacity-40" />
-    <motion.div
+    <motion.div 
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
       className="max-w-2xl w-full glass-dark p-12 rounded-[4rem] border border-red-500/20 text-center relative z-10"
@@ -4414,15 +4304,15 @@ const EmergencyScreen = ({ onBack, onReturn }: { onBack: () => void, onReturn: (
       <p className="text-vox-paper/60 text-xl font-serif italic mb-12 leading-relaxed">
         "The bridge has been crossed. You've found your voice here so you can use it out there. This screen is your safety net—if you feel lost again, we're here. But for now, take a breath and speak your truth to the world."
       </p>
-
+      
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <button
+        <button 
           onClick={onBack}
           className="py-4 bg-vox-paper text-vox-ink rounded-2xl font-bold hover:scale-105 transition-all"
         >
           Exit to Real Life
         </button>
-        <button
+        <button 
           onClick={onReturn}
           className="py-4 border border-white/10 rounded-2xl font-bold hover:bg-white/5 transition-all text-vox-paper/40"
         >
@@ -4463,15 +4353,15 @@ const BelovedBridge = ({ onBack, onExitToEmergency, safePlayPCM, stopAllAudio }:
     const response = await ghostModePractice(message, persona);
     setPracticeResponse(response);
     setIsLoading(false);
-
+    
     if (response?.confidenceScore > 0.8) {
       setTimeout(() => {
         onExitToEmergency();
       }, 3000); // Give them a few seconds to see the result
     }
-
+    
     setStep('ghost');
-
+    
     // Do not auto-generate audio for the reaction as per user request
     // if (response?.personaReaction) {
     //   handlePlayAudio(response.personaReaction);
@@ -4512,7 +4402,7 @@ const BelovedBridge = ({ onBack, onExitToEmergency, safePlayPCM, stopAllAudio }:
             <h3 className="text-xl mb-6">Who do you want to reach out to?</h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
               {['Partner', 'Parent', 'Friend', 'Colleague'].map(p => (
-                <button
+                <button 
                   key={p}
                   onClick={() => setPersona(p)}
                   className={`py-3 rounded-xl border transition-all ${persona === p ? 'bg-vox-accent border-vox-accent' : 'border-white/10 bg-white/5 hover:bg-white/10'}`}
@@ -4521,16 +4411,16 @@ const BelovedBridge = ({ onBack, onExitToEmergency, safePlayPCM, stopAllAudio }:
                 </button>
               ))}
             </div>
-
+            
             <h3 className="text-xl mb-4">What do you want to say?</h3>
-            <textarea
+            <textarea 
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               placeholder="Draft your message here..."
               className="w-full h-40 bg-white/5 border border-white/10 rounded-2xl p-6 focus:outline-none focus:border-vox-accent transition-colors mb-6"
             />
 
-            <button
+            <button 
               onClick={startGhostMode}
               disabled={!persona || !message}
               className="w-full py-4 bg-vox-paper text-vox-ink rounded-xl font-semibold disabled:opacity-30 flex items-center justify-center gap-2"
@@ -4546,7 +4436,7 @@ const BelovedBridge = ({ onBack, onExitToEmergency, safePlayPCM, stopAllAudio }:
               <div className="glass-dark p-8 rounded-3xl border border-white/5 relative group">
                 <div className="flex items-center justify-between mb-4">
                   <div className="text-[10px] uppercase tracking-widest text-vox-paper/30 font-bold">Likely Reaction from {persona}</div>
-                  <button
+                  <button 
                     onClick={() => handlePlayAudio(practiceResponse?.personaReaction)}
                     disabled={isAudioLoading}
                     className="p-2 rounded-full bg-vox-accent/10 text-vox-accent hover:bg-vox-accent/20 transition-all disabled:opacity-50"
@@ -4570,7 +4460,7 @@ const BelovedBridge = ({ onBack, onExitToEmergency, safePlayPCM, stopAllAudio }:
                     <div className="flex items-center gap-2">
                       <span className="text-[10px] uppercase tracking-widest text-vox-paper/30 font-bold">Readiness</span>
                       <div className="w-24 h-1.5 bg-white/5 rounded-full overflow-hidden">
-                        <motion.div
+                        <motion.div 
                           initial={{ width: 0 }}
                           animate={{ width: `${practiceResponse.confidenceScore * 100}%` }}
                           className={`absolute inset-0 ${practiceResponse.confidenceScore > 0.8 ? 'bg-emerald-400' : 'bg-vox-accent'}`}
@@ -4582,7 +4472,7 @@ const BelovedBridge = ({ onBack, onExitToEmergency, safePlayPCM, stopAllAudio }:
                 <p className="text-vox-paper/80 mb-6 leading-relaxed">
                   {practiceResponse?.analysis}
                 </p>
-
+                
                 <div className="space-y-4">
                   <h4 className="text-sm font-bold flex items-center gap-2 text-emerald-400">
                     <Sparkles size={14} /> Actionable Tips
@@ -4626,13 +4516,13 @@ const BelovedBridge = ({ onBack, onExitToEmergency, safePlayPCM, stopAllAudio }:
           </div>
 
           <div className="flex gap-4">
-            <button
+            <button 
               onClick={() => setStep('select')}
               className="flex-1 py-4 border border-white/10 rounded-xl font-semibold hover:bg-white/5"
             >
               Try Again
             </button>
-            <button
+            <button 
               className="flex-1 py-4 bg-vox-accent text-white rounded-xl font-semibold hover:bg-vox-accent/90"
             >
               I'm Ready to Send
@@ -4665,38 +4555,38 @@ const Journal = ({ onBack, user, setUser, setView }: { onBack: () => void, user:
       audioChunksRef.current = [];
 
       mediaRecorderRef.current.ondataavailable = (e) => audioChunksRef.current.push(e.data);
-      mediaRecorderRef.current.onstop = async () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-        const reader = new FileReader();
-        reader.readAsDataURL(audioBlob);
-        reader.onloadend = async () => {
-          const dataUrl = reader.result as string;
-          const base64Audio = dataUrl.split(',')[1];
-          setIsTranscribing(true);
-          try {
-            const text = await transcribeAudio(base64Audio, 'audio/webm');
-            if (text) {
-              // Check for safe word
-              if (user.safeWord && text.toLowerCase().includes(user.safeWord.toLowerCase())) {
-                setView('anchor');
-                return;
+          mediaRecorderRef.current.onstop = async () => {
+            const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+            const reader = new FileReader();
+            reader.readAsDataURL(audioBlob);
+            reader.onloadend = async () => {
+              const dataUrl = reader.result as string;
+              const base64Audio = dataUrl.split(',')[1];
+              setIsTranscribing(true);
+              try {
+                const text = await transcribeAudio(base64Audio, 'audio/webm');
+                if (text) {
+                  // Check for safe word
+                  if (user.safeWord && text.toLowerCase().includes(user.safeWord.toLowerCase())) {
+                    setView('anchor');
+                    return;
+                  }
+                  setResponse(prev => prev ? prev + " " + text : text);
+                }
+              } catch (err) {
+                console.error("Transcription error:", err);
+              } finally {
+                setIsTranscribing(false);
               }
-              setResponse(prev => prev ? prev + " " + text : text);
-            }
-          } catch (err) {
-            console.error("Transcription error:", err);
-          } finally {
-            setIsTranscribing(false);
-          }
-        };
-      };
+            };
+          };
 
       mediaRecorderRef.current.start();
       setIsRecording(true);
     } catch (err: any) {
       console.error("Mic access error:", err);
-      setMicError(err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError'
-        ? "No microphone found. Please connect a device and try again."
+      setMicError(err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError' 
+        ? "No microphone found. Please connect a device and try again." 
         : "Microphone access denied. Please check your browser permissions.");
     }
   };
@@ -4708,14 +4598,14 @@ const Journal = ({ onBack, user, setUser, setView }: { onBack: () => void, user:
 
   const getNewPrompt = async () => {
     setIsGenerating(true);
-
+    
     // Build rich context from mood history and past entries
     const journalContext = user.journalEntries?.slice(0, 5).map(e => `Prompt: ${e.prompt}\nResponse: ${e.response}`).join("\n---\n") || "";
     const moodContext = user.moodHistory?.slice(0, 10).map(m => {
       const date = new Date(m.timestamp).toLocaleDateString();
       return `${date}: ${m.mood}${m.note ? ` (Note: ${m.note})` : ''}`;
     }).join("\n") || "";
-
+    
     const fullContext = `
       USER PROFILE & HISTORY:
       - Current Courage Level: ${user.courageLevel}/100
@@ -4762,19 +4652,19 @@ const Journal = ({ onBack, user, setUser, setView }: { onBack: () => void, user:
   return (
     <div className="min-h-screen flex flex-col items-center p-6 relative overflow-hidden pt-24">
       <div className="absolute inset-0 vox-gradient opacity-30" />
-
+      
       <div className="absolute top-10 left-10 z-20 flex gap-4">
         <button onClick={onBack} className="flex items-center gap-2 text-vox-paper/50 hover:text-vox-paper">
           <ChevronRight className="rotate-180" size={20} /> Back to Sanctuary
         </button>
-        <button
-          onClick={() => setShowHistory(!showHistory)}
+        <button 
+          onClick={() => setShowHistory(!showHistory)} 
           className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all ${showHistory ? 'bg-vox-accent text-white' : 'text-vox-paper/50 hover:text-vox-paper bg-white/5'}`}
         >
           <History size={18} /> {showHistory ? "Journal History" : "Journal History"}
         </button>
         {!showHistory && response.trim() && (
-          <button
+          <button 
             onClick={saveEntry}
             disabled={isSaving}
             className="flex items-center gap-2 px-4 py-2 rounded-full bg-vox-accent/20 text-vox-accent border border-vox-accent/30 hover:bg-vox-accent hover:text-vox-bg transition-all font-bold text-xs uppercase tracking-widest"
@@ -4790,7 +4680,7 @@ const Journal = ({ onBack, user, setUser, setView }: { onBack: () => void, user:
 
       <AnimatePresence mode="wait">
         {showHistory ? (
-          <motion.div
+          <motion.div 
             key="history"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -4805,7 +4695,7 @@ const Journal = ({ onBack, user, setUser, setView }: { onBack: () => void, user:
                 {user.journalEntries?.length || 0} Reflections
               </div>
             </h2>
-
+            
             <div className="flex-1 overflow-y-auto pr-4 space-y-6 scrollbar-hide">
               {(!user.journalEntries || user.journalEntries.length === 0) ? (
                 <div className="text-center py-20 text-vox-paper/30 italic">
@@ -4830,7 +4720,7 @@ const Journal = ({ onBack, user, setUser, setView }: { onBack: () => void, user:
             </div>
           </motion.div>
         ) : (
-          <motion.div
+          <motion.div 
             key="write"
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -4848,7 +4738,7 @@ const Journal = ({ onBack, user, setUser, setView }: { onBack: () => void, user:
             <div className="glass-dark rounded-[3rem] p-12 border border-white/5 relative overflow-hidden">
               {isGenerating ? (
                 <div className="py-20 flex flex-col items-center gap-6">
-                  <motion.div
+                  <motion.div 
                     animate={{ rotate: 360 }}
                     transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
                     className="w-12 h-12 border-2 border-vox-accent/30 border-t-vox-accent rounded-full"
@@ -4863,7 +4753,7 @@ const Journal = ({ onBack, user, setUser, setView }: { onBack: () => void, user:
                       {prompt}
                     </h3>
                     <div className="mt-6 flex gap-4">
-                      <button
+                      <button 
                         onClick={getNewPrompt}
                         className="px-6 py-2 bg-vox-accent/10 border border-vox-accent/30 text-vox-accent rounded-full text-xs font-bold uppercase tracking-widest hover:bg-vox-accent hover:text-vox-bg transition-all flex items-center gap-2"
                       >
@@ -4874,7 +4764,7 @@ const Journal = ({ onBack, user, setUser, setView }: { onBack: () => void, user:
 
                   <div className="relative">
                     <span className="absolute -top-6 left-0 text-[10px] uppercase tracking-widest text-vox-paper/30">Your Reflection</span>
-                    <textarea
+                    <textarea 
                       value={response}
                       onChange={(e) => setResponse(e.target.value)}
                       placeholder="Let your thoughts flow freely..."
@@ -4882,7 +4772,7 @@ const Journal = ({ onBack, user, setUser, setView }: { onBack: () => void, user:
                     />
                     <div className="absolute bottom-6 right-6 flex flex-col items-end gap-3">
                       {micError && (
-                        <motion.div
+                        <motion.div 
                           initial={{ opacity: 0, x: 10 }}
                           animate={{ opacity: 1, x: 0 }}
                           className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-[10px] flex items-center gap-2 max-w-[200px]"
@@ -4897,7 +4787,7 @@ const Journal = ({ onBack, user, setUser, setView }: { onBack: () => void, user:
                         title={isRecording ? "Stop Recording" : "Voice to Text"}
                       >
                         {isTranscribing ? (
-                          <motion.div
+                          <motion.div 
                             animate={{ rotate: 360 }}
                             transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
                             className="w-5 h-5 border-2 border-vox-bg/30 border-t-vox-bg rounded-full"
@@ -4907,7 +4797,7 @@ const Journal = ({ onBack, user, setUser, setView }: { onBack: () => void, user:
                     </div>
                   </div>
 
-                  <button
+                  <button 
                     onClick={saveEntry}
                     disabled={!response.trim() || isSaving}
                     className="w-full py-6 bg-vox-accent text-white rounded-full font-bold text-lg hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-30 shadow-xl shadow-vox-accent/20"
@@ -5020,27 +4910,27 @@ const AnchorMode = ({ onBack, user, setUser }: { onBack: () => void, user: User,
   return (
     <div className="min-h-screen bg-red-950/90 backdrop-blur-xl flex flex-col p-6 overflow-y-auto pt-24 pb-32">
       <div className="max-w-md mx-auto w-full flex flex-col items-center">
-        <motion.div
+        <motion.div 
           animate={{ scale: [1, 1.05, 1] }}
           transition={{ repeat: Infinity, duration: 4 }}
           className="w-20 h-20 rounded-full bg-red-500/20 flex items-center justify-center mb-6"
         >
           <Shield size={40} className="text-red-500" />
         </motion.div>
-
+        
         <h2 className="text-3xl mb-2 font-light tracking-tight text-white">Anchor Mode</h2>
         <p className="text-vox-paper/60 font-serif italic text-sm mb-8 text-center">
           You are safe. You are here. Let's find your center.
         </p>
 
         <div className="flex gap-2 p-1 bg-white/5 rounded-2xl mb-8 w-full">
-          <button
+          <button 
             onClick={() => { setActiveTab('grounding'); setExercise('none'); }}
             className={`flex-1 py-3 rounded-xl text-xs uppercase tracking-widest font-bold transition-all ${activeTab === 'grounding' ? 'bg-vox-accent text-vox-bg' : 'text-vox-paper/40 hover:text-vox-paper'}`}
           >
             Grounding
           </button>
-          <button
+          <button 
             onClick={() => setActiveTab('contacts')}
             className={`flex-1 py-3 rounded-xl text-xs uppercase tracking-widest font-bold transition-all ${activeTab === 'contacts' ? 'bg-vox-accent text-vox-bg' : 'text-vox-paper/40 hover:text-vox-paper'}`}
           >
@@ -5052,7 +4942,7 @@ const AnchorMode = ({ onBack, user, setUser }: { onBack: () => void, user: User,
           <div className="w-full space-y-6">
             {exercise === 'none' && (
               <div className="grid grid-cols-1 gap-4">
-                <motion.button
+                <motion.button 
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={() => setExercise('breathing')}
@@ -5067,7 +4957,7 @@ const AnchorMode = ({ onBack, user, setUser }: { onBack: () => void, user: User,
                   </div>
                 </motion.button>
 
-                <motion.button
+                <motion.button 
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={() => { setExercise('sensory'); setSensoryStep(0); }}
@@ -5082,7 +4972,7 @@ const AnchorMode = ({ onBack, user, setUser }: { onBack: () => void, user: User,
                   </div>
                 </motion.button>
 
-                <motion.button
+                <motion.button 
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={() => { setExercise('muscle'); setMuscleStep(0); }}
@@ -5097,7 +4987,7 @@ const AnchorMode = ({ onBack, user, setUser }: { onBack: () => void, user: User,
                   </div>
                 </motion.button>
 
-                <motion.button
+                <motion.button 
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={() => { setExercise('visualization'); setVisualizationStep(0); }}
@@ -5115,14 +5005,14 @@ const AnchorMode = ({ onBack, user, setUser }: { onBack: () => void, user: User,
             )}
 
             {exercise === 'breathing' && (
-              <motion.div
+              <motion.div 
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 className="flex flex-col items-center py-12"
               >
                 <div className="relative w-64 h-64 flex items-center justify-center">
-                  <motion.div
-                    animate={{
+                  <motion.div 
+                    animate={{ 
                       scale: breathingPhase === 'Inhale' ? 1.5 : breathingPhase === 'Hold' ? 1.5 : 1,
                       opacity: breathingPhase === 'Hold' ? 0.8 : 0.5
                     }}
@@ -5134,7 +5024,7 @@ const AnchorMode = ({ onBack, user, setUser }: { onBack: () => void, user: User,
                     <p className="text-xs uppercase tracking-[0.3em] text-vox-paper/40">Keep going</p>
                   </div>
                 </div>
-                <button
+                <button 
                   onClick={() => setExercise('none')}
                   className="mt-16 text-xs uppercase tracking-widest font-bold text-vox-paper/40 hover:text-vox-paper"
                 >
@@ -5144,7 +5034,7 @@ const AnchorMode = ({ onBack, user, setUser }: { onBack: () => void, user: User,
             )}
 
             {exercise === 'sensory' && (
-              <motion.div
+              <motion.div 
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 className="glass-dark p-10 rounded-[3rem] border border-white/5 text-center"
@@ -5154,17 +5044,17 @@ const AnchorMode = ({ onBack, user, setUser }: { onBack: () => void, user: User,
                 </div>
                 <h4 className="text-5xl font-light tracking-tighter mb-4">{sensoryPrompts[sensoryStep].count}</h4>
                 <p className="text-xl font-serif italic mb-12">{sensoryPrompts[sensoryStep].label}</p>
-
+                
                 <div className="flex gap-4">
                   {sensoryStep > 0 && (
-                    <button
+                    <button 
                       onClick={() => setSensoryStep(s => s - 1)}
                       className="flex-1 py-4 bg-white/5 rounded-2xl font-bold text-xs uppercase tracking-widest"
                     >
                       Back
                     </button>
                   )}
-                  <button
+                  <button 
                     onClick={() => {
                       if (sensoryStep < sensoryPrompts.length - 1) {
                         setSensoryStep(s => s + 1);
@@ -5181,7 +5071,7 @@ const AnchorMode = ({ onBack, user, setUser }: { onBack: () => void, user: User,
             )}
 
             {exercise === 'muscle' && (
-              <motion.div
+              <motion.div 
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 className="glass-dark p-10 rounded-[3rem] border border-white/5 text-center"
@@ -5191,17 +5081,17 @@ const AnchorMode = ({ onBack, user, setUser }: { onBack: () => void, user: User,
                 </div>
                 <h4 className="text-2xl font-serif italic mb-4">{muscleSteps[muscleStep].label}</h4>
                 <p className="text-lg text-vox-paper/60 leading-relaxed mb-12">{muscleSteps[muscleStep].instruction}</p>
-
+                
                 <div className="flex gap-4">
                   {muscleStep > 0 && (
-                    <button
+                    <button 
                       onClick={() => setMuscleStep(s => s - 1)}
                       className="flex-1 py-4 bg-white/5 rounded-2xl font-bold text-xs uppercase tracking-widest"
                     >
                       Back
                     </button>
                   )}
-                  <button
+                  <button 
                     onClick={() => {
                       if (muscleStep < muscleSteps.length - 1) {
                         setMuscleStep(s => s + 1);
@@ -5218,7 +5108,7 @@ const AnchorMode = ({ onBack, user, setUser }: { onBack: () => void, user: User,
             )}
 
             {exercise === 'visualization' && (
-              <motion.div
+              <motion.div 
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 className="glass-dark p-10 rounded-[3rem] border border-white/5 text-center"
@@ -5228,17 +5118,17 @@ const AnchorMode = ({ onBack, user, setUser }: { onBack: () => void, user: User,
                 </div>
                 <h4 className="text-2xl font-serif italic mb-4">{visualizationSteps[visualizationStep].label}</h4>
                 <p className="text-lg text-vox-paper/60 leading-relaxed mb-12">{visualizationSteps[visualizationStep].instruction}</p>
-
+                
                 <div className="flex gap-4">
                   {visualizationStep > 0 && (
-                    <button
+                    <button 
                       onClick={() => setVisualizationStep(s => s - 1)}
                       className="flex-1 py-4 bg-white/5 rounded-2xl font-bold text-xs uppercase tracking-widest"
                     >
                       Back
                     </button>
                   )}
-                  <button
+                  <button 
                     onClick={() => {
                       if (visualizationStep < visualizationSteps.length - 1) {
                         setVisualizationStep(s => s + 1);
@@ -5260,7 +5150,7 @@ const AnchorMode = ({ onBack, user, setUser }: { onBack: () => void, user: User,
           <div className="w-full space-y-6">
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-xs uppercase tracking-[0.3em] font-bold text-red-400">Emergency Contacts</h3>
-              <button
+              <button 
                 onClick={() => setShowAddContact(!showAddContact)}
                 className="text-xs text-vox-paper/40 hover:text-vox-paper flex items-center gap-1"
               >
@@ -5269,33 +5159,33 @@ const AnchorMode = ({ onBack, user, setUser }: { onBack: () => void, user: User,
             </div>
 
             {showAddContact && (
-              <motion.div
+              <motion.div 
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="bg-white/5 p-6 rounded-[2rem] border border-white/10 space-y-4"
               >
-                <input
-                  type="text"
-                  placeholder="Name"
+                <input 
+                  type="text" 
+                  placeholder="Name" 
                   value={newContactName}
                   onChange={(e) => setNewContactName(e.target.value)}
                   className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-sm focus:outline-none focus:border-vox-accent"
                 />
-                <input
-                  type="text"
-                  placeholder="Phone Number"
+                <input 
+                  type="text" 
+                  placeholder="Phone Number" 
                   value={newContactPhone}
                   onChange={(e) => setNewContactPhone(e.target.value)}
                   className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-sm focus:outline-none focus:border-vox-accent"
                 />
                 <div className="flex gap-2">
-                  <button
+                  <button 
                     onClick={addContact}
                     className="flex-1 py-4 bg-vox-accent text-vox-bg rounded-2xl font-bold text-xs uppercase tracking-widest"
                   >
                     Save Contact
                   </button>
-                  <button
+                  <button 
                     onClick={() => setShowAddContact(false)}
                     className="flex-1 py-4 bg-white/5 rounded-2xl font-bold text-xs uppercase tracking-widest"
                   >
@@ -5319,13 +5209,13 @@ const AnchorMode = ({ onBack, user, setUser }: { onBack: () => void, user: User,
                       <p className="text-xs text-vox-paper/40">{contact.phone}</p>
                     </div>
                     <div className="flex gap-2">
-                      <a
+                      <a 
                         href={`tel:${contact.phone}`}
                         className="w-12 h-12 rounded-2xl bg-vox-accent/20 text-vox-accent flex items-center justify-center hover:bg-vox-accent hover:text-vox-bg transition-all"
                       >
                         <Phone size={18} />
                       </a>
-                      <button
+                      <button 
                         onClick={() => removeContact(contact.id)}
                         className="w-12 h-12 rounded-2xl bg-white/5 text-vox-paper/20 flex items-center justify-center hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all"
                       >
@@ -5338,13 +5228,14 @@ const AnchorMode = ({ onBack, user, setUser }: { onBack: () => void, user: User,
             </div>
 
             {user.emergencyContacts && user.emergencyContacts.length > 0 && (
-              <motion.button
+              <motion.button 
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={sendAlert}
                 disabled={alertStatus !== 'idle'}
-                className={`w-full py-6 rounded-[2rem] font-bold uppercase tracking-widest text-sm shadow-2xl transition-all flex items-center justify-center gap-3 ${alertStatus === 'sent' ? 'bg-emerald-500 text-white' : 'bg-red-600 text-white shadow-red-600/20'
-                  }`}
+                className={`w-full py-6 rounded-[2rem] font-bold uppercase tracking-widest text-sm shadow-2xl transition-all flex items-center justify-center gap-3 ${
+                  alertStatus === 'sent' ? 'bg-emerald-500 text-white' : 'bg-red-600 text-white shadow-red-600/20'
+                }`}
               >
                 {alertStatus === 'idle' && <><Shield size={20} /> Alert All Contacts</>}
                 {alertStatus === 'sending' && "Sending Alerts..."}
@@ -5355,10 +5246,10 @@ const AnchorMode = ({ onBack, user, setUser }: { onBack: () => void, user: User,
         )}
 
         <div className="mt-12 w-full">
-          <motion.button
+          <motion.button 
             whileHover={{ scale: 1.02, backgroundColor: "rgba(255, 255, 255, 0.15)" }}
             whileTap={{ scale: 0.98 }}
-            className="w-full py-5 bg-white/10 rounded-2xl font-bold uppercase tracking-widest text-xs text-vox-paper/60 hover:text-vox-paper transition-all"
+            className="w-full py-5 bg-white/10 rounded-2xl font-bold uppercase tracking-widest text-xs text-vox-paper/60 hover:text-vox-paper transition-all" 
             onClick={onBack}
           >
             I'm Feeling Better
@@ -5408,10 +5299,10 @@ const FearStrengthMap = ({ user, onBack }: { user: User, onBack: () => void }) =
           <div className="relative h-[500px] glass-dark rounded-[4rem] overflow-hidden p-12 border border-white/5 shadow-2xl">
             <div className="absolute inset-0 bg-gradient-to-br from-vox-bg via-vox-bg to-vox-accent/5" />
             <div className="absolute inset-0 vox-gradient opacity-10" />
-
-            <motion.div
+            
+            <motion.div 
               initial={false}
-              animate={{
+              animate={{ 
                 opacity: Math.max(0, 1 - (user.courageLevel / 100)),
                 backdropFilter: `blur(${Math.max(0, 40 * (1 - user.courageLevel / 100))}px)`
               }}
@@ -5424,10 +5315,10 @@ const FearStrengthMap = ({ user, onBack }: { user: User, onBack: () => void }) =
                 const isActive = i < user.courageLevel;
                 const delay = i * 0.005;
                 return (
-                  <motion.div
+                  <motion.div 
                     key={i}
                     initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{
+                    animate={{ 
                       opacity: isActive ? 1 : 0.15,
                       scale: isActive ? 1 : 0.9,
                     }}
@@ -5452,39 +5343,39 @@ const FearStrengthMap = ({ user, onBack }: { user: User, onBack: () => void }) =
                 <AreaChart data={chartData}>
                   <defs>
                     <linearGradient id="colorLevel" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#0EA5E9" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="#0EA5E9" stopOpacity={0} />
+                      <stop offset="5%" stopColor="#0EA5E9" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="#0EA5E9" stopOpacity={0}/>
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                  <XAxis
-                    dataKey="time"
-                    stroke="rgba(255,255,255,0.2)"
-                    fontSize={10}
+                  <XAxis 
+                    dataKey="time" 
+                    stroke="rgba(255,255,255,0.2)" 
+                    fontSize={10} 
                     tickLine={false}
                     axisLine={false}
                   />
-                  <YAxis
-                    stroke="rgba(255,255,255,0.2)"
-                    fontSize={10}
+                  <YAxis 
+                    stroke="rgba(255,255,255,0.2)" 
+                    fontSize={10} 
                     tickLine={false}
                     axisLine={false}
                     domain={[0, 100]}
                   />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: '#050505',
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: '#050505', 
                       border: '1px solid rgba(255,255,255,0.1)',
                       borderRadius: '12px',
                       fontSize: '12px'
                     }}
                   />
-                  <Area
-                    type="monotone"
-                    dataKey="level"
-                    stroke="#0EA5E9"
-                    fillOpacity={1}
-                    fill="url(#colorLevel)"
+                  <Area 
+                    type="monotone" 
+                    dataKey="level" 
+                    stroke="#0EA5E9" 
+                    fillOpacity={1} 
+                    fill="url(#colorLevel)" 
                     strokeWidth={2}
                   />
                 </AreaChart>
@@ -5542,7 +5433,7 @@ const VoiceCircles = ({ onBack, user, setUser }: { onBack: () => void, user: Use
   const [newGroupDesc, setNewGroupDesc] = useState("");
   const [alias, setAlias] = useState(`Seeker-${Math.floor(Math.random() * 1000)}`);
   const socketRef = useRef<WebSocket | null>(null);
-
+  
   const [circles, setCircles] = useState([
     { id: "morning", name: "Gentle Morning", active: 12, type: "listening", color: "from-emerald-500/20 to-teal-500/20", description: "Soft music and shared silence to start your day." },
     { id: "courage", name: "Courage to Say No", active: 5, type: "sharing", color: "from-vox-accent/20 to-orange-500/20", description: "A space to practice boundaries and find your voice." },
@@ -5606,11 +5497,11 @@ const VoiceCircles = ({ onBack, user, setUser }: { onBack: () => void, user: Use
           setParticipants(message.participants);
         }
         if (message.type === 'chat_received' && activeCircle && message.roomId === activeCircle.id) {
-          setMessages(prev => [...prev, {
-            id: Date.now() + Math.random(),
-            text: message.text,
-            sender: message.fromId === user.id ? "You" : message.fromName,
-            time: new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          setMessages(prev => [...prev, { 
+            id: Date.now() + Math.random(), 
+            text: message.text, 
+            sender: message.fromId === user.id ? "You" : message.fromName, 
+            time: new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) 
           }]);
         }
       } catch (e) {
@@ -5651,7 +5542,7 @@ const VoiceCircles = ({ onBack, user, setUser }: { onBack: () => void, user: Use
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
     if (!chatMessage.trim() || !socketRef.current || socketRef.current.readyState !== WebSocket.OPEN) return;
-
+    
     socketRef.current.send(JSON.stringify({
       type: 'chat_message',
       text: chatMessage,
@@ -5672,7 +5563,7 @@ const VoiceCircles = ({ onBack, user, setUser }: { onBack: () => void, user: Use
     <div className="min-h-screen p-6 pt-24 max-w-6xl mx-auto">
       <AnimatePresence mode="wait">
         {!activeCircle ? (
-          <motion.div
+          <motion.div 
             key="list"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -5683,7 +5574,7 @@ const VoiceCircles = ({ onBack, user, setUser }: { onBack: () => void, user: Use
                 <ChevronRight className="rotate-180" size={20} /> Dashboard
               </button>
               <div className="flex items-center gap-6">
-                <motion.button
+                <motion.button 
                   whileHover={{ scale: 1.05, backgroundColor: "rgba(45, 212, 191, 0.2)" }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => setShowCreateGroup(true)}
@@ -5699,28 +5590,28 @@ const VoiceCircles = ({ onBack, user, setUser }: { onBack: () => void, user: Use
             </header>
 
             {showCreateGroup && (
-              <motion.div
+              <motion.div 
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="glass-dark p-8 rounded-[2.5rem] border border-white/10 mb-12 max-w-2xl mx-auto"
               >
                 <h3 className="text-2xl mb-6">Create a New Circle</h3>
                 <div className="space-y-4">
-                  <input
-                    type="text"
-                    placeholder="Circle Name"
+                  <input 
+                    type="text" 
+                    placeholder="Circle Name" 
                     value={newGroupName}
                     onChange={(e) => setNewGroupName(e.target.value)}
                     className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-sm focus:outline-none focus:border-vox-accent"
                   />
-                  <textarea
-                    placeholder="Description (What is this space for?)"
+                  <textarea 
+                    placeholder="Description (What is this space for?)" 
                     value={newGroupDesc}
                     onChange={(e) => setNewGroupDesc(e.target.value)}
                     className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-sm focus:outline-none focus:border-vox-accent h-24 resize-none"
                   />
                   <div className="flex gap-4">
-                    <motion.button
+                    <motion.button 
                       whileHover={{ scale: 1.02, backgroundColor: "rgba(45, 212, 191, 0.9)" }}
                       whileTap={{ scale: 0.98 }}
                       onClick={createGroup}
@@ -5728,7 +5619,7 @@ const VoiceCircles = ({ onBack, user, setUser }: { onBack: () => void, user: Use
                     >
                       Establish Circle
                     </motion.button>
-                    <motion.button
+                    <motion.button 
                       whileHover={{ scale: 1.02, backgroundColor: "rgba(255, 255, 255, 0.1)" }}
                       whileTap={{ scale: 0.98 }}
                       onClick={() => setShowCreateGroup(false)}
@@ -5743,7 +5634,7 @@ const VoiceCircles = ({ onBack, user, setUser }: { onBack: () => void, user: Use
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {circles.map(circle => (
-                <motion.div
+                <motion.div 
                   key={circle.id}
                   whileHover={{ scale: 1.02, y: -4 }}
                   whileTap={{ scale: 0.98 }}
@@ -5751,7 +5642,7 @@ const VoiceCircles = ({ onBack, user, setUser }: { onBack: () => void, user: Use
                   className={`glass-dark p-8 rounded-[2.5rem] flex items-center justify-between group cursor-pointer border border-white/5 hover:border-vox-accent/30 transition-all relative overflow-hidden`}
                 >
                   <div className={`absolute inset-0 bg-gradient-to-br ${circle.color} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
-
+                  
                   <div className="flex items-center gap-6 relative z-10">
                     <div className={`w-16 h-16 rounded-2xl flex items-center justify-center ${circle.type === 'presence' ? 'bg-blue-500/20' : 'bg-vox-accent/20'} border border-white/10`}>
                       {circle.type === 'presence' ? <Wind className="text-blue-400" /> : <Mic className="text-vox-accent" />}
@@ -5790,7 +5681,7 @@ const VoiceCircles = ({ onBack, user, setUser }: { onBack: () => void, user: Use
             </div>
           </motion.div>
         ) : (
-          <motion.div
+          <motion.div 
             key="active"
             initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -5800,7 +5691,7 @@ const VoiceCircles = ({ onBack, user, setUser }: { onBack: () => void, user: Use
             {/* Main Stage */}
             <div className="lg:col-span-3 flex flex-col glass-dark rounded-[3rem] border border-white/5 overflow-hidden relative">
               <div className="absolute inset-0 vox-gradient opacity-10 pointer-events-none" />
-
+              
               <header className="p-8 flex items-center justify-between border-b border-white/5 relative z-10">
                 <button onClick={leaveCircle} className="flex items-center gap-2 text-vox-paper/50 hover:text-vox-paper transition-colors">
                   <ChevronRight className="rotate-180" size={20} /> Leave Circle
@@ -5813,7 +5704,7 @@ const VoiceCircles = ({ onBack, user, setUser }: { onBack: () => void, user: Use
                   </div>
                 </div>
                 <div className="flex -space-x-2">
-                  {[1, 2, 3].map(i => (
+                  {[1,2,3].map(i => (
                     <div key={i} className="w-8 h-8 rounded-full border-2 border-vox-bg bg-white/10 flex items-center justify-center text-[10px] font-bold">
                       {String.fromCharCode(64 + i)}
                     </div>
@@ -5830,7 +5721,7 @@ const VoiceCircles = ({ onBack, user, setUser }: { onBack: () => void, user: Use
                   <motion.div layout className="flex flex-col items-center gap-4">
                     <div className="relative">
                       {userStatus.isSpeaking && (
-                        <motion.div
+                        <motion.div 
                           initial={{ scale: 0.8, opacity: 0 }}
                           animate={{ scale: 1.8, opacity: 0 }}
                           transition={{ repeat: Infinity, duration: 1.5 }}
@@ -5851,7 +5742,7 @@ const VoiceCircles = ({ onBack, user, setUser }: { onBack: () => void, user: Use
 
                   <AnimatePresence>
                     {participants.filter(p => p.id !== user.id).map(p => (
-                      <motion.div
+                      <motion.div 
                         key={p.id}
                         initial={{ opacity: 0, scale: 0.8 }}
                         animate={{ opacity: 1, scale: 1 }}
@@ -5861,7 +5752,7 @@ const VoiceCircles = ({ onBack, user, setUser }: { onBack: () => void, user: Use
                       >
                         <div className="relative">
                           {p.status === 'speaking' && (
-                            <motion.div
+                            <motion.div 
                               initial={{ scale: 0.8, opacity: 0 }}
                               animate={{ scale: 1.6, opacity: 0 }}
                               transition={{ repeat: Infinity, duration: 2 }}
@@ -5892,7 +5783,7 @@ const VoiceCircles = ({ onBack, user, setUser }: { onBack: () => void, user: Use
               </div>
 
               <footer className="p-8 border-t border-white/5 flex items-center justify-center gap-6 relative z-10">
-                <motion.button
+                <motion.button 
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.9 }}
                   onClick={toggleMic}
@@ -5900,8 +5791,8 @@ const VoiceCircles = ({ onBack, user, setUser }: { onBack: () => void, user: Use
                 >
                   {userStatus.isMuted ? <MicOff size={28} /> : <Mic size={28} />}
                 </motion.button>
-
-                <motion.button
+                
+                <motion.button 
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.9 }}
                   className="w-16 h-16 rounded-full glass-dark flex items-center justify-center text-vox-paper/50 hover:text-vox-accent transition-all border border-white/5"
@@ -5909,7 +5800,7 @@ const VoiceCircles = ({ onBack, user, setUser }: { onBack: () => void, user: Use
                   <Wind size={24} />
                 </motion.button>
 
-                <motion.button
+                <motion.button 
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.9 }}
                   className="w-16 h-16 rounded-full glass-dark flex items-center justify-center text-vox-paper/50 hover:text-blue-400 transition-all border border-white/5"
@@ -5925,7 +5816,7 @@ const VoiceCircles = ({ onBack, user, setUser }: { onBack: () => void, user: Use
                 <h3 className="text-xs uppercase tracking-[0.2em] font-bold text-vox-paper/40">Shared Echoes</h3>
                 <span className="text-[10px] text-vox-accent font-bold">{messages.length} notes</span>
               </header>
-
+              
               <div className="flex-1 overflow-y-auto p-6 space-y-4">
                 {messages.length === 0 ? (
                   <div className="h-full flex flex-col items-center justify-center text-center p-4">
@@ -5934,7 +5825,7 @@ const VoiceCircles = ({ onBack, user, setUser }: { onBack: () => void, user: Use
                   </div>
                 ) : (
                   messages.map(msg => (
-                    <motion.div
+                    <motion.div 
                       key={msg.id}
                       initial={{ opacity: 0, x: 10 }}
                       animate={{ opacity: 1, x: 0 }}
@@ -5952,7 +5843,7 @@ const VoiceCircles = ({ onBack, user, setUser }: { onBack: () => void, user: Use
 
               <form onSubmit={handleSendMessage} className="p-6 border-t border-white/5">
                 <div className="relative">
-                  <input
+                  <input 
                     type="text"
                     value={chatMessage}
                     onChange={(e) => {
@@ -5963,7 +5854,7 @@ const VoiceCircles = ({ onBack, user, setUser }: { onBack: () => void, user: Use
                     placeholder="Whisper a note..."
                     className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-vox-accent/50 transition-all pr-12"
                   />
-                  <button
+                  <button 
                     type="submit"
                     className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-xl bg-vox-accent/20 text-vox-accent flex items-center justify-center hover:bg-vox-accent hover:text-vox-bg transition-all"
                   >
@@ -5987,9 +5878,9 @@ const FearSimulation = ({ onBack, user, setUser }: { onBack: () => void, user: U
   const [practiceStep, setPracticeStep] = useState(0);
 
   const scenarios = [
-    {
-      id: 'public-speaking-1',
-      title: "The Spotlight Moment",
+    { 
+      id: 'public-speaking-1', 
+      title: "The Spotlight Moment", 
       category: 'Public Speaking',
       desc: "Practice introducing yourself in a room full of strangers. Focus on steady breath and clear projection.",
       steps: [
@@ -5999,9 +5890,9 @@ const FearSimulation = ({ onBack, user, setUser }: { onBack: () => void, user: U
         "Closing: 'I look forward to hearing your thoughts as well. Thank you.'"
       ]
     },
-    {
-      id: 'assertiveness-1',
-      title: "Setting the Bar",
+    { 
+      id: 'assertiveness-1', 
+      title: "Setting the Bar", 
       category: 'Assertiveness',
       desc: "A colleague asks you to take on their work right before you leave. Practice saying no without guilt.",
       steps: [
@@ -6011,9 +5902,9 @@ const FearSimulation = ({ onBack, user, setUser }: { onBack: () => void, user: U
         "The Alternative: 'I can look at it first thing tomorrow morning if it's still needed.'"
       ]
     },
-    {
-      id: 'vulnerability-1',
-      title: "Sharing a Shadow",
+    { 
+      id: 'vulnerability-1', 
+      title: "Sharing a Shadow", 
       category: 'Vulnerability',
       desc: "Practice sharing a small, safe insecurity with a trusted (simulated) companion.",
       steps: [
@@ -6045,8 +5936,8 @@ const FearSimulation = ({ onBack, user, setUser }: { onBack: () => void, user: U
       return {
         ...prev,
         courageLevel: Math.min(100, prev.courageLevel + 5),
-        courageHistory: [...(prev.courageHistory || []), {
-          timestamp: Date.now(),
+        courageHistory: [...(prev.courageHistory || []), { 
+          timestamp: Date.now(), 
           level: Math.min(100, prev.courageLevel + 5),
           rejection: lastEntry?.rejection || 0,
           conflict: lastEntry?.conflict || 0,
@@ -6074,7 +5965,7 @@ const FearSimulation = ({ onBack, user, setUser }: { onBack: () => void, user: U
 
       <AnimatePresence mode="wait">
         {!scenario ? (
-          <motion.div
+          <motion.div 
             key="list"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -6082,7 +5973,7 @@ const FearSimulation = ({ onBack, user, setUser }: { onBack: () => void, user: U
             className="grid grid-cols-1 md:grid-cols-2 gap-6"
           >
             {scenarios.map(s => (
-              <button
+              <button 
                 key={s.id}
                 onClick={() => setScenario(s)}
                 className="glass-dark p-8 rounded-[2.5rem] text-left hover:border-vox-accent/50 transition-all group relative overflow-hidden"
@@ -6097,7 +5988,7 @@ const FearSimulation = ({ onBack, user, setUser }: { onBack: () => void, user: U
             ))}
           </motion.div>
         ) : (
-          <motion.div
+          <motion.div 
             key="practice"
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -6106,7 +5997,7 @@ const FearSimulation = ({ onBack, user, setUser }: { onBack: () => void, user: U
           >
             <div className="glass-dark p-12 rounded-[3rem] border border-white/5 relative overflow-hidden">
               <div className="absolute top-0 left-0 w-full h-1 bg-white/5">
-                <motion.div
+                <motion.div 
                   className="h-full bg-vox-accent"
                   initial={{ width: 0 }}
                   animate={{ width: `${((practiceStep + 1) / scenario.steps.length) * 100}%` }}
@@ -6120,7 +6011,7 @@ const FearSimulation = ({ onBack, user, setUser }: { onBack: () => void, user: U
                   </div>
                   <h3 className="text-3xl mb-4 font-serif italic">{scenario.title}</h3>
                   <p className="text-vox-paper/60 mb-12 max-w-md mx-auto">{scenario.desc}</p>
-                  <button
+                  <button 
                     onClick={() => setIsPracticing(true)}
                     className="px-12 py-6 bg-vox-accent text-vox-bg rounded-full font-bold text-lg hover:scale-105 transition-all shadow-xl shadow-vox-accent/20"
                   >
@@ -6135,7 +6026,7 @@ const FearSimulation = ({ onBack, user, setUser }: { onBack: () => void, user: U
                   </div>
 
                   <div className="min-h-[200px] flex items-center justify-center text-center">
-                    <motion.div
+                    <motion.div 
                       key={practiceStep}
                       initial={{ opacity: 0, x: 20 }}
                       animate={{ opacity: 1, x: 0 }}
@@ -6147,7 +6038,7 @@ const FearSimulation = ({ onBack, user, setUser }: { onBack: () => void, user: U
 
                   <div className="flex gap-4">
                     {practiceStep > 0 && (
-                      <button
+                      <button 
                         onClick={() => setPracticeStep(practiceStep - 1)}
                         className="flex-1 py-6 bg-white/5 rounded-full font-bold text-vox-paper/60 hover:bg-white/10 transition-all"
                       >
@@ -6155,14 +6046,14 @@ const FearSimulation = ({ onBack, user, setUser }: { onBack: () => void, user: U
                       </button>
                     )}
                     {practiceStep < scenario.steps.length - 1 ? (
-                      <button
+                      <button 
                         onClick={() => setPracticeStep(practiceStep + 1)}
                         className="flex-[2] py-6 bg-vox-accent text-vox-bg rounded-full font-bold text-lg hover:scale-[1.02] transition-all"
                       >
                         Next Step
                       </button>
                     ) : (
-                      <button
+                      <button 
                         onClick={handleComplete}
                         className="flex-[2] py-6 bg-emerald-500 text-white rounded-full font-bold text-lg hover:scale-[1.02] transition-all shadow-xl shadow-emerald-500/20"
                       >
@@ -6193,9 +6084,9 @@ const EchoChamber = ({ onBack, user, safePlayPCM }: { onBack: () => void, user: 
       alert("No audio data available for this note.");
       return;
     }
-
+    
     // Echo complete
-
+    
     if (playingId === note.id) {
       if (audioRef.current) {
         audioRef.current.pause();
@@ -6219,7 +6110,7 @@ const EchoChamber = ({ onBack, user, safePlayPCM }: { onBack: () => void, user: 
         const src = note.audioData.startsWith('data:') ? note.audioData : `data:audio/webm;base64,${note.audioData}`;
         audioRef.current = new Audio(src);
         audioRef.current.play();
-
+        
         audioRef.current.onended = () => {
           setPlayingId(null);
         };
@@ -6249,7 +6140,7 @@ const EchoChamber = ({ onBack, user, safePlayPCM }: { onBack: () => void, user: 
       <div className="space-y-8">
         <div className="glass-dark p-12 rounded-[3rem] border border-white/5">
           <h3 className="text-2xl font-light tracking-tighter mb-10">Your Growth Proof</h3>
-
+          
           <div className="space-y-4">
             {user.voiceNotes.length === 0 ? (
               <div className="text-center py-20 border-2 border-dashed border-white/5 rounded-[2rem]">
@@ -6258,23 +6149,24 @@ const EchoChamber = ({ onBack, user, safePlayPCM }: { onBack: () => void, user: 
               </div>
             ) : (
               user.voiceNotes.map((note) => (
-                <motion.div
+                <motion.div 
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  key={note.id}
+                  key={note.id} 
                   className={`glass p-6 rounded-3xl border transition-all group ${playingId === note.id ? 'border-vox-accent bg-vox-accent/5 shadow-lg shadow-vox-accent/10' : 'border-white/5 hover:border-vox-accent/30'}`}
                 >
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-6">
-                      <div className={`w-16 h-16 rounded-2xl flex items-center justify-center ${note.type === 'breath' ? 'bg-blue-500/10 text-blue-400' :
+                      <div className={`w-16 h-16 rounded-2xl flex items-center justify-center ${
+                        note.type === 'breath' ? 'bg-blue-500/10 text-blue-400' :
                         note.type === 'whisper' ? 'bg-vox-accent/10 text-vox-accent' :
-                          note.type === 'companion' ? 'bg-purple-500/10 text-purple-400' :
-                            'bg-emerald-500/10 text-emerald-400'
-                        }`}>
-                        {note.type === 'breath' ? <Wind size={28} /> :
-                          note.type === 'whisper' ? <Mic size={28} /> :
-                            note.type === 'companion' ? <Sparkles size={28} /> :
-                              <Activity size={28} />}
+                        note.type === 'companion' ? 'bg-purple-500/10 text-purple-400' :
+                        'bg-emerald-500/10 text-emerald-400'
+                      }`}>
+                        {note.type === 'breath' ? <Wind size={28} /> : 
+                         note.type === 'whisper' ? <Mic size={28} /> : 
+                         note.type === 'companion' ? <Sparkles size={28} /> : 
+                         <Activity size={28} />}
                       </div>
                       <div>
                         <div className="text-xs uppercase tracking-widest text-vox-paper/40 mb-1 font-bold">{note.type}</div>
@@ -6283,10 +6175,10 @@ const EchoChamber = ({ onBack, user, safePlayPCM }: { onBack: () => void, user: 
                         </div>
                       </div>
                     </div>
-
+                    
                     <div className="flex items-center gap-4">
                       {note.audioData && (
-                        <button
+                        <button 
                           onClick={() => playNote(note)}
                           className={`w-14 h-14 rounded-full flex items-center justify-center transition-all ${playingId === note.id ? 'bg-vox-accent text-vox-bg scale-110' : 'bg-white/5 hover:bg-vox-accent hover:text-vox-bg group-hover:scale-110'}`}
                         >
@@ -6323,7 +6215,7 @@ const EchoChamber = ({ onBack, user, safePlayPCM }: { onBack: () => void, user: 
             )}
           </div>
         </div>
-
+        
         <div className="p-10 rounded-[3rem] bg-vox-accent/5 border border-vox-accent/10 text-center">
           <p className="text-vox-paper/60 font-serif italic text-lg leading-relaxed">
             "Can you hear it? Your breath is deeper. Your words are clearer. You are stronger than you were."
@@ -6337,14 +6229,14 @@ const EchoChamber = ({ onBack, user, safePlayPCM }: { onBack: () => void, user: 
 const ExitRitual = ({ user, onBack }: { user: User, onBack: () => void }) => {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center max-w-2xl mx-auto pt-24 pb-48">
-      <motion.div
+      <motion.div 
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         className="mb-12"
       >
         <DoorOpen size={80} className="text-vox-accent mx-auto" />
       </motion.div>
-
+      
       <h2 className="text-5xl mb-6 font-light tracking-tighter">The Beautiful Goodbye</h2>
       <p className="text-vox-paper/70 font-serif italic text-xl mb-12 leading-relaxed">
         VOXARA was built to be a bridge, not a destination. You've found your voice, and now it's time to use it in the real world.
@@ -6369,7 +6261,7 @@ const ExitRitual = ({ user, onBack }: { user: User, onBack: () => void }) => {
       </div>
 
       <div className="space-y-6 w-full">
-        <button
+        <button 
           onClick={onBack}
           className="w-full py-6 bg-vox-accent text-vox-bg rounded-2xl font-bold uppercase tracking-widest hover:scale-[1.02] transition-all shadow-xl shadow-vox-accent/20"
         >
@@ -6419,7 +6311,7 @@ const CourageConnections = ({ onBack, user }: { onBack: () => void, user: User }
               status: "online",
               sharedWins: Math.floor(Math.random() * 10)
             }));
-
+          
           // Add some mock offline partners if list is short
           if (otherUsers.length < 3) {
             const mocks = [
@@ -6456,7 +6348,7 @@ const CourageConnections = ({ onBack, user }: { onBack: () => void, user: User }
   const sendSignal = (targetId: string) => {
     if (sentSignals.includes(targetId)) return;
     setSentSignals([...sentSignals, targetId]);
-
+    
     if (socketRef.current?.readyState === WebSocket.OPEN) {
       socketRef.current.send(JSON.stringify({
         type: 'signal',
@@ -6485,7 +6377,7 @@ const CourageConnections = ({ onBack, user }: { onBack: () => void, user: User }
             <h3 className="text-2xl font-light tracking-tighter mb-8">Partners in Courage</h3>
             <div className="space-y-4">
               {partners.map(p => (
-                <motion.div
+                <motion.div 
                   key={p.id}
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
@@ -6516,7 +6408,7 @@ const CourageConnections = ({ onBack, user }: { onBack: () => void, user: User }
                       <div className="text-lg font-mono">{p.sharedWins}</div>
                       <div className="text-[8px] uppercase tracking-widest text-vox-paper/30">Shared Wins</div>
                     </div>
-                    <button
+                    <button 
                       onClick={() => sendSignal(p.id)}
                       disabled={sentSignals.includes(p.id)}
                       className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${sentSignals.includes(p.id) ? 'bg-emerald-500/20 text-emerald-400' : 'bg-vox-accent/10 text-vox-accent hover:bg-vox-accent hover:text-vox-bg'}`}
@@ -6539,7 +6431,7 @@ const CourageConnections = ({ onBack, user }: { onBack: () => void, user: User }
                 <span className="text-lg font-mono">84%</span>
               </div>
               <div className="h-2 bg-white/5 rounded-full overflow-hidden">
-                <motion.div
+                <motion.div 
                   initial={{ width: 0 }}
                   animate={{ width: '84%' }}
                   className="h-full bg-vox-accent"
@@ -6558,8 +6450,8 @@ const CourageConnections = ({ onBack, user }: { onBack: () => void, user: User }
                 <p className="text-xs text-vox-paper/20 italic">Waiting for signals of strength...</p>
               ) : (
                 recentSignals.map(signal => (
-                  <motion.div
-                    key={signal.id}
+                  <motion.div 
+                    key={signal.id} 
                     initial={{ opacity: 0, x: 10 }}
                     animate={{ opacity: 1, x: 0 }}
                     className="flex items-center gap-4 text-xs"
@@ -6618,12 +6510,12 @@ const SettingsView = ({ onBack, user, setUser }: { onBack: () => void, user: Use
   return (
     <div className="min-h-screen flex flex-col items-center p-6 relative overflow-y-auto pt-24 pb-32">
       <div className="absolute inset-0 vox-gradient opacity-30 fixed" />
-
+      
       <button onClick={onBack} className="absolute top-10 left-10 z-20 flex items-center gap-2 text-vox-paper/50 hover:text-vox-paper">
         <ChevronRight className="rotate-180" size={20} /> Dashboard
       </button>
 
-      <motion.div
+      <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="glass-dark p-12 rounded-[4rem] w-full max-w-3xl border border-white/5 relative z-10"
@@ -6647,15 +6539,15 @@ const SettingsView = ({ onBack, user, setUser }: { onBack: () => void, user: Use
             </div>
             <div className="space-y-4">
               <div className="flex gap-2">
-                <input
-                  type="text"
+                <input 
+                  type="text" 
                   value={newGoal}
                   onChange={(e) => setNewGoal(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && addGoal()}
                   className="flex-1 bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-sm focus:outline-none focus:border-vox-accent transition-colors"
                   placeholder="Add a new goal..."
                 />
-                <motion.button
+                <motion.button 
                   whileHover={{ scale: 1.05, backgroundColor: "rgba(45, 212, 191, 0.9)" }}
                   whileTap={{ scale: 0.95 }}
                   onClick={addGoal}
@@ -6666,13 +6558,13 @@ const SettingsView = ({ onBack, user, setUser }: { onBack: () => void, user: Use
               </div>
               <div className="space-y-2">
                 {goals.map(goal => (
-                  <motion.div
-                    key={goal.id}
+                  <motion.div 
+                    key={goal.id} 
                     whileHover={{ x: 4, backgroundColor: "rgba(255, 255, 255, 0.08)" }}
                     className="flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/10 group"
                   >
                     <div className="flex items-center gap-4">
-                      <motion.button
+                      <motion.button 
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.9 }}
                         onClick={() => toggleGoal(goal.id)}
@@ -6682,7 +6574,7 @@ const SettingsView = ({ onBack, user, setUser }: { onBack: () => void, user: Use
                       </motion.button>
                       <span className={`text-sm ${goal.completed ? 'text-vox-paper/30 line-through' : 'text-vox-paper'}`}>{goal.text}</span>
                     </div>
-                    <motion.button
+                    <motion.button 
                       whileHover={{ scale: 1.2, color: "rgb(248, 113, 113)" }}
                       whileTap={{ scale: 0.8 }}
                       onClick={() => removeGoal(goal.id)}
@@ -6705,8 +6597,8 @@ const SettingsView = ({ onBack, user, setUser }: { onBack: () => void, user: Use
             <div className="space-y-6">
               <div className="space-y-4">
                 <label className="block text-[10px] uppercase tracking-widest text-vox-paper/40 mb-2">Safe Word</label>
-                <input
-                  type="text"
+                <input 
+                  type="text" 
                   value={safeWord}
                   onChange={(e) => setSafeWord(e.target.value)}
                   className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-xl focus:outline-none focus:border-vox-accent transition-colors"
@@ -6719,7 +6611,7 @@ const SettingsView = ({ onBack, user, setUser }: { onBack: () => void, user: Use
             </div>
           </section>
 
-          <motion.button
+          <motion.button 
             whileHover={{ scale: 1.02, backgroundColor: isSaved ? "rgb(16, 185, 129)" : "rgba(45, 212, 191, 0.9)" }}
             whileTap={{ scale: 0.98 }}
             onClick={handleSave}
@@ -6739,27 +6631,27 @@ const Meditations = ({ onBack, safePlayPCM }: { onBack: () => void, safePlayPCM:
   const [isLoading, setIsLoading] = useState(false);
 
   const meditationList = [
-    {
-      id: 'courage-1',
-      title: 'The Inner Lion',
-      theme: 'Courage',
-      duration: '5 min',
+    { 
+      id: 'courage-1', 
+      title: 'The Inner Lion', 
+      theme: 'Courage', 
+      duration: '5 min', 
       desc: 'A powerful visualization to awaken your latent strength and confidence.',
       script: 'Find a comfortable position. Close your eyes. Imagine a golden light at your center. This is your courage. With every breath, it grows stronger. You are a lion, calm and powerful. You face the world with a steady heart.'
     },
-    {
-      id: 'calm-1',
-      title: 'Ocean Breath',
-      theme: 'Calm',
-      duration: '10 min',
+    { 
+      id: 'calm-1', 
+      title: 'Ocean Breath', 
+      theme: 'Calm', 
+      duration: '10 min', 
       desc: 'Synchronize your breath with the rhythm of the tides to release anxiety.',
       script: 'Breathe in deeply, like a rising wave. Hold for a moment at the peak. Now exhale slowly, like the tide receding. Feel the tension leaving your body with the water. You are the ocean, vast and peaceful.'
     },
-    {
-      id: 'wellbeing-1',
-      title: 'Sanctuary of Self',
-      theme: 'Well-being',
-      duration: '7 min',
+    { 
+      id: 'wellbeing-1', 
+      title: 'Sanctuary of Self', 
+      theme: 'Well-being', 
+      duration: '7 min', 
       desc: 'Build a mental sanctuary where you are always safe and cherished.',
       script: 'Imagine a beautiful garden. This is your sanctuary. The air is warm and filled with the scent of pine. Here, you are safe. Here, you are enough. Take a moment to simply be in this space of pure well-being.'
     },
@@ -6777,7 +6669,7 @@ const Meditations = ({ onBack, safePlayPCM }: { onBack: () => void, safePlayPCM:
     setActiveMeditation(meditation);
     setIsLoading(true);
     setIsPlaying(true);
-
+    
     try {
       const audioBase64 = await generateSpeech(meditation.script);
       if (audioBase64) {
@@ -6817,8 +6709,8 @@ const Meditations = ({ onBack, safePlayPCM }: { onBack: () => void, safePlayPCM:
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 relative z-10">
         {meditationList.map(m => (
-          <motion.div
-            key={m.id}
+          <motion.div 
+            key={m.id} 
             whileHover={{ scale: 1.02, y: -5, backgroundColor: "rgba(255, 255, 255, 0.05)" }}
             className="glass-dark rounded-[3rem] p-10 border border-white/5 flex flex-col justify-between group hover:border-vox-accent/30 transition-all"
           >
@@ -6832,8 +6724,8 @@ const Meditations = ({ onBack, safePlayPCM }: { onBack: () => void, safePlayPCM:
               <h3 className="text-3xl font-serif italic mb-4 group-hover:text-vox-accent transition-colors">{m.title}</h3>
               <p className="text-vox-paper/50 text-sm leading-relaxed mb-8">{m.desc}</p>
             </div>
-
-            <motion.button
+            
+            <motion.button 
               whileHover={{ scale: 1.05, backgroundColor: activeMeditation?.id === m.id ? "rgb(220, 38, 38)" : "rgba(45, 212, 191, 0.9)" }}
               whileTap={{ scale: 0.95 }}
               onClick={() => activeMeditation?.id === m.id ? stopMeditation() : startMeditation(m)}
@@ -6841,7 +6733,7 @@ const Meditations = ({ onBack, safePlayPCM }: { onBack: () => void, safePlayPCM:
               className={`w-full py-5 rounded-2xl font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-3 transition-all ${activeMeditation?.id === m.id ? 'bg-red-500 text-white' : 'bg-vox-accent text-vox-bg shadow-lg shadow-vox-accent/20'} ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               {isLoading && activeMeditation?.id === m.id ? (
-                <motion.div
+                <motion.div 
                   animate={{ rotate: 360 }}
                   transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
                   className="w-4 h-4 border-2 border-vox-bg/30 border-t-vox-bg rounded-full"
@@ -6857,7 +6749,7 @@ const Meditations = ({ onBack, safePlayPCM }: { onBack: () => void, safePlayPCM:
       </div>
 
       {activeMeditation && (
-        <motion.div
+        <motion.div 
           initial={{ opacity: 0, y: 50 }}
           animate={{ opacity: 1, y: 0 }}
           className="fixed bottom-32 left-1/2 -translate-x-1/2 glass-dark px-12 py-6 rounded-full border border-vox-accent/30 flex items-center gap-8 z-50 shadow-2xl"
@@ -6888,7 +6780,6 @@ export default function App() {
   const currentAudioRef = useRef<{ stop: () => void } | null>(null);
   const lastNotifiedLevelRef = useRef<number | null>(null);
 
-  const lastSavedDataRef = useRef<string>('');
   const [showExitPrompt, setShowExitPrompt] = useState(false);
 
   // Daily data update and exit logic
@@ -6909,12 +6800,12 @@ export default function App() {
         misunderstanding: lastEntry?.misunderstanding || 0,
         vulnerability: lastEntry?.vulnerability || 0,
       };
-
+      
       const updatedUser = {
         ...user,
         courageHistory: [...(user.courageHistory || []), newEntry]
       };
-
+      
       setUser(updatedUser);
       saveUserData(user.id, updatedUser);
     }
@@ -6947,22 +6838,16 @@ export default function App() {
   }, [view]);
 
   useEffect(() => {
-    let unsubscribeUserData: (() => void) | null = null;
-    const unsubscribeAuth = subscribeToAuthChanges(async (firebaseUser) => {
+    const unsubscribe = subscribeToAuthChanges(async (firebaseUser) => {
       if (firebaseUser) {
-        // Subscribe to real-time updates instead of one-time fetch
-        unsubscribeUserData = subscribeToUserData(firebaseUser.uid, async (data) => {
-          const newDataStr = JSON.stringify(data);
-          if (newDataStr !== lastSavedDataRef.current) {
-            lastSavedDataRef.current = newDataStr;
-            setUser(data);
-          }
-        });
-
+        // Try to fetch full data from Firestore first
         const storedData = await getUserData(firebaseUser.uid);
+        
         let currentUserData = storedData;
-
-        if (!storedData) {
+        
+        if (storedData) {
+          setUser(storedData);
+        } else {
           // If no data exists, create the initial basic data
           const basicUser: User = {
             id: firebaseUser.uid,
@@ -7005,7 +6890,6 @@ export default function App() {
           }
         }
       } else {
-        if (unsubscribeUserData) unsubscribeUserData();
         setUser(null);
         if (view !== 'landing' && view !== 'auth') {
           setView('auth');
@@ -7013,21 +6897,14 @@ export default function App() {
       }
       setIsUserLoading(false);
     });
-    return () => {
-      unsubscribeAuth();
-      if (unsubscribeUserData) unsubscribeUserData();
-    };
+    return () => unsubscribe();
   }, [view]);
 
-  // Auto-save user data whenever it changes locally
+  // Auto-save user data whenever it changes
   useEffect(() => {
     if (user && user.id && !isUserLoading) {
-      const currentDataStr = JSON.stringify(user);
-      if (currentDataStr !== lastSavedDataRef.current) {
-        lastSavedDataRef.current = currentDataStr;
-        saveUserData(user.id, user);
-      }
-
+      saveUserData(user.id, user);
+      
       // Auto-exit if confidence reaches 100
       if (user.courageLevel >= 100 && view !== 'exit' && view !== 'anchor') {
         setView('exit');
@@ -7066,8 +6943,8 @@ export default function App() {
 
       <AnimatePresence mode="wait">
         {view === 'landing' && (
-          <motion.div
-            key="landing"
+          <motion.div 
+            key="landing" 
             initial={{ opacity: 0, scale: 0.99 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.99 }}
@@ -7078,8 +6955,8 @@ export default function App() {
         )}
 
         {view === 'auth' && (
-          <motion.div
-            key="auth"
+          <motion.div 
+            key="auth" 
             initial={{ opacity: 0, scale: 0.99 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.99 }}
@@ -7090,8 +6967,8 @@ export default function App() {
         )}
 
         {view === 'safety-onboarding' && user && (
-          <motion.div
-            key="safety-onboarding"
+          <motion.div 
+            key="safety-onboarding" 
             initial={{ opacity: 0, scale: 0.99 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.99 }}
@@ -7102,8 +6979,8 @@ export default function App() {
         )}
 
         {view === 'home' && user && (
-          <motion.div
-            key="home"
+          <motion.div 
+            key="home" 
             initial={{ opacity: 0, scale: 0.99 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.99 }}
@@ -7114,8 +6991,8 @@ export default function App() {
         )}
 
         {view === 'dashboard' && user && (
-          <motion.div
-            key="dashboard"
+          <motion.div 
+            key="dashboard" 
             initial={{ opacity: 0, scale: 0.99 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.99 }}
@@ -7126,10 +7003,10 @@ export default function App() {
         )}
 
         {view === 'whisper' && user && (
-          <motion.div
-            key="whisper"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
+          <motion.div 
+            key="whisper" 
+            initial={{ opacity: 0, x: 20 }} 
+            animate={{ opacity: 1, x: 0 }} 
             exit={{ opacity: 0, x: -20 }}
             transition={pageTransition}
           >
@@ -7138,10 +7015,10 @@ export default function App() {
         )}
 
         {view === 'echo' && user && (
-          <motion.div
-            key="echo"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
+          <motion.div 
+            key="echo" 
+            initial={{ opacity: 0, y: 20 }} 
+            animate={{ opacity: 1, y: 0 }} 
             exit={{ opacity: 0, y: -20 }}
             transition={pageTransition}
           >
@@ -7150,10 +7027,10 @@ export default function App() {
         )}
 
         {view === 'companion' && user && (
-          <motion.div
-            key="companion"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
+          <motion.div 
+            key="companion" 
+            initial={{ opacity: 0, y: 20 }} 
+            animate={{ opacity: 1, y: 0 }} 
             exit={{ opacity: 0, y: -20 }}
             transition={pageTransition}
           >
@@ -7162,8 +7039,8 @@ export default function App() {
         )}
 
         {view === 'presence' && (
-          <motion.div
-            key="presence"
+          <motion.div 
+            key="presence" 
             initial={{ opacity: 0, scale: 0.99 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.99 }}
@@ -7174,8 +7051,8 @@ export default function App() {
         )}
 
         {view === 'bridge' && (
-          <motion.div
-            key="bridge"
+          <motion.div 
+            key="bridge" 
             initial={{ opacity: 0, scale: 0.99 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.99 }}
@@ -7186,8 +7063,8 @@ export default function App() {
         )}
 
         {view === 'emergency' && (
-          <motion.div
-            key="emergency"
+          <motion.div 
+            key="emergency" 
             initial={{ opacity: 0, scale: 0.99 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.99 }}
@@ -7198,8 +7075,8 @@ export default function App() {
         )}
 
         {view === 'journal' && user && (
-          <motion.div
-            key="journal"
+          <motion.div 
+            key="journal" 
             initial={{ opacity: 0, scale: 0.99 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.99 }}
@@ -7210,8 +7087,8 @@ export default function App() {
         )}
 
         {view === 'rituals' && user && (
-          <motion.div
-            key="rituals"
+          <motion.div 
+            key="rituals" 
             initial={{ opacity: 0, scale: 0.99 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.99 }}
@@ -7222,8 +7099,8 @@ export default function App() {
         )}
 
         {view === 'calm' && (
-          <motion.div
-            key="calm"
+          <motion.div 
+            key="calm" 
             initial={{ opacity: 0, scale: 0.99 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.99 }}
@@ -7234,8 +7111,8 @@ export default function App() {
         )}
 
         {view === 'meditations' && (
-          <motion.div
-            key="meditations"
+          <motion.div 
+            key="meditations" 
             initial={{ opacity: 0, scale: 0.99 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.99 }}
@@ -7247,8 +7124,8 @@ export default function App() {
 
 
         {view === 'map' && user && (
-          <motion.div
-            key="map"
+          <motion.div 
+            key="map" 
             initial={{ opacity: 0, scale: 0.99 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.99 }}
@@ -7259,8 +7136,8 @@ export default function App() {
         )}
 
         {view === 'circles' && user && (
-          <motion.div
-            key="circles"
+          <motion.div 
+            key="circles" 
             initial={{ opacity: 0, scale: 0.99 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.99 }}
@@ -7271,8 +7148,8 @@ export default function App() {
         )}
 
         {view === 'connections' && user && (
-          <motion.div
-            key="connections"
+          <motion.div 
+            key="connections" 
             initial={{ opacity: 0, scale: 0.99 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.99 }}
@@ -7283,8 +7160,8 @@ export default function App() {
         )}
 
         {view === 'simulation' && user && (
-          <motion.div
-            key="simulation"
+          <motion.div 
+            key="simulation" 
             initial={{ opacity: 0, scale: 0.99 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.99 }}
@@ -7295,8 +7172,8 @@ export default function App() {
         )}
 
         {view === 'exit' && user && (
-          <motion.div
-            key="exit"
+          <motion.div 
+            key="exit" 
             initial={{ opacity: 0, scale: 0.99 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.99 }}
@@ -7307,8 +7184,8 @@ export default function App() {
         )}
 
         {view === 'anchor' && user && (
-          <motion.div
-            key="anchor"
+          <motion.div 
+            key="anchor" 
             initial={{ opacity: 0, scale: 0.99 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.99 }}
@@ -7319,8 +7196,8 @@ export default function App() {
         )}
 
         {view === 'settings' && user && (
-          <motion.div
-            key="settings"
+          <motion.div 
+            key="settings" 
             initial={{ opacity: 0, scale: 0.99 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.99 }}
@@ -7331,8 +7208,8 @@ export default function App() {
         )}
 
         {view === 'notifications' && user && (
-          <motion.div
-            key="notifications"
+          <motion.div 
+            key="notifications" 
             initial={{ opacity: 0, scale: 0.99 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.99 }}
@@ -7348,8 +7225,8 @@ export default function App() {
         )}
 
         {view === 'energy' && user && (
-          <motion.div
-            key="energy"
+          <motion.div 
+            key="energy" 
             initial={{ opacity: 0, scale: 0.99 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.99 }}
@@ -7360,8 +7237,8 @@ export default function App() {
         )}
 
         {view === 'avoidance' && user && (
-          <motion.div
-            key="avoidance"
+          <motion.div 
+            key="avoidance" 
             initial={{ opacity: 0, scale: 0.99 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.99 }}
@@ -7372,8 +7249,8 @@ export default function App() {
         )}
 
         {view === 'future-self' && user && (
-          <motion.div
-            key="future-self"
+          <motion.div 
+            key="future-self" 
             initial={{ opacity: 0, scale: 0.99 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.99 }}
@@ -7384,8 +7261,8 @@ export default function App() {
         )}
 
         {view === 'help' && (
-          <motion.div
-            key="help"
+          <motion.div 
+            key="help" 
             initial={{ opacity: 0, scale: 0.99 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.99 }}
@@ -7397,7 +7274,7 @@ export default function App() {
       </AnimatePresence>
 
       {showExitPrompt && (
-        <ExitPrompt
+        <ExitPrompt 
           onConfirm={() => {
             setShowExitPrompt(false);
             setView('exit');
@@ -7415,7 +7292,7 @@ export default function App() {
             { id: 'companion', icon: Sparkles, label: 'AI Companion' },
             { id: 'settings', icon: Settings, label: 'Settings' },
           ].map((item, idx, arr) => (
-            <motion.button
+            <motion.button 
               key={item.id}
               whileTap={{ scale: 0.8 }}
               onClick={() => setView(item.id as AppState)}
@@ -7431,7 +7308,7 @@ export default function App() {
             </motion.button>
           ))}
           <div className="w-px h-8 bg-white/10 self-center mx-1" />
-          <button
+          <button 
             onClick={() => setView('exit')}
             className="w-12 h-12 rounded-full flex items-center justify-center text-vox-paper/50 hover:bg-white/5 group relative"
             title="Exit"

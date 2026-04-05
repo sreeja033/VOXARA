@@ -24,14 +24,14 @@ const withRetry = async <T>(fn: () => Promise<T>, maxRetries = 5): Promise<T> =>
     } catch (error: any) {
       lastError = error;
       const errorString = error?.message || String(error);
-      const isQuotaError =
-        errorString.includes('429') ||
+      const isQuotaError = 
+        errorString.includes('429') || 
         errorString.includes('RESOURCE_EXHAUSTED') ||
         errorString.includes('Rate limit') ||
         errorString.includes('quota') ||
         (error?.status === 'RESOURCE_EXHAUSTED') ||
         (error?.response?.status === 429);
-
+        
       if (isQuotaError && i < maxRetries - 1) {
         // Even longer delay for quota errors with exponential backoff
         // i=0: ~2s, i=1: ~6s, i=2: ~18s, etc.
@@ -40,7 +40,7 @@ const withRetry = async <T>(fn: () => Promise<T>, maxRetries = 5): Promise<T> =>
         await new Promise(resolve => setTimeout(resolve, delay));
         continue;
       }
-
+      
       // For other errors, maybe retry once or twice with shorter delay
       if (i < 2 && !isQuotaError) {
         await new Promise(resolve => setTimeout(resolve, 2000));
@@ -70,7 +70,7 @@ export const generateCompanionResponse = async (message: string, history: { role
 
   try {
     const response = await withRetry(() => ai.models.generateContent({
-      model: "gemini-2.0-flash",
+      model: "gemini-3-flash-preview",
       contents: [
         ...history.map(h => ({ role: h.role, parts: h.parts })),
         { role: 'user', parts: [{ text: message }] }
@@ -96,7 +96,7 @@ export const generateCompanionResponse = async (message: string, history: { role
         temperature: 0.9,
       }
     }));
-
+    
     const text = response.text;
     if (message.includes("entering the sanctuary") && history.length === 0 && text) {
       companionIntroCache["intro"] = text;
@@ -110,7 +110,7 @@ export const generateCompanionResponse = async (message: string, history: { role
 
 export const generateSpeech = async (text: string, voiceName: string = 'Zephyr') => {
   if (!text || text.trim().length === 0) return null;
-
+  
   try {
     const response = await withRetry(() => ai.models.generateContent({
       model: "gemini-2.5-flash-preview-tts",
@@ -143,7 +143,7 @@ export const generateSpeech = async (text: string, voiceName: string = 'Zephyr')
 export const ghostModePractice = async (message: string, persona: string) => {
   try {
     const response = await withRetry(() => ai.models.generateContent({
-      model: "gemini-2.0-flash",
+      model: "gemini-3-flash-preview",
       contents: [{ role: 'user', parts: [{ text: `I want to practice saying this to my ${persona}: "${message}"` }] }],
       config: {
         responseMimeType: "application/json",
@@ -203,13 +203,12 @@ export const generateVoiceInsight = async (text: string, base64Audio: string, mi
   try {
     const normalizedMimeType = mimeType.split(';')[0];
     const response = await withRetry(() => ai.models.generateContent({
-      model: "gemini-2.0-flash",
+      model: "gemini-3-flash-preview",
       contents: [{
         role: 'user',
         parts: [
           { inlineData: { data: base64Audio, mimeType: normalizedMimeType } },
-          {
-            text: `The user just recorded a ${mode} note: "${text}". 
+          { text: `The user just recorded a ${mode} note: "${text}". 
           Provide a very brief (1-2 sentences) supportive insight or validation based on their voice and what they said. 
           Keep it atmospheric and trauma-informed.` }
         ]
@@ -226,13 +225,12 @@ export const analyzePracticeAudio = async (practiceWord: string, base64Audio: st
   try {
     const normalizedMimeType = mimeType.split(';')[0];
     const response = await withRetry(() => ai.models.generateContent({
-      model: "gemini-2.0-flash",
+      model: "gemini-3-flash-preview",
       contents: [{
         role: 'user',
         parts: [
           { inlineData: { data: base64Audio, mimeType: normalizedMimeType } },
-          {
-            text: `The user is practicing in ${mode} mode. The target word/sound is: "${practiceWord}". 
+          { text: `The user is practicing in ${mode} mode. The target word/sound is: "${practiceWord}". 
           Analyze the audio for:
           1. Sentiment (emotional tone)
           2. Courage level (confidence and strength in voice)
@@ -258,9 +256,9 @@ export const transcribeAudio = async (base64Audio: string, mimeType: string) => 
   try {
     // Normalize mimeType for Gemini API
     const normalizedMimeType = mimeType.split(';')[0];
-
+    
     const response = await withRetry(() => ai.models.generateContent({
-      model: "gemini-2.0-flash",
+      model: "gemini-3-flash-preview",
       contents: [
         {
           role: 'user',
@@ -292,7 +290,7 @@ export const generateJournalPrompt = async (userContext?: string) => {
 
   try {
     const response = await withRetry(() => ai.models.generateContent({
-      model: "gemini-2.0-flash",
+      model: "gemini-3-flash-preview",
       contents: [{ role: 'user', parts: [{ text: userContext ? `Based on my recent experiences: ${userContext}, generate a unique journaling prompt.` : "Generate a unique journaling prompt for self-reflection and courage building." }] }],
       config: {
         systemInstruction: `You are the VOXARA Courage Guide. 
@@ -307,7 +305,7 @@ export const generateJournalPrompt = async (userContext?: string) => {
         temperature: 0.9,
       }
     }));
-
+    
     const text = response.text;
     if (text) {
       promptCache[cacheKey] = text;
@@ -323,7 +321,7 @@ export const generateJournalPrompt = async (userContext?: string) => {
 export const generateFutureSelfDialogue = async (message: string, history: { role: 'user' | 'model', parts: { text: string }[] }[], userGrowthData: string) => {
   try {
     const response = await withRetry(() => ai.models.generateContent({
-      model: "gemini-2.0-flash",
+      model: "gemini-3-flash-preview",
       contents: [
         ...history.map(h => ({ role: h.role, parts: h.parts })),
         { role: 'user', parts: [{ text: message }] }
