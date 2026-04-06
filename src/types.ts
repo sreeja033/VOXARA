@@ -97,7 +97,7 @@ export interface User {
   futureSelfDialogueHistory?: FutureSelfDialogueEntry[];
 }
 
-export type AppState = 'landing' | 'auth' | 'home' | 'dashboard' | 'whisper' | 'companion' | 'map' | 'circles' | 'presence' | 'bridge' | 'simulation' | 'echo' | 'anchor' | 'exit' | 'emergency' | 'connections' | 'journal' | 'settings' | 'meditations' | 'rituals' | 'calm' | 'mood' | 'safety-onboarding' | 'notifications' | 'help' | 'energy' | 'avoidance' | 'future-self';
+export type AppState = 'landing' | 'auth' | 'home' | 'dashboard' | 'whisper' | 'companion' | 'map' | 'circles' | 'presence' | 'bridge' | 'simulation' | 'echo' | 'anchor' | 'exit' | 'emergency' | 'connections' | 'journal' | 'settings' | 'meditations' | 'rituals' | 'calm' | 'mood' | 'safety-onboarding' | 'notifications' | 'help' | 'energy' | 'avoidance' | 'future-self' | 'bridge-complete';
 
 export interface VoiceNote {
   id: string;

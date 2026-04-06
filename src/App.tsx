@@ -61,6 +61,9 @@ import {
   Bell,
   HelpCircle,
   BarChart2,
+  Ghost,
+  Clock,
+  Copy,
   Hand,
   Utensils
 } from 'lucide-react';
@@ -2932,13 +2935,12 @@ const Home = ({ user, setView }: { user: User, setView: (v: AppState) => void })
     { id: 'meditations', label: 'Meditations', x: 20, y: 45, icon: Moon, desc: 'Guided mindfulness journeys for inner peace.', priority: true, size: 'large' },
     { id: 'whisper', label: 'Whisper', x: 35, y: 30, icon: Mic, desc: 'A safe space to speak your unspoken truths.', priority: true, size: 'xl' },
     { id: 'calm', label: 'Grief Support', x: 50, y: 20, icon: Heart, desc: 'Gentle guidance through loss and healing.' },
-    { id: 'emergency', label: 'Crisis Toolkit', x: 75, y: 25, icon: AlertCircle, desc: 'Immediate tools for overwhelming moments.', priority: true, size: 'large' },
     { id: 'circles', label: 'Connections', x: 85, y: 45, icon: Users, desc: 'Supportive community spaces and circles.' },
     { id: 'journal', label: 'Journal', x: 70, y: 65, icon: BookOpen, desc: 'Reflect on your daily path and insights.' },
     { id: 'rituals', label: 'Rituals', x: 50, y: 75, icon: Sparkles, desc: 'Daily habits to ground your spirit.' },
     { id: 'avoidance', label: 'Avoidance', x: 25, y: 15, icon: RotateCcw, desc: 'Break patterns that hold you back.' },
     { id: 'future-self', label: 'Future Self', x: 10, y: 55, icon: Sparkles, desc: 'Connect with your future, confident self.' },
-    { id: 'simulation', label: 'Bridge', x: 45, y: 45, icon: Zap, desc: 'Practice difficult moments with AI guidance.' },
+    { id: 'simulation', label: 'Beloved Bridge', x: 45, y: 45, icon: Zap, desc: 'A scaffold for emotional growth. Practice vulnerability before connecting in the real world.', priority: true, size: 'large' },
     { id: 'anchor', label: 'Anchor', x: 85, y: 15, icon: Shield, desc: 'Immediate grounding and safety tools.' },
     { id: 'energy', label: 'Social Energy', x: 92, y: 35, icon: Zap, desc: 'Track and manage your social battery.' },
   ];
@@ -2948,17 +2950,16 @@ const Home = ({ user, setView }: { user: User, setView: (v: AppState) => void })
     ['whisper', 'calm'],
     ['whisper', 'future-self'],
     ['avoidance', 'calm'],
-    ['calm', 'emergency'],
+    ['calm', 'anchor'],
     ['calm', 'simulation'],
-    ['emergency', 'anchor'],
-    ['emergency', 'circles'],
+    ['anchor', 'circles'],
     ['circles', 'journal'],
     ['journal', 'rituals'],
     ['rituals', 'meditations'],
     ['simulation', 'future-self'],
     ['simulation', 'rituals'],
     ['circles', 'energy'],
-    ['emergency', 'energy'],
+    ['anchor', 'energy'],
   ];
 
   return (
@@ -4289,16 +4290,16 @@ const FearMap = ({ data }: { data: { rejection: number, conflict: number, misund
   );
 };
 
-const EmergencyScreen = ({ onBack, onReturn }: { onBack: () => void, onReturn: () => void }) => (
+const BridgeCompletionScreen = ({ onBack, onReturn }: { onBack: () => void, onReturn: () => void }) => (
   <div className="min-h-screen flex flex-col items-center justify-center p-6 relative overflow-hidden">
-    <div className="absolute inset-0 bg-red-500/5 vox-gradient opacity-40" />
+    <div className="absolute inset-0 bg-vox-accent/5 vox-gradient opacity-40" />
     <motion.div 
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
-      className="max-w-2xl w-full glass-dark p-12 rounded-[4rem] border border-red-500/20 text-center relative z-10"
+      className="max-w-2xl w-full glass-dark p-12 rounded-[4rem] border border-vox-accent/20 text-center relative z-10"
     >
-      <div className="w-24 h-24 rounded-[2.5rem] bg-red-500/10 flex items-center justify-center border border-red-500/20 mx-auto mb-8">
-        <AlertTriangle size={48} className="text-red-500" />
+      <div className="w-24 h-24 rounded-[2.5rem] bg-vox-accent/10 flex items-center justify-center border border-vox-accent/20 mx-auto mb-8">
+        <CheckCircle2 size={48} className="text-vox-accent" />
       </div>
       <h2 className="text-5xl font-light tracking-tighter mb-6">You're Ready.</h2>
       <p className="text-vox-paper/60 text-xl font-serif italic mb-12 leading-relaxed">
@@ -4308,7 +4309,7 @@ const EmergencyScreen = ({ onBack, onReturn }: { onBack: () => void, onReturn: (
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <button 
           onClick={onBack}
-          className="py-4 bg-vox-paper text-vox-ink rounded-2xl font-bold hover:scale-105 transition-all"
+          className="py-4 bg-vox-paper text-vox-bg rounded-2xl font-bold hover:scale-105 transition-all"
         >
           Exit to Real Life
         </button>
@@ -4330,6 +4331,7 @@ const BelovedBridge = ({ onBack, onExitToEmergency, safePlayPCM, stopAllAudio }:
   const [practiceResponse, setPracticeResponse] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isAudioLoading, setIsAudioLoading] = useState(false);
+  const [showCelebration, setShowCelebration] = useState(false);
   const [audioBase64, setAudioBase64] = useState<string | null>(null);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -4389,145 +4391,266 @@ const BelovedBridge = ({ onBack, onExitToEmergency, safePlayPCM, stopAllAudio }:
 
   return (
     <div className="min-h-screen p-6 max-w-4xl mx-auto pt-24">
-      <header className="flex items-center justify-between mb-12">
+      <header className="flex items-center justify-between mb-8">
         <button onClick={onBack} className="flex items-center gap-2 text-vox-paper/50 hover:text-vox-paper">
           <ChevronRight className="rotate-180" size={20} /> Dashboard
         </button>
-        <h2 className="text-3xl">Beloved Bridge™</h2>
+        <div className="text-right">
+          <h2 className="text-3xl font-light tracking-tight">Beloved Bridge™</h2>
+          <p className="text-[10px] uppercase tracking-[0.3em] text-vox-accent font-bold">Real-World Connection Builder</p>
+        </div>
       </header>
 
       {step === 'select' ? (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-8">
-          <div className="glass-dark p-8 rounded-3xl">
-            <h3 className="text-xl mb-6">Who do you want to reach out to?</h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-              {['Partner', 'Parent', 'Friend', 'Colleague'].map(p => (
-                <button 
-                  key={p}
-                  onClick={() => setPersona(p)}
-                  className={`py-3 rounded-xl border transition-all ${persona === p ? 'bg-vox-accent border-vox-accent' : 'border-white/10 bg-white/5 hover:bg-white/10'}`}
-                >
-                  {p}
-                </button>
-              ))}
-            </div>
+          <div className="glass-dark p-10 rounded-[3rem] border border-white/5 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-vox-accent/5 blur-[100px] rounded-full -mr-32 -mt-32" />
             
-            <h3 className="text-xl mb-4">What do you want to say?</h3>
-            <textarea 
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              placeholder="Draft your message here..."
-              className="w-full h-40 bg-white/5 border border-white/10 rounded-2xl p-6 focus:outline-none focus:border-vox-accent transition-colors mb-6"
-            />
+            <div className="relative z-10 mb-12">
+              <h3 className="text-4xl font-light tracking-tighter mb-4">Practice Vulnerability</h3>
+              <p className="text-vox-paper/40 font-serif italic text-lg leading-relaxed">
+                A safe scaffold for emotional growth. Rehearse difficult conversations with AI before you step back into your real-life relationships.
+              </p>
+            </div>
 
-            <button 
-              onClick={startGhostMode}
-              disabled={!persona || !message}
-              className="w-full py-4 bg-vox-paper text-vox-ink rounded-xl font-semibold disabled:opacity-30 flex items-center justify-center gap-2"
-            >
-              {isLoading ? 'Preparing Ghost Mode...' : 'Enter Ghost Mode Practice'} <ChevronRight size={18} />
-            </button>
+            <div className="space-y-10 relative z-10">
+              <div>
+                <h4 className="text-xs font-bold uppercase tracking-widest text-vox-paper/30 mb-6">1. Choose your connection</h4>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {['Partner', 'Parent', 'Friend', 'Colleague'].map(p => (
+                    <button 
+                      key={p}
+                      onClick={() => setPersona(p)}
+                      className={`py-4 rounded-2xl border transition-all text-sm font-medium ${persona === p ? 'bg-vox-accent border-vox-accent text-white shadow-lg shadow-vox-accent/20' : 'border-white/5 bg-white/5 hover:bg-white/10 text-vox-paper/60'}`}
+                    >
+                      {p}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              
+              <div>
+                <h4 className="text-xs font-bold uppercase tracking-widest text-vox-paper/30 mb-6">2. Draft your message</h4>
+                <textarea 
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  placeholder="What do you want to say? Be as honest as you can..."
+                  className="w-full h-48 bg-white/5 border border-white/10 rounded-[2rem] p-8 focus:outline-none focus:border-vox-accent transition-colors text-lg leading-relaxed placeholder:text-vox-paper/20"
+                />
+              </div>
+
+              <button 
+                onClick={startGhostMode}
+                disabled={!persona || !message}
+                className="w-full py-6 bg-vox-paper text-vox-bg rounded-[2rem] font-bold uppercase tracking-[0.3em] text-xs disabled:opacity-30 flex items-center justify-center gap-3 shadow-xl shadow-black/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
+              >
+                {isLoading ? (
+                  <div className="w-5 h-5 border-2 border-vox-bg border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <>Enter Ghost Mode Practice <Zap size={16} /></>
+                )}
+              </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="glass-dark p-8 rounded-[2.5rem] border border-white/5">
+              <div className="w-10 h-10 rounded-2xl bg-white/5 flex items-center justify-center mb-6">
+                <Ghost size={20} className="text-vox-accent" />
+              </div>
+              <h4 className="text-sm font-bold mb-3 uppercase tracking-wider">Ghost Mode</h4>
+              <p className="text-xs text-vox-paper/40 leading-relaxed">Rehearse with a simulated persona to see likely reactions and refine your approach.</p>
+            </div>
+            <div className="glass-dark p-8 rounded-[2.5rem] border border-white/5">
+              <div className="w-10 h-10 rounded-2xl bg-white/5 flex items-center justify-center mb-6">
+                <Clock size={20} className="text-vox-accent" />
+              </div>
+              <h4 className="text-sm font-bold mb-3 uppercase tracking-wider">Drafting & Timing</h4>
+              <p className="text-xs text-vox-paper/40 leading-relaxed">Get suggestions on the best time to reach out based on your emotional state.</p>
+            </div>
+            <div className="glass-dark p-8 rounded-[2.5rem] border border-white/5">
+              <div className="w-10 h-10 rounded-2xl bg-white/5 flex items-center justify-center mb-6">
+                <LogOut size={20} className="text-vox-accent" />
+              </div>
+              <h4 className="text-sm font-bold mb-3 uppercase tracking-wider">Anti-Dependency</h4>
+              <p className="text-xs text-vox-paper/40 leading-relaxed">We celebrate when you step away from the screen and into a real human connection.</p>
+            </div>
           </div>
         </motion.div>
       ) : (
-        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="space-y-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="md:col-span-2 space-y-6">
-              <div className="glass-dark p-8 rounded-3xl border border-white/5 relative group">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="text-[10px] uppercase tracking-widest text-vox-paper/30 font-bold">Likely Reaction from {persona}</div>
+        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="space-y-8 pb-24">
+          {showCelebration ? (
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="glass-dark p-12 rounded-[4rem] border border-vox-accent/20 text-center relative overflow-hidden"
+            >
+              <div className="absolute inset-0 bg-vox-accent/5 blur-[100px] rounded-full" />
+              <div className="relative z-10">
+                <div className="w-24 h-24 rounded-[2.5rem] bg-vox-accent/20 flex items-center justify-center mx-auto mb-10 border border-vox-accent/30">
+                  <Heart size={48} className="text-vox-accent animate-pulse" />
+                </div>
+                <h3 className="text-5xl font-light tracking-tighter mb-6">Courage in Action</h3>
+                <p className="text-vox-paper/60 font-serif italic text-2xl mb-12 max-w-2xl mx-auto leading-relaxed">
+                  {practiceResponse?.realWorldCelebration || "You've practiced well. The next step is the most courageous one—connecting for real."}
+                </p>
+                <div className="flex flex-col md:flex-row gap-4 justify-center">
                   <button 
-                    onClick={() => handlePlayAudio(practiceResponse?.personaReaction)}
-                    disabled={isAudioLoading}
-                    className="p-2 rounded-full bg-vox-accent/10 text-vox-accent hover:bg-vox-accent/20 transition-all disabled:opacity-50"
+                    onClick={() => {
+                      setShowCelebration(false);
+                      onExitToEmergency();
+                    }}
+                    className="px-12 py-5 bg-vox-accent text-white rounded-full font-bold uppercase tracking-[0.3em] text-xs shadow-xl shadow-vox-accent/20 hover:scale-105 transition-all"
                   >
-                    {isAudioLoading ? (
-                      <div className="w-4 h-4 border-2 border-vox-accent border-t-transparent rounded-full animate-spin" />
-                    ) : (
-                      <Volume2 size={16} />
-                    )}
+                    I've Reached Out
+                  </button>
+                  <button 
+                    onClick={() => setShowCelebration(false)}
+                    className="px-12 py-5 border border-white/10 rounded-full font-bold uppercase tracking-[0.3em] text-xs hover:bg-white/5 transition-all"
+                  >
+                    Not Yet
                   </button>
                 </div>
-                <div className="font-serif text-2xl italic leading-relaxed text-vox-accent">
-                  "{practiceResponse?.personaReaction}"
+              </div>
+            </motion.div>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+              <div className="lg:col-span-8 space-y-8">
+                <div className="glass-dark p-10 rounded-[3rem] border border-white/5 relative group overflow-hidden">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-vox-accent/5 blur-[60px] rounded-full -mr-16 -mt-16" />
+                  <div className="flex items-center justify-between mb-8 relative z-10">
+                    <div className="text-[10px] uppercase tracking-[0.4em] text-vox-accent font-bold">Likely Reaction from {persona}</div>
+                    <button 
+                      onClick={() => handlePlayAudio(practiceResponse?.personaReaction)}
+                      disabled={isAudioLoading}
+                      className="w-12 h-12 rounded-2xl bg-vox-accent/10 text-vox-accent flex items-center justify-center hover:bg-vox-accent/20 transition-all disabled:opacity-50 border border-vox-accent/20"
+                    >
+                      {isAudioLoading ? (
+                        <div className="w-5 h-5 border-2 border-vox-accent border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <Volume2 size={20} />
+                      )}
+                    </button>
+                  </div>
+                  <div className="font-serif text-3xl italic leading-relaxed text-vox-paper/90 relative z-10">
+                    "{practiceResponse?.personaReaction}"
+                  </div>
+                </div>
+
+                <div className="glass-dark p-10 rounded-[3rem] border border-white/5">
+                  <div className="flex items-center justify-between mb-10">
+                    <div className="text-[10px] uppercase tracking-[0.4em] text-vox-paper/30 font-bold">Analysis & Refinement</div>
+                    {practiceResponse?.confidenceScore && (
+                      <div className="flex items-center gap-4">
+                        <span className="text-[10px] uppercase tracking-[0.4em] text-vox-paper/30 font-bold">Readiness</span>
+                        <div className="w-32 h-2 bg-white/5 rounded-full overflow-hidden relative">
+                          <motion.div 
+                            initial={{ width: 0 }}
+                            animate={{ width: `${practiceResponse.confidenceScore * 100}%` }}
+                            className={`absolute inset-y-0 left-0 ${practiceResponse.confidenceScore > 0.8 ? 'bg-emerald-400' : 'bg-vox-accent'}`}
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="space-y-10">
+                    <div>
+                      <h4 className="text-xs font-bold uppercase tracking-widest text-vox-paper/30 mb-4">The Insight</h4>
+                      <p className="text-vox-paper/70 leading-relaxed text-lg italic font-serif">
+                        {practiceResponse?.analysis}
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                      <div className="space-y-6">
+                        <h4 className="text-xs font-bold uppercase tracking-widest text-emerald-400 flex items-center gap-2">
+                          <Sparkles size={14} /> Actionable Tips
+                        </h4>
+                        <ul className="space-y-4">
+                          {practiceResponse?.actionableAdvice?.map((tip: string, i: number) => (
+                            <li key={i} className="text-sm flex gap-4 text-vox-paper/60 leading-relaxed">
+                              <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0 mt-2" />
+                              {tip}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+
+                      <div className="space-y-6">
+                        <h4 className="text-xs font-bold uppercase tracking-widest text-vox-accent flex items-center gap-2">
+                          <Clock size={14} /> Timing Advice
+                        </h4>
+                        <div className="p-6 rounded-2xl bg-vox-accent/5 border border-vox-accent/10 text-sm text-vox-paper/70 leading-relaxed italic">
+                          {practiceResponse?.timingAdvice || "Wait for a quiet moment when you both feel grounded."}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="pt-6 border-t border-white/5">
+                      <h4 className="text-xs font-bold uppercase tracking-widest text-vox-paper/30 mb-6">Drafting Suggestions</h4>
+                      <div className="space-y-4">
+                        {practiceResponse?.draftingSuggestions?.map((draft: string, i: number) => (
+                          <div key={i} className="p-6 rounded-2xl bg-white/5 border border-white/5 text-sm text-vox-paper/80 leading-relaxed relative group">
+                            <button 
+                              onClick={() => {
+                                navigator.clipboard.writeText(draft);
+                                // Could add a toast here
+                              }}
+                              className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity text-vox-paper/30 hover:text-vox-accent"
+                            >
+                              <Copy size={14} />
+                            </button>
+                            "{draft}"
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              <div className="glass-dark p-8 rounded-3xl border border-white/5">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="text-[10px] uppercase tracking-widest text-vox-paper/30 font-bold">Analysis & Advice</div>
-                  {practiceResponse?.confidenceScore && (
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] uppercase tracking-widest text-vox-paper/30 font-bold">Readiness</span>
-                      <div className="w-24 h-1.5 bg-white/5 rounded-full overflow-hidden">
-                        <motion.div 
-                          initial={{ width: 0 }}
-                          animate={{ width: `${practiceResponse.confidenceScore * 100}%` }}
-                          className={`absolute inset-0 ${practiceResponse.confidenceScore > 0.8 ? 'bg-emerald-400' : 'bg-vox-accent'}`}
-                        />
-                      </div>
-                    </div>
-                  )}
-                </div>
-                <p className="text-vox-paper/80 mb-6 leading-relaxed">
-                  {practiceResponse?.analysis}
-                </p>
-                
-                <div className="space-y-4">
-                  <h4 className="text-sm font-bold flex items-center gap-2 text-emerald-400">
-                    <Sparkles size={14} /> Actionable Tips
-                  </h4>
-                  <ul className="space-y-2">
-                    {practiceResponse?.actionableAdvice?.map((tip: string, i: number) => (
-                      <li key={i} className="text-sm flex gap-3 text-vox-paper/70">
-                        <span className="text-emerald-400 font-mono">•</span>
-                        {tip}
+              <div className="lg:col-span-4 space-y-8">
+                {practiceResponse?.fearMap && (
+                  <div className="glass-dark p-8 rounded-[2.5rem] border border-white/5">
+                    <h4 className="text-[10px] font-bold uppercase tracking-[0.4em] text-vox-accent mb-8">Fear Map</h4>
+                    <FearMap data={practiceResponse.fearMap} />
+                  </div>
+                )}
+
+                <div className="glass-dark p-8 rounded-[2.5rem] border border-white/5 bg-vox-accent/5">
+                  <h4 className="text-[10px] font-bold uppercase tracking-[0.4em] text-vox-accent mb-6">Your Strengths</h4>
+                  <ul className="space-y-4">
+                    {practiceResponse?.strengths?.map((s: string, i: number) => (
+                      <li key={i} className="text-xs flex gap-3 text-vox-paper/70 leading-relaxed">
+                        <Heart size={14} className="text-vox-accent shrink-0 mt-0.5" />
+                        {s}
                       </li>
                     ))}
                   </ul>
                 </div>
-              </div>
-            </div>
 
-            <div className="space-y-6">
-              {practiceResponse?.fearMap && (
-                <div className="glass-dark p-6 rounded-3xl border border-white/5">
-                  <h4 className="text-xs font-bold uppercase tracking-widest text-vox-accent mb-4">Fear Map</h4>
-                  <FearMap data={practiceResponse.fearMap} />
+                <div className="glass-dark p-8 rounded-[2.5rem] border border-white/5 italic text-sm text-vox-paper/40 text-center leading-relaxed">
+                  "{practiceResponse?.encouragement}"
                 </div>
-              )}
 
-              <div className="glass-dark p-6 rounded-3xl border border-white/5 bg-vox-accent/5">
-                <h4 className="text-xs font-bold uppercase tracking-widest text-vox-accent mb-4">Your Strengths</h4>
-                <ul className="space-y-3">
-                  {practiceResponse?.strengths?.map((s: string, i: number) => (
-                    <li key={i} className="text-xs flex gap-2 text-vox-paper/80">
-                      <Heart size={12} className="text-vox-accent shrink-0 mt-0.5" />
-                      {s}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <div className="glass-dark p-6 rounded-3xl border border-white/5 italic text-sm text-vox-paper/60 text-center">
-                "{practiceResponse?.encouragement}"
+                <div className="flex flex-col gap-4">
+                  <button 
+                    onClick={() => setShowCelebration(true)}
+                    className="w-full py-6 bg-vox-accent text-white rounded-[2rem] font-bold uppercase tracking-[0.3em] text-xs shadow-xl shadow-vox-accent/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
+                  >
+                    I'm Ready to Connect
+                  </button>
+                  <button 
+                    onClick={() => setStep('select')}
+                    className="w-full py-6 border border-white/10 rounded-[2rem] font-bold uppercase tracking-[0.3em] text-xs text-vox-paper/40 hover:bg-white/5 transition-all"
+                  >
+                    Refine Draft
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-
-          <div className="flex gap-4">
-            <button 
-              onClick={() => setStep('select')}
-              className="flex-1 py-4 border border-white/10 rounded-xl font-semibold hover:bg-white/5"
-            >
-              Try Again
-            </button>
-            <button 
-              className="flex-1 py-4 bg-vox-accent text-white rounded-xl font-semibold hover:bg-vox-accent/90"
-            >
-              I'm Ready to Send
-            </button>
-          </div>
+          )}
         </motion.div>
       )}
     </div>
@@ -5871,208 +5994,6 @@ const VoiceCircles = ({ onBack, user, setUser }: { onBack: () => void, user: Use
 };
 
 
-const FearSimulation = ({ onBack, user, setUser }: { onBack: () => void, user: User, setUser: React.Dispatch<React.SetStateAction<User | null>> }) => {
-  const [scenario, setScenario] = useState<any>(null);
-  const [feedback, setFeedback] = useState<string | null>(null);
-  const [isPracticing, setIsPracticing] = useState(false);
-  const [practiceStep, setPracticeStep] = useState(0);
-
-  const scenarios = [
-    { 
-      id: 'public-speaking-1', 
-      title: "The Spotlight Moment", 
-      category: 'Public Speaking',
-      desc: "Practice introducing yourself in a room full of strangers. Focus on steady breath and clear projection.",
-      steps: [
-        "Grounding: Take three deep breaths, feeling your feet on the floor.",
-        "Opening: 'Hello everyone, my name is [Your Alias].'",
-        "Connection: 'I'm here today because I believe in the power of shared silence.'",
-        "Closing: 'I look forward to hearing your thoughts as well. Thank you.'"
-      ]
-    },
-    { 
-      id: 'assertiveness-1', 
-      title: "Setting the Bar", 
-      category: 'Assertiveness',
-      desc: "A colleague asks you to take on their work right before you leave. Practice saying no without guilt.",
-      steps: [
-        "The Request: 'Hey, can you just finish this report for me? I really need to head out.'",
-        "Initial Response: 'I understand you're in a hurry...'",
-        "The Boundary: '...but I've finished my tasks for the day and I'm leaving now.'",
-        "The Alternative: 'I can look at it first thing tomorrow morning if it's still needed.'"
-      ]
-    },
-    { 
-      id: 'vulnerability-1', 
-      title: "Sharing a Shadow", 
-      category: 'Vulnerability',
-      desc: "Practice sharing a small, safe insecurity with a trusted (simulated) companion.",
-      steps: [
-        "Opening: 'There's something I've been feeling a bit anxious about lately...'",
-        "The Share: 'I sometimes worry that my voice isn't strong enough to be heard.'",
-        "The Reflection: 'Saying it out loud makes it feel a bit less heavy.'",
-        "The Request: 'Thank you for just listening to that.'"
-      ]
-    },
-    {
-      id: 'conflict-1',
-      title: "The Calm Dissent",
-      category: 'Conflict Resolution',
-      desc: "Practice disagreeing with a popular opinion in a group setting without being confrontational.",
-      steps: [
-        "Listening: 'I hear what everyone is saying about the new direction...'",
-        "The Pivot: 'However, I have some concerns about how it might affect our quiet hours.'",
-        "The Proposal: 'Could we consider a hybrid approach that preserves the sanctuary feel?'",
-        "The Invitation: 'What do you all think about that possibility?'"
-      ]
-    }
-  ];
-
-  const handleComplete = () => {
-    const newLevel = Math.min(100, user.courageLevel + 5);
-    const lastEntry = user.courageHistory?.[user.courageHistory.length - 1];
-    setUser(prev => {
-      if (!prev) return null;
-      return {
-        ...prev,
-        courageLevel: Math.min(100, prev.courageLevel + 5),
-        courageHistory: [...(prev.courageHistory || []), { 
-          timestamp: Date.now(), 
-          level: Math.min(100, prev.courageLevel + 5),
-          rejection: lastEntry?.rejection || 0,
-          conflict: lastEntry?.conflict || 0,
-          misunderstanding: lastEntry?.misunderstanding || 0,
-          vulnerability: lastEntry?.vulnerability || 0
-        }]
-      };
-    });
-    setScenario(null);
-    setIsPracticing(false);
-    setPracticeStep(0);
-  };
-
-  return (
-    <div className="min-h-screen p-6 pt-24 max-w-4xl mx-auto pb-32">
-      <header className="flex items-center justify-between mb-12">
-        <button onClick={onBack} className="flex items-center gap-2 text-vox-paper/50 hover:text-vox-paper transition-colors">
-          <ChevronRight className="rotate-180" size={20} /> Dashboard
-        </button>
-        <div className="text-right">
-          <h2 className="text-4xl font-light tracking-tighter">Courage Lab</h2>
-          <p className="text-vox-paper/40 text-xs uppercase tracking-widest mt-1">Guided Practice Scenarios</p>
-        </div>
-      </header>
-
-      <AnimatePresence mode="wait">
-        {!scenario ? (
-          <motion.div 
-            key="list"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="grid grid-cols-1 md:grid-cols-2 gap-6"
-          >
-            {scenarios.map(s => (
-              <button 
-                key={s.id}
-                onClick={() => setScenario(s)}
-                className="glass-dark p-8 rounded-[2.5rem] text-left hover:border-vox-accent/50 transition-all group relative overflow-hidden"
-              >
-                <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
-                  <Shield size={64} />
-                </div>
-                <div className="text-[10px] uppercase tracking-widest font-bold text-vox-accent mb-4">{s.category}</div>
-                <h3 className="text-2xl mb-4 group-hover:text-vox-accent transition-colors font-serif italic">{s.title}</h3>
-                <p className="text-vox-paper/50 text-sm leading-relaxed">{s.desc}</p>
-              </button>
-            ))}
-          </motion.div>
-        ) : (
-          <motion.div 
-            key="practice"
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            className="space-y-8"
-          >
-            <div className="glass-dark p-12 rounded-[3rem] border border-white/5 relative overflow-hidden">
-              <div className="absolute top-0 left-0 w-full h-1 bg-white/5">
-                <motion.div 
-                  className="h-full bg-vox-accent"
-                  initial={{ width: 0 }}
-                  animate={{ width: `${((practiceStep + 1) / scenario.steps.length) * 100}%` }}
-                />
-              </div>
-
-              {!isPracticing ? (
-                <div className="text-center py-12">
-                  <div className="w-24 h-24 rounded-[2rem] bg-vox-accent/10 flex items-center justify-center mx-auto mb-8 border border-vox-accent/20">
-                    <Play size={40} className="text-vox-accent" />
-                  </div>
-                  <h3 className="text-3xl mb-4 font-serif italic">{scenario.title}</h3>
-                  <p className="text-vox-paper/60 mb-12 max-w-md mx-auto">{scenario.desc}</p>
-                  <button 
-                    onClick={() => setIsPracticing(true)}
-                    className="px-12 py-6 bg-vox-accent text-vox-bg rounded-full font-bold text-lg hover:scale-105 transition-all shadow-xl shadow-vox-accent/20"
-                  >
-                    Enter Simulation
-                  </button>
-                </div>
-              ) : (
-                <div className="space-y-12">
-                  <div className="flex justify-between items-center">
-                    <span className="text-[10px] uppercase tracking-[0.3em] font-bold text-vox-accent">Step {practiceStep + 1} of {scenario.steps.length}</span>
-                    <button onClick={() => setScenario(null)} className="text-vox-paper/30 hover:text-vox-paper transition-colors"><X size={20} /></button>
-                  </div>
-
-                  <div className="min-h-[200px] flex items-center justify-center text-center">
-                    <motion.div 
-                      key={practiceStep}
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      className="text-2xl md:text-3xl font-serif italic leading-relaxed text-vox-paper/90"
-                    >
-                      {scenario.steps[practiceStep]}
-                    </motion.div>
-                  </div>
-
-                  <div className="flex gap-4">
-                    {practiceStep > 0 && (
-                      <button 
-                        onClick={() => setPracticeStep(practiceStep - 1)}
-                        className="flex-1 py-6 bg-white/5 rounded-full font-bold text-vox-paper/60 hover:bg-white/10 transition-all"
-                      >
-                        Previous
-                      </button>
-                    )}
-                    {practiceStep < scenario.steps.length - 1 ? (
-                      <button 
-                        onClick={() => setPracticeStep(practiceStep + 1)}
-                        className="flex-[2] py-6 bg-vox-accent text-vox-bg rounded-full font-bold text-lg hover:scale-[1.02] transition-all"
-                      >
-                        Next Step
-                      </button>
-                    ) : (
-                      <button 
-                        onClick={handleComplete}
-                        className="flex-[2] py-6 bg-emerald-500 text-white rounded-full font-bold text-lg hover:scale-[1.02] transition-all shadow-xl shadow-emerald-500/20"
-                      >
-                        Complete Practice
-                      </button>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-            <button onClick={() => setScenario(null)} className="text-vox-paper/40 hover:text-vox-paper transition-colors flex items-center gap-2 mx-auto">
-              <ChevronRight className="rotate-180" size={16} /> Choose different scenario
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-};
 
 const EchoChamber = ({ onBack, user, safePlayPCM }: { onBack: () => void, user: User, safePlayPCM: (b: string, s?: number, o?: () => void) => Promise<any> }) => {
   const [playingId, setPlayingId] = useState<string | null>(null);
@@ -7050,27 +6971,35 @@ export default function App() {
           </motion.div>
         )}
 
-        {view === 'bridge' && (
+        {view === 'simulation' && user && (
           <motion.div 
-            key="bridge" 
+            key="simulation" 
             initial={{ opacity: 0, scale: 0.99 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.99 }}
             transition={pageTransition}
           >
-            <BelovedBridge onBack={() => { stopAllAudio(); setView('home'); }} onExitToEmergency={() => setView('emergency')} safePlayPCM={safePlayPCM} stopAllAudio={stopAllAudio} />
+            <BelovedBridge 
+              onBack={() => { stopAllAudio(); setView('home'); }} 
+              onExitToEmergency={() => setView('bridge-complete')} 
+              safePlayPCM={safePlayPCM} 
+              stopAllAudio={stopAllAudio} 
+            />
           </motion.div>
         )}
 
-        {view === 'emergency' && (
+        {view === 'bridge-complete' && user && (
           <motion.div 
-            key="emergency" 
+            key="bridge-complete" 
             initial={{ opacity: 0, scale: 0.99 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.99 }}
             transition={pageTransition}
           >
-            <EmergencyScreen onBack={() => setView('landing')} onReturn={() => setView('home')} />
+            <BridgeCompletionScreen 
+              onBack={() => setView('home')} 
+              onReturn={() => setView('simulation')} 
+            />
           </motion.div>
         )}
 
@@ -7159,17 +7088,7 @@ export default function App() {
           </motion.div>
         )}
 
-        {view === 'simulation' && user && (
-          <motion.div 
-            key="simulation" 
-            initial={{ opacity: 0, scale: 0.99 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.99 }}
-            transition={pageTransition}
-          >
-            <FearSimulation onBack={() => setView('dashboard')} user={user} setUser={setUser} />
-          </motion.div>
-        )}
+
 
         {view === 'exit' && user && (
           <motion.div 

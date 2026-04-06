@@ -152,6 +152,9 @@ export const ghostModePractice = async (message: string, persona: string) => {
           properties: {
             personaReaction: { type: Type.STRING, description: "How the persona would likely react in character." },
             analysis: { type: Type.STRING, description: "A brief analysis of the message's tone and impact." },
+            draftingSuggestions: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Refined or alternative versions of the user's message for better clarity or impact." },
+            timingAdvice: { type: Type.STRING, description: "Advice on the best time or context to send this message based on emotional state." },
+            realWorldCelebration: { type: Type.STRING, description: "A message encouraging the user to step away from the app and connect in the real world." },
             strengths: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Specific things the user did well." },
             actionableAdvice: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Specific, actionable steps to improve the message, directly tied to the persona's likely reaction." },
             encouragement: { type: Type.STRING, description: "A supportive closing statement." },
@@ -167,18 +170,21 @@ export const ghostModePractice = async (message: string, persona: string) => {
               required: ["rejection", "conflict", "misunderstanding", "vulnerability"]
             }
           },
-          required: ["personaReaction", "analysis", "strengths", "actionableAdvice", "encouragement", "confidenceScore", "fearMap"]
+          required: ["personaReaction", "analysis", "draftingSuggestions", "timingAdvice", "realWorldCelebration", "strengths", "actionableAdvice", "encouragement", "confidenceScore", "fearMap"]
         },
-        systemInstruction: `You are a communication coach in VOXARA Ghost Mode. 
+        systemInstruction: `You are a communication coach in VOXARA Beloved Bridge™ Ghost Mode. 
         The user is practicing a difficult conversation with their ${persona}.
         
         Your task:
         1. Simulate how the ${persona} might react (be realistic but not overly harsh).
         2. Analyze the user's message for clarity, emotional honesty, and boundaries.
         3. Provide SPECIFIC, ACTIONABLE advice. 
-        4. Highlight what they did well to build their courage.
-        5. Evaluate their confidence and readiness.
-        6. Map their likely internal fears based on the content of their message.
+        4. Suggest 2-3 refined "Drafts" of their message that might be more effective.
+        5. Give "Timing Advice" on when it's best to reach out (e.g., "Wait until you're both calm", "Send it when you're feeling grounded").
+        6. Create a "Real-World Celebration" message that pushes them to have the actual conversation and celebrate their courage.
+        7. Highlight what they did well to build their courage.
+        8. Evaluate their confidence and readiness.
+        9. Map their likely internal fears based on the content of their message.
         
         Keep the tone supportive, trauma-informed, and empowering.`,
         temperature: 0.7,
@@ -190,6 +196,9 @@ export const ghostModePractice = async (message: string, persona: string) => {
     return {
       personaReaction: "I'm listening...",
       analysis: "It takes courage to speak your truth.",
+      draftingSuggestions: ["I wanted to share something important with you...", "I've been thinking about our conversation..."],
+      timingAdvice: "Reach out when you both have a quiet moment to talk.",
+      realWorldCelebration: "You've practiced well. The next step is the most courageous one—connecting for real.",
       strengths: ["You took the first step by practicing."],
       actionableAdvice: ["Try to focus on your own feelings and needs."],
       encouragement: "You've got this. Practice makes it easier.",
