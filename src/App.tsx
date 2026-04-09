@@ -2194,8 +2194,7 @@ const LandingPage = ({ onStart, isLoggedIn }: { onStart: () => void, isLoggedIn:
         <VoxaraLogo className="w-10 h-10" />
         <div className="flex flex-col">
           <span className="text-lg font-serif tracking-tighter leading-none">VOXARA</span>
-          <span className="text-[8px] uppercase tracking-[0.4em] text-vox-accent font-bold mt-1">Aura of voice,Power of Rise
-</span>
+          <span className="text-[8px] uppercase tracking-[0.4em] text-vox-accent font-bold mt-1">Courage Companion</span>
         </div>
       </div>
       <motion.button 
@@ -2372,12 +2371,29 @@ const LandingPage = ({ onStart, isLoggedIn }: { onStart: () => void, isLoggedIn:
     {/* Final CTA */}
     <section className="py-40 text-center px-6">
       <h2 className="text-6xl md:text-8xl mb-12 font-serif italic">Ready to be heard?</h2>
-      <button 
-        onClick={onStart}
-        className="px-12 py-6 bg-vox-paper text-vox-ink rounded-full font-bold text-2xl hover:scale-105 active:scale-95 transition-all"
-      >
-        Start Your Free Journey
-      </button>
+      <div className="flex flex-col items-center gap-6">
+        <button 
+          onClick={onStart}
+          className="px-12 py-6 bg-vox-paper text-vox-ink rounded-full font-bold text-2xl hover:scale-105 active:scale-95 transition-all"
+        >
+          {isLoggedIn ? 'Go to Dashboard' : 'Start Your Free Journey'}
+        </button>
+        {isLoggedIn && (
+          <button 
+            onClick={async () => {
+              try {
+                await logOut();
+                window.location.reload();
+              } catch (err) {
+                console.error("Logout error:", err);
+              }
+            }}
+            className="text-vox-paper/40 hover:text-vox-paper transition-colors uppercase tracking-widest text-xs font-bold"
+          >
+            Sign Out of Sanctuary
+          </button>
+        )}
+      </div>
       <p className="mt-8 text-vox-paper/40">No credit card required. Just your courage.</p>
     </section>
 
@@ -2656,8 +2672,8 @@ const StrengthMap = ({ history }: { history: CourageHistoryEntry[] }) => {
   ];
 
   return (
-    <div className="h-full w-full relative group">
-      <ResponsiveContainer width="100%" height="100%">
+    <div className="h-full w-full relative group" style={{ minWidth: 0 }}>
+      <ResponsiveContainer width="100%" height="100%" minWidth={0}>
         <AreaChart data={data} margin={{ top: 20, right: 20, left: -20, bottom: 20 }}>
           <defs>
             <linearGradient id="colorLevel" x1="0" y1="0" x2="0" y2="1">
@@ -2807,8 +2823,8 @@ const FearMapEvolution = ({ history }: { history: CourageHistoryEntry[] }) => {
   ];
 
   return (
-    <div className="h-full w-full relative">
-      <ResponsiveContainer width="100%" height="100%">
+    <div className="h-full w-full relative" style={{ minWidth: 0 }}>
+      <ResponsiveContainer width="100%" height="100%" minWidth={0}>
         <AreaChart data={data} margin={{ top: 20, right: 20, left: -20, bottom: 20 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
           <XAxis 
@@ -3179,7 +3195,7 @@ const Dashboard = ({ user, setView, setUser }: { user: User, setView: (v: AppSta
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.1 }}
-              className="glass-dark p-10 rounded-[3rem] border border-white/5 flex flex-col h-full relative overflow-hidden group"
+              className="glass-dark p-10 rounded-[3rem] border border-white/5 flex flex-col relative overflow-hidden group"
             >
               <div className="absolute bottom-0 right-0 w-32 h-32 bg-white/5 blur-[60px] rounded-full -mb-16 -mr-16" />
               <div className="relative z-10">
@@ -3197,12 +3213,6 @@ const Dashboard = ({ user, setView, setUser }: { user: User, setView: (v: AppSta
                       {user.voiceNotes?.length || 0} <span className="text-sm text-vox-paper/40 font-serif italic">Notes Recorded</span>
                     </div>
                   </div>
-                  <div className="p-6 rounded-3xl bg-white/5 border border-white/10 hover:border-vox-accent/30 transition-all">
-                    <div className="text-[10px] text-vox-paper/30 uppercase tracking-widest mb-2 font-bold">Journaling</div>
-                    <div className="text-2xl font-light tracking-tighter">
-                      {user.journalEntries?.length || 0} <span className="text-sm text-vox-paper/40 font-serif italic">Reflections</span>
-                    </div>
-                  </div>
                 </div>
               </div>
               <button 
@@ -3210,6 +3220,34 @@ const Dashboard = ({ user, setView, setUser }: { user: User, setView: (v: AppSta
                 className="mt-12 w-full py-5 rounded-2xl bg-vox-accent text-vox-bg text-xs font-bold uppercase tracking-[0.3em] hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-vox-accent/10"
               >
                 Open History
+              </button>
+            </motion.div>
+
+            {/* Beloved Bridge Section */}
+            <motion.div 
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.15 }}
+              className="glass-dark p-10 rounded-[3rem] border border-vox-accent/20 flex flex-col relative overflow-hidden group"
+            >
+              <div className="absolute top-0 right-0 w-32 h-32 bg-vox-accent/5 blur-[60px] rounded-full -mt-16 -mr-16" />
+              <div className="relative z-10">
+                <div className="flex items-center justify-between mb-12">
+                  <div>
+                    <h3 className="text-2xl font-light tracking-tight mb-2">Beloved Bridge</h3>
+                    <p className="text-vox-accent text-xs uppercase tracking-widest font-bold">Connection Builder</p>
+                  </div>
+                  <Zap className="text-vox-accent/50" size={24} />
+                </div>
+                <p className="text-vox-paper/40 text-xs font-serif italic leading-relaxed mb-8">
+                  Practice vulnerability in a safe space before you step back into your real-life relationships.
+                </p>
+              </div>
+              <button 
+                onClick={() => setView('simulation')} 
+                className="w-full py-5 rounded-2xl bg-vox-paper text-vox-bg text-xs font-bold uppercase tracking-[0.3em] hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-black/20"
+              >
+                Start Practice
               </button>
             </motion.div>
           </div>
@@ -6184,7 +6222,15 @@ const ExitRitual = ({ user, onBack }: { user: User, onBack: () => void }) => {
 
       <div className="space-y-6 w-full">
         <button 
-          onClick={onBack}
+          onClick={async () => {
+            try {
+              await logOut();
+              onBack();
+            } catch (err) {
+              console.error("Logout error:", err);
+              onBack();
+            }
+          }}
           className="w-full py-6 bg-vox-accent text-vox-bg rounded-2xl font-bold uppercase tracking-widest hover:scale-[1.02] transition-all shadow-xl shadow-vox-accent/20"
         >
           Celebrate & Step Away

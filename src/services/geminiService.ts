@@ -1,6 +1,10 @@
-import { GoogleGenAI, Modality, Type } from "@google/genai";
+import { GoogleGenAI, Modality, Type, GenerateContentResponse } from "@google/genai";
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
+
+// Model aliases from skill guidelines
+const TEXT_MODEL = "gemini-flash-latest"; // Alias for the most stable flash model
+const MULTIMODAL_MODEL = "gemini-2.0-flash-exp"; 
 
 // Global throttle to prevent rapid successive calls
 let lastRequestTime = 0;
@@ -69,8 +73,8 @@ export const generateCompanionResponse = async (message: string, history: { role
   }
 
   try {
-    const response = await withRetry(() => ai.models.generateContent({
-      model: "gemini-3-flash-preview",
+    const response: GenerateContentResponse = await withRetry(() => ai.models.generateContent({
+      model: TEXT_MODEL,
       contents: [
         ...history.map(h => ({ role: h.role, parts: h.parts })),
         { role: 'user', parts: [{ text: message }] }
@@ -142,8 +146,8 @@ export const generateSpeech = async (text: string, voiceName: string = 'Zephyr')
 
 export const ghostModePractice = async (message: string, persona: string) => {
   try {
-    const response = await withRetry(() => ai.models.generateContent({
-      model: "gemini-3-flash-preview",
+    const response: GenerateContentResponse = await withRetry(() => ai.models.generateContent({
+      model: TEXT_MODEL,
       contents: [{ role: 'user', parts: [{ text: `I want to practice saying this to my ${persona}: "${message}"` }] }],
       config: {
         responseMimeType: "application/json",
@@ -211,8 +215,8 @@ export const ghostModePractice = async (message: string, persona: string) => {
 export const generateVoiceInsight = async (text: string, base64Audio: string, mimeType: string, mode: string) => {
   try {
     const normalizedMimeType = mimeType.split(';')[0];
-    const response = await withRetry(() => ai.models.generateContent({
-      model: "gemini-3-flash-preview",
+    const response: GenerateContentResponse = await withRetry(() => ai.models.generateContent({
+      model: TEXT_MODEL,
       contents: [{
         role: 'user',
         parts: [
@@ -233,8 +237,8 @@ export const generateVoiceInsight = async (text: string, base64Audio: string, mi
 export const analyzePracticeAudio = async (practiceWord: string, base64Audio: string, mimeType: string, mode: string) => {
   try {
     const normalizedMimeType = mimeType.split(';')[0];
-    const response = await withRetry(() => ai.models.generateContent({
-      model: "gemini-3-flash-preview",
+    const response: GenerateContentResponse = await withRetry(() => ai.models.generateContent({
+      model: TEXT_MODEL,
       contents: [{
         role: 'user',
         parts: [
@@ -266,8 +270,8 @@ export const transcribeAudio = async (base64Audio: string, mimeType: string) => 
     // Normalize mimeType for Gemini API
     const normalizedMimeType = mimeType.split(';')[0];
     
-    const response = await withRetry(() => ai.models.generateContent({
-      model: "gemini-3-flash-preview",
+    const response: GenerateContentResponse = await withRetry(() => ai.models.generateContent({
+      model: TEXT_MODEL,
       contents: [
         {
           role: 'user',
@@ -298,8 +302,8 @@ export const generateJournalPrompt = async (userContext?: string) => {
   }
 
   try {
-    const response = await withRetry(() => ai.models.generateContent({
-      model: "gemini-3-flash-preview",
+    const response: GenerateContentResponse = await withRetry(() => ai.models.generateContent({
+      model: TEXT_MODEL,
       contents: [{ role: 'user', parts: [{ text: userContext ? `Based on my recent experiences: ${userContext}, generate a unique journaling prompt.` : "Generate a unique journaling prompt for self-reflection and courage building." }] }],
       config: {
         systemInstruction: `You are the VOXARA Courage Guide. 
@@ -329,8 +333,8 @@ export const generateJournalPrompt = async (userContext?: string) => {
 
 export const generateFutureSelfDialogue = async (message: string, history: { role: 'user' | 'model', parts: { text: string }[] }[], userGrowthData: string) => {
   try {
-    const response = await withRetry(() => ai.models.generateContent({
-      model: "gemini-3-flash-preview",
+    const response: GenerateContentResponse = await withRetry(() => ai.models.generateContent({
+      model: TEXT_MODEL,
       contents: [
         ...history.map(h => ({ role: h.role, parts: h.parts })),
         { role: 'user', parts: [{ text: message }] }
