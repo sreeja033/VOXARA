@@ -1762,19 +1762,25 @@ const FutureSelfCall = ({ user, setUser, onBack, setView }: { user: User, setUse
   }, []);
 
   const cleanupAudio = () => {
+    sessionActiveRef.current = false;
     if (processorRef.current) {
-      processorRef.current.disconnect();
+      try {
+        processorRef.current.disconnect();
+      } catch (e) {}
       processorRef.current = null;
     }
     if (inputContextRef.current) {
-      inputContextRef.current.close();
+      try {
+        inputContextRef.current.close();
+      } catch (e) {}
       inputContextRef.current = null;
     }
     if (audioContextRef.current) {
-      audioContextRef.current.close();
+      try {
+        audioContextRef.current.close();
+      } catch (e) {}
       audioContextRef.current = null;
     }
-    sessionActiveRef.current = false;
   };
 
   const processQueue = async () => {
@@ -1926,6 +1932,7 @@ const FutureSelfCall = ({ user, setUser, onBack, setView }: { user: User, setUse
   };
 
   const setupAudio = async (session: any) => {
+    if (processorRef.current) return; // Already setup
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       
@@ -1979,8 +1986,8 @@ const FutureSelfCall = ({ user, setUser, onBack, setView }: { user: User, setUse
         }
 
         const workletNode = new AudioWorkletNode(inputContextRef.current, 'audio-processor');
-        workletNode.port.onmessage = (event) => {
-          if (!sessionActiveRef.current) return;
+        workletNode.port.onmessage = async (event) => {
+          if (!sessionActiveRef.current || !session) return;
           try {
             const inputData = event.data;
             const pcmData = new Int16Array(inputData.length);
@@ -1990,11 +1997,9 @@ const FutureSelfCall = ({ user, setUser, onBack, setView }: { user: User, setUse
             const base64Data = btoa(String.fromCharCode(...new Uint8Array(pcmData.buffer)));
             
             // Use the session passed to setupAudio
-            if (session) {
-              session.sendRealtimeInput({
-                audio: { data: base64Data, mimeType: 'audio/pcm;rate=16000' }
-              });
-            }
+            await session.sendRealtimeInput({
+              audio: { data: base64Data, mimeType: 'audio/pcm;rate=16000' }
+            });
           } catch (err) {
             // Silently ignore if session is closed
           }
@@ -2006,8 +2011,8 @@ const FutureSelfCall = ({ user, setUser, onBack, setView }: { user: User, setUse
       } catch (workletErr) {
         console.warn("AudioWorklet failed, falling back to ScriptProcessorNode:", workletErr);
         const scriptProcessor = inputContextRef.current.createScriptProcessor(4096, 1, 1);
-        scriptProcessor.onaudioprocess = (e) => {
-          if (!sessionActiveRef.current) return;
+        scriptProcessor.onaudioprocess = async (e) => {
+          if (!sessionActiveRef.current || !session) return;
           try {
             const inputData = e.inputBuffer.getChannelData(0);
             const pcmData = new Int16Array(inputData.length);
@@ -2016,11 +2021,9 @@ const FutureSelfCall = ({ user, setUser, onBack, setView }: { user: User, setUse
             }
             const base64Data = btoa(String.fromCharCode(...new Uint8Array(pcmData.buffer)));
             
-            if (session) {
-              session.sendRealtimeInput({
-                audio: { data: base64Data, mimeType: 'audio/pcm;rate=16000' }
-              });
-            }
+            await session.sendRealtimeInput({
+              audio: { data: base64Data, mimeType: 'audio/pcm;rate=16000' }
+            });
           } catch (err) {
             // Silently ignore
           }
