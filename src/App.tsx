@@ -1848,7 +1848,7 @@ const FutureSelfCall = ({ user, setUser, onBack, setView }: { user: User, setUse
       const growthData = `Current Courage: ${user.courageLevel}%. History: ${JSON.stringify(user.courageHistory?.slice(-5))}. Avoidance: ${user.avoidanceHistory?.map(e => e.situation).join(', ')}.`;
       
       const sessionPromise = ai.live.connect({
-        model: "gemini-2.0-flash-exp",
+        model: "gemini-3.1-flash-live-preview",
         callbacks: {
           onopen: () => {
             setIsConnected(true);
@@ -1958,7 +1958,7 @@ const FutureSelfCall = ({ user, setUser, onBack, setView }: { user: User, setUse
             class AudioProcessor extends AudioWorkletProcessor {
               process(inputs, outputs, parameters) {
                 const input = inputs[0];
-                if (input.length > 0) {
+                if (input && input.length > 0) {
                   const channelData = input[0];
                   this.port.postMessage(channelData);
                 }
@@ -1973,9 +1973,14 @@ const FutureSelfCall = ({ user, setUser, onBack, setView }: { user: User, setUse
           isWorkletLoadedRef.current = true;
         }
         
+        // Ensure context is running before creating node
+        if (inputContextRef.current.state === 'suspended') {
+          await inputContextRef.current.resume();
+        }
+
         const workletNode = new AudioWorkletNode(inputContextRef.current, 'audio-processor');
         workletNode.port.onmessage = (event) => {
-          if (!sessionActiveRef.current || !sessionRef.current) return;
+          if (!sessionActiveRef.current) return;
           try {
             const inputData = event.data;
             const pcmData = new Int16Array(inputData.length);
@@ -1983,11 +1988,15 @@ const FutureSelfCall = ({ user, setUser, onBack, setView }: { user: User, setUse
               pcmData[i] = Math.max(-1, Math.min(1, inputData[i])) * 0x7FFF;
             }
             const base64Data = btoa(String.fromCharCode(...new Uint8Array(pcmData.buffer)));
-            session.sendRealtimeInput({
-              audio: { data: base64Data, mimeType: 'audio/pcm;rate=16000' }
-            });
+            
+            // Use the session passed to setupAudio
+            if (session) {
+              session.sendRealtimeInput({
+                audio: { data: base64Data, mimeType: 'audio/pcm;rate=16000' }
+              });
+            }
           } catch (err) {
-            console.warn("Failed to send audio input (socket might be closed):", err);
+            // Silently ignore if session is closed
           }
         };
         
@@ -1998,7 +2007,7 @@ const FutureSelfCall = ({ user, setUser, onBack, setView }: { user: User, setUse
         console.warn("AudioWorklet failed, falling back to ScriptProcessorNode:", workletErr);
         const scriptProcessor = inputContextRef.current.createScriptProcessor(4096, 1, 1);
         scriptProcessor.onaudioprocess = (e) => {
-          if (!sessionActiveRef.current || !sessionRef.current || sessionRef.current.readyState !== 1) return;
+          if (!sessionActiveRef.current) return;
           try {
             const inputData = e.inputBuffer.getChannelData(0);
             const pcmData = new Int16Array(inputData.length);
@@ -2006,11 +2015,14 @@ const FutureSelfCall = ({ user, setUser, onBack, setView }: { user: User, setUse
               pcmData[i] = Math.max(-1, Math.min(1, inputData[i])) * 0x7FFF;
             }
             const base64Data = btoa(String.fromCharCode(...new Uint8Array(pcmData.buffer)));
-            session.sendRealtimeInput({
-              audio: { data: base64Data, mimeType: 'audio/pcm;rate=16000' }
-            });
+            
+            if (session) {
+              session.sendRealtimeInput({
+                audio: { data: base64Data, mimeType: 'audio/pcm;rate=16000' }
+              });
+            }
           } catch (err) {
-            console.warn("Failed to send audio input via ScriptProcessor:", err);
+            // Silently ignore
           }
         };
         source.connect(scriptProcessor);

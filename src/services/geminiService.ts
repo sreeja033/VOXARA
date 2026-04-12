@@ -3,9 +3,9 @@ import { GoogleGenAI, Modality, Type, GenerateContentResponse } from "@google/ge
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
 
 // Model aliases from skill guidelines
-const TEXT_MODEL = "gemini-1.5-flash"; // More stable model
-const MULTIMODAL_MODEL = "gemini-1.5-flash"; 
-const TTS_MODEL = "gemini-1.5-flash"; // Use 1.5-flash for TTS if supported, or fallback
+const TEXT_MODEL = "gemini-3-flash-preview"; 
+const MULTIMODAL_MODEL = "gemini-3-flash-preview"; 
+const TTS_MODEL = "gemini-2.5-flash-preview-tts"; 
 
 // Global throttle to prevent rapid successive calls
 let lastRequestTime = 0;
@@ -130,13 +130,9 @@ export const generateSpeech = async (text: string, voiceName: string = 'Zephyr')
       },
     }));
 
-    // Iterate through candidates and parts to find the audio data
-    for (const candidate of response.candidates || []) {
-      for (const part of candidate.content?.parts || []) {
-        if (part.inlineData?.data) {
-          return part.inlineData.data;
-        }
-      }
+    const base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+    if (base64Audio) {
+      return base64Audio;
     }
     throw new Error("No audio data in response");
   } catch (error) {
