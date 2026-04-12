@@ -1806,6 +1806,7 @@ const FutureSelfCall = ({ user, setUser, onBack, setView }: { user: User, setUse
       if (audioContextRef.current.state === 'suspended') {
         await audioContextRef.current.resume();
       }
+      console.log("Processing audio chunk for playback");
       const binaryString = atob(base64Audio);
       const len = binaryString.length;
       const bytes = new Uint8Array(len);
@@ -1867,6 +1868,7 @@ const FutureSelfCall = ({ user, setUser, onBack, setView }: { user: User, setUse
             if (message.serverContent?.modelTurn?.parts) {
               for (const part of message.serverContent.modelTurn.parts) {
                 if (part.inlineData?.data) {
+                  console.log("Received audio chunk from model");
                   playAudio(part.inlineData.data);
                 }
               }
@@ -1974,15 +1976,19 @@ const FutureSelfCall = ({ user, setUser, onBack, setView }: { user: User, setUse
         const workletNode = new AudioWorkletNode(inputContextRef.current, 'audio-processor');
         workletNode.port.onmessage = (event) => {
           if (!sessionActiveRef.current || !sessionRef.current) return;
-          const inputData = event.data;
-          const pcmData = new Int16Array(inputData.length);
-          for (let i = 0; i < inputData.length; i++) {
-            pcmData[i] = Math.max(-1, Math.min(1, inputData[i])) * 0x7FFF;
+          try {
+            const inputData = event.data;
+            const pcmData = new Int16Array(inputData.length);
+            for (let i = 0; i < inputData.length; i++) {
+              pcmData[i] = Math.max(-1, Math.min(1, inputData[i])) * 0x7FFF;
+            }
+            const base64Data = btoa(String.fromCharCode(...new Uint8Array(pcmData.buffer)));
+            session.sendRealtimeInput({
+              audio: { data: base64Data, mimeType: 'audio/pcm;rate=16000' }
+            });
+          } catch (err) {
+            console.warn("Failed to send audio input (socket might be closed):", err);
           }
-          const base64Data = btoa(String.fromCharCode(...new Uint8Array(pcmData.buffer)));
-          session.sendRealtimeInput({
-            audio: { data: base64Data, mimeType: 'audio/pcm;rate=16000' }
-          });
         };
         
         source.connect(workletNode);
@@ -1993,15 +1999,19 @@ const FutureSelfCall = ({ user, setUser, onBack, setView }: { user: User, setUse
         const scriptProcessor = inputContextRef.current.createScriptProcessor(4096, 1, 1);
         scriptProcessor.onaudioprocess = (e) => {
           if (!sessionActiveRef.current || !sessionRef.current || sessionRef.current.readyState !== 1) return;
-          const inputData = e.inputBuffer.getChannelData(0);
-          const pcmData = new Int16Array(inputData.length);
-          for (let i = 0; i < inputData.length; i++) {
-            pcmData[i] = Math.max(-1, Math.min(1, inputData[i])) * 0x7FFF;
+          try {
+            const inputData = e.inputBuffer.getChannelData(0);
+            const pcmData = new Int16Array(inputData.length);
+            for (let i = 0; i < inputData.length; i++) {
+              pcmData[i] = Math.max(-1, Math.min(1, inputData[i])) * 0x7FFF;
+            }
+            const base64Data = btoa(String.fromCharCode(...new Uint8Array(pcmData.buffer)));
+            session.sendRealtimeInput({
+              audio: { data: base64Data, mimeType: 'audio/pcm;rate=16000' }
+            });
+          } catch (err) {
+            console.warn("Failed to send audio input via ScriptProcessor:", err);
           }
-          const base64Data = btoa(String.fromCharCode(...new Uint8Array(pcmData.buffer)));
-          session.sendRealtimeInput({
-            audio: { data: base64Data, mimeType: 'audio/pcm;rate=16000' }
-          });
         };
         source.connect(scriptProcessor);
         processorRef.current = scriptProcessor;

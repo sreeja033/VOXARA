@@ -138,9 +138,14 @@ export const generateSpeech = async (text: string, voiceName: string = 'Zephyr')
         }
       }
     }
-    return null;
+    throw new Error("No audio data in response");
   } catch (error) {
     console.error("TTS Error:", error);
+    // Fallback to browser speech synthesis if API fails
+    if ('speechSynthesis' in window) {
+      const utterance = new SpeechSynthesisUtterance(text);
+      window.speechSynthesis.speak(utterance);
+    }
     return null;
   }
 };
