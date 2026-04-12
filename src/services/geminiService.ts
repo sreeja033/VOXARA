@@ -3,8 +3,9 @@ import { GoogleGenAI, Modality, Type, GenerateContentResponse } from "@google/ge
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
 
 // Model aliases from skill guidelines
-const TEXT_MODEL = "gemini-flash-latest"; // Alias for the most stable flash model
-const MULTIMODAL_MODEL = "gemini-2.0-flash-exp"; 
+const TEXT_MODEL = "gemini-1.5-flash"; // More stable model
+const MULTIMODAL_MODEL = "gemini-1.5-flash"; 
+const TTS_MODEL = "gemini-1.5-flash"; // Use 1.5-flash for TTS if supported, or fallback
 
 // Global throttle to prevent rapid successive calls
 let lastRequestTime = 0;
@@ -19,8 +20,8 @@ const withRetry = async <T>(fn: () => Promise<T>, maxRetries = 5): Promise<T> =>
       // Enforce a minimum delay between requests to the same model
       const now = Date.now();
       const timeSinceLastRequest = now - lastRequestTime;
-      if (timeSinceLastRequest < 1000) {
-        await new Promise(resolve => setTimeout(resolve, 1000 - timeSinceLastRequest));
+      if (timeSinceLastRequest < 2000) {
+        await new Promise(resolve => setTimeout(resolve, 2000 - timeSinceLastRequest));
       }
       lastRequestTime = Date.now();
 
@@ -117,7 +118,7 @@ export const generateSpeech = async (text: string, voiceName: string = 'Zephyr')
   
   try {
     const response = await withRetry(() => ai.models.generateContent({
-      model: "gemini-2.5-flash-preview-tts",
+      model: TTS_MODEL,
       contents: [{ parts: [{ text: text.trim() }] }],
       config: {
         responseModalities: [Modality.AUDIO],

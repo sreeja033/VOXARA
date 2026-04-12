@@ -438,55 +438,54 @@ const SafetyOnboarding = ({ user, setUser, onComplete }: { user: User, setUser: 
 
 const VoxaraLogo = ({ className = "w-12 h-12" }: { className?: string }) => (
   <svg viewBox="0 0 100 100" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
-    {/* Curved Base */}
-    <path d="M10 90C30 75 70 75 90 90" stroke="url(#logoGradient)" strokeWidth="4" strokeLinecap="round" />
-    
-    {/* Left Person */}
-    <g transform="translate(15, 45) scale(0.8)">
-      <circle cx="10" cy="5" r="5" fill="#3b82f6" />
-      <path d="M0 25C0 15 20 15 20 25L15 40L5 40Z" fill="#3b82f6" opacity="0.8" />
-      <path d="M5 15L-5 5" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" />
-      <path d="M15 15L25 5" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" />
-    </g>
-
-    {/* Right Person */}
-    <g transform="translate(65, 45) scale(0.8)">
-      <circle cx="10" cy="5" r="5" fill="#f97316" />
-      <path d="M0 25C0 15 20 15 20 25L15 40L5 40Z" fill="#f97316" opacity="0.8" />
-      <path d="M5 15L-5 5" stroke="#f97316" strokeWidth="2" strokeLinecap="round" />
-      <path d="M15 15L25 5" stroke="#f97316" strokeWidth="2" strokeLinecap="round" />
-    </g>
-
-    {/* Center Microphone */}
-    <g transform="translate(40, 20)">
-      <rect x="5" y="0" width="10" height="20" rx="5" fill="#d97706" />
-      <path d="M0 10C0 20 20 20 20 10" stroke="#d97706" strokeWidth="2" fill="none" />
-      <line x1="10" y1="20" x2="10" y2="25" stroke="#d97706" strokeWidth="2" />
-      <line x1="5" y1="25" x2="15" y2="25" stroke="#d97706" strokeWidth="2" />
-      
-      {/* Sound Waves */}
-      <path d="M-5 5C-8 8 -8 12 -5 15" stroke="#d97706" strokeWidth="1.5" strokeLinecap="round" opacity="0.6">
-        <animate attributeName="opacity" values="0.2;1;0.2" dur="2s" repeatCount="indefinite" />
-      </path>
-      <path d="M-10 0C-15 5 -15 15 -10 20" stroke="#d97706" strokeWidth="1.5" strokeLinecap="round" opacity="0.4">
-        <animate attributeName="opacity" values="0.1;0.8;0.1" dur="2s" repeatCount="indefinite" begin="0.5s" />
-      </path>
-      
-      <path d="M25 5C28 8 28 12 25 15" stroke="#d97706" strokeWidth="1.5" strokeLinecap="round" opacity="0.6">
-        <animate attributeName="opacity" values="0.2;1;0.2" dur="2s" repeatCount="indefinite" />
-      </path>
-      <path d="M30 0C35 5 35 15 30 20" stroke="#d97706" strokeWidth="1.5" strokeLinecap="round" opacity="0.4">
-        <animate attributeName="opacity" values="0.1;0.8;0.1" dur="2s" repeatCount="indefinite" begin="0.5s" />
-      </path>
-    </g>
-
     <defs>
-      <linearGradient id="logoGradient" x1="0" y1="0" x2="100" y2="0">
-        <stop offset="0%" stopColor="#3b82f6" />
-        <stop offset="50%" stopColor="#d97706" />
-        <stop offset="100%" stopColor="#f97316" />
+      <linearGradient id="bridgeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stopColor="#2DD4BF" />
+        <stop offset="100%" stopColor="#0EA5E9" />
       </linearGradient>
+      <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+        <feGaussianBlur stdDeviation="2" result="blur" />
+        <feComposite in="SourceGraphic" in2="blur" operator="over" />
+      </filter>
     </defs>
+    
+    {/* Abstract Bridge / Wave Shape */}
+    <motion.path
+      d="M10 60C25 40 45 40 50 60C55 80 75 80 90 60"
+      stroke="url(#bridgeGradient)"
+      strokeWidth="6"
+      strokeLinecap="round"
+      initial={{ pathLength: 0, opacity: 0 }}
+      animate={{ pathLength: 1, opacity: 1 }}
+      transition={{ duration: 2, ease: "easeInOut" }}
+      filter="url(#glow)"
+    />
+    
+    {/* Connection Points */}
+    <motion.circle
+      cx="10" cy="60" r="4"
+      fill="#2DD4BF"
+      initial={{ scale: 0 }}
+      animate={{ scale: 1 }}
+      transition={{ delay: 1.5 }}
+    />
+    <motion.circle
+      cx="90" cy="60" r="4"
+      fill="#0EA5E9"
+      initial={{ scale: 0 }}
+      animate={{ scale: 1 }}
+      transition={{ delay: 1.5 }}
+    />
+    
+    {/* Central Pulse */}
+    <motion.circle
+      cx="50" cy="60" r="8"
+      stroke="#2DD4BF"
+      strokeWidth="1"
+      initial={{ scale: 0.5, opacity: 0 }}
+      animate={{ scale: [1, 2, 1], opacity: [0, 0.5, 0] }}
+      transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+    />
   </svg>
 );
 
@@ -1848,7 +1847,7 @@ const FutureSelfCall = ({ user, setUser, onBack, setView }: { user: User, setUse
       const growthData = `Current Courage: ${user.courageLevel}%. History: ${JSON.stringify(user.courageHistory?.slice(-5))}. Avoidance: ${user.avoidanceHistory?.map(e => e.situation).join(', ')}.`;
       
       const sessionPromise = ai.live.connect({
-        model: "gemini-3.1-flash-live-preview",
+        model: "gemini-2.0-flash-exp",
         callbacks: {
           onopen: () => {
             setIsConnected(true);
@@ -1988,7 +1987,9 @@ const FutureSelfCall = ({ user, setUser, onBack, setView }: { user: User, setUse
         
         source.connect(workletNode);
         processorRef.current = workletNode;
+        console.log("AudioWorklet loaded successfully");
       } catch (workletErr) {
+        console.warn("AudioWorklet failed, falling back to ScriptProcessorNode:", workletErr);
         const scriptProcessor = inputContextRef.current.createScriptProcessor(4096, 1, 1);
         scriptProcessor.onaudioprocess = (e) => {
           if (!sessionActiveRef.current || !sessionRef.current || sessionRef.current.readyState !== 1) return;
@@ -2997,22 +2998,23 @@ const Home = ({ user, setView }: { user: User, setView: (v: AppState) => void })
       </div>
 
       {/* Header */}
-      <div className="absolute top-16 left-16 z-30">
+      <div className="absolute top-8 left-8 md:top-16 md:left-16 z-30 max-w-[80vw]">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           className="space-y-1"
         >
-          <h1 className="text-5xl font-light tracking-tighter">
-            Your voice exists. <span className="text-vox-accent font-serif italic">Even in the quiet.</span>
+          <h1 className="text-3xl md:text-5xl font-light tracking-tighter leading-tight">
+            Your voice exists. <br className="md:hidden" />
+            <span className="text-vox-accent font-serif italic">Even in the quiet.</span>
           </h1>
           <motion.p 
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.5 }}
-            className="text-vox-paper/40 text-xs uppercase tracking-[0.4em] mt-4 font-medium flex items-center gap-4"
+            className="text-vox-paper/40 text-[10px] md:text-xs uppercase tracking-[0.4em] mt-4 font-medium flex items-center gap-4"
           >
-            <span className="w-8 h-px bg-vox-accent/30" />
+            <span className="w-6 md:w-8 h-px bg-vox-accent/30" />
             Let it guide you home
           </motion.p>
         </motion.div>
@@ -3020,13 +3022,13 @@ const Home = ({ user, setView }: { user: User, setView: (v: AppState) => void })
 
       {/* Constellation Container */}
       <motion.div 
-        className="absolute inset-0 flex items-center justify-center pt-20"
+        className="absolute inset-0 flex items-center justify-center pt-24 md:pt-20 overflow-hidden"
         animate={{ x: mousePos.x, y: mousePos.y }}
         transition={{ type: 'spring', stiffness: 50, damping: 20 }}
       >
-        <div className="relative w-full h-full max-w-6xl max-h-[75vh]">
+        <div className="relative w-full h-full max-w-6xl max-h-[70vh] md:max-h-[80vh] scale-[0.75] sm:scale-[0.85] md:scale-100">
           {/* SVG Lines */}
-          <svg className="absolute inset-0 w-full h-full pointer-events-none">
+          <svg className="absolute inset-0 w-full h-full pointer-events-none overflow-visible">
             <defs>
               <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="100%">
                 <stop offset="0%" stopColor="rgba(45, 212, 191, 0.05)" />
@@ -3049,9 +3051,9 @@ const Home = ({ user, setView }: { user: User, setView: (v: AppState) => void })
                   x2={`${end.x}%`}
                   y2={`${end.y}%`}
                   stroke="url(#lineGradient)"
-                  strokeWidth="2.5"
-                  strokeDasharray="6 6"
-                  className="opacity-60"
+                  strokeWidth="1.5"
+                  strokeDasharray="4 4"
+                  className="opacity-40 md:opacity-60"
                 />
               );
             })}
@@ -3085,14 +3087,14 @@ const Home = ({ user, setView }: { user: User, setView: (v: AppState) => void })
               >
                 {/* The "Star" */}
                 <div className="relative">
-                  <div className={`rounded-full bg-white transition-all duration-500 ${node.size === 'xl' ? 'w-5 h-5' : node.size === 'large' ? 'w-4 h-4' : node.priority ? 'w-3 h-3' : 'w-2 h-2'} ${activeNode === node.id ? 'scale-125 shadow-[0_0_30px_rgba(255,255,255,0.8)]' : ''}`} />
+                  <div className={`rounded-full bg-white transition-all duration-500 ${node.size === 'xl' ? 'w-4 h-4 md:w-5 md:h-5' : node.size === 'large' ? 'w-3 h-3 md:w-4 md:h-4' : node.priority ? 'w-2.5 h-2.5 md:w-3 md:h-3' : 'w-1.5 h-1.5 md:w-2 md:h-2'} ${activeNode === node.id ? 'scale-125 shadow-[0_0_30px_rgba(255,255,255,0.8)]' : ''}`} />
                   {/* Outer Ring */}
                   <div className={`absolute inset-0 -m-3 border border-white/30 rounded-full transition-all duration-500 ${activeNode === node.id ? 'scale-150 opacity-100' : 'scale-100 opacity-0'}`} />
                 </div>
 
                 {/* Minimal Label */}
                 <div className="absolute top-6 flex flex-col items-center pointer-events-none">
-                  <span className={`text-[9px] uppercase tracking-[0.4em] font-bold transition-all duration-500 whitespace-nowrap ${activeNode === node.id ? 'text-vox-paper/80 translate-y-1' : 'text-vox-paper/20'}`}>
+                  <span className={`text-[8px] md:text-[9px] uppercase tracking-[0.4em] font-bold transition-all duration-500 whitespace-nowrap ${activeNode === node.id ? 'text-vox-paper/80 translate-y-1' : 'text-vox-paper/20'}`}>
                     {node.label}
                   </span>
                 </div>
@@ -3105,22 +3107,22 @@ const Home = ({ user, setView }: { user: User, setView: (v: AppState) => void })
                     initial={{ opacity: 0, y: 15, scale: 0.95 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                    className="absolute top-16 left-1/2 -translate-x-1/2 w-72 glass-dark p-8 rounded-[2.5rem] border border-white/10 shadow-[0_30px_60px_rgba(0,0,0,0.5)] z-50 pointer-events-auto backdrop-blur-3xl"
+                    className="fixed md:absolute bottom-12 md:bottom-auto md:top-16 left-1/2 md:left-1/2 -translate-x-1/2 w-[90vw] max-w-xs glass-dark p-6 md:p-8 rounded-[2rem] md:rounded-[2.5rem] border border-white/10 shadow-[0_30px_60px_rgba(0,0,0,0.5)] z-[100] pointer-events-auto backdrop-blur-3xl"
                     onClick={(e) => e.stopPropagation()}
                   >
-                    <div className="flex flex-col items-center text-center gap-6">
-                      <div className="w-16 h-16 rounded-3xl bg-white/5 flex items-center justify-center text-white border border-white/10">
-                        <node.icon size={28} strokeWidth={1.5} />
+                    <div className="flex flex-col items-center text-center gap-4 md:gap-6">
+                      <div className="w-12 h-12 md:w-16 md:h-16 rounded-3xl bg-white/5 flex items-center justify-center text-white border border-white/10">
+                        <node.icon size={24} strokeWidth={1.5} className="md:w-7 md:h-7" />
                       </div>
-                      <div className="space-y-3">
-                        <h3 className="text-2xl font-light tracking-tight">{node.label}</h3>
-                        <p className="text-xs text-vox-paper/40 leading-relaxed font-serif italic">
+                      <div className="space-y-2 md:space-y-3">
+                        <h3 className="text-xl md:text-2xl font-light tracking-tight">{node.label}</h3>
+                        <p className="text-[10px] md:text-xs text-vox-paper/40 leading-relaxed font-serif italic">
                           {node.desc}
                         </p>
                       </div>
                       <button 
                         onClick={() => setView(node.id as AppState)}
-                        className="w-full py-4 bg-white text-vox-bg rounded-2xl text-[10px] font-bold uppercase tracking-[0.3em] active:scale-[0.98] transition-all shadow-lg shadow-white/10 flex items-center justify-center gap-2"
+                        className="w-full py-3 md:py-4 bg-white text-vox-bg rounded-2xl text-[9px] md:text-[10px] font-bold uppercase tracking-[0.3em] active:scale-[0.98] transition-all shadow-lg shadow-white/10 flex items-center justify-center gap-2"
                       >
                         Enter Space <ChevronRight size={14} />
                       </button>
@@ -3768,6 +3770,7 @@ const CompanionMode = ({ onBack, user, setUser, safePlayPCM, stopAllAudio, setVi
   const [soundscapeVolume, setSoundscapeVolume] = useState(0.2);
   const [avatar, setAvatar] = useState('serenity');
   const [sessionActive, setSessionActive] = useState(false);
+  const [showSidebar, setShowSidebar] = useState(true);
   const [isUserTyping, setIsUserTyping] = useState(false);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -3956,261 +3959,270 @@ const CompanionMode = ({ onBack, user, setUser, safePlayPCM, stopAllAudio, setVi
   };
 
   return (
-    <div className="min-h-screen flex flex-col p-6 max-w-5xl mx-auto">
-      <header className="flex items-center justify-between mb-8 pt-4">
-        <button onClick={() => { stopAllAudio(); onBack(); }} className="flex items-center gap-2 text-vox-paper/50 hover:text-vox-paper">
-          <ChevronRight className="rotate-180" size={20} /> Dashboard
-        </button>
-        <div className="flex items-center gap-6">
+    <div className="min-h-screen flex flex-col p-4 md:p-6 max-w-6xl mx-auto overflow-x-hidden">
+      <header className="flex flex-col md:flex-row md:items-center justify-between mb-6 md:mb-8 pt-2 md:pt-4 gap-4">
+        <div className="flex items-center gap-3 md:gap-4">
+          <button onClick={() => { stopAllAudio(); onBack(); }} className="p-2 hover:bg-white/5 rounded-full transition-colors text-vox-paper/50 hover:text-vox-paper">
+            <ChevronRight className="rotate-180" size={20} />
+          </button>
+          <div>
+            <h2 className="text-xl md:text-2xl font-serif italic text-white leading-none">Companion Sanctuary</h2>
+            <div className="flex items-center gap-2 mt-1">
+              <div className={`w-1.5 h-1.5 rounded-full ${isSpeaking ? 'bg-vox-accent animate-ping' : 'bg-emerald-400'}`} />
+              <span className="text-[9px] md:text-[10px] uppercase tracking-[0.2em] text-vox-paper/40 font-bold">
+                {isSpeaking ? 'Speaking' : 'Ready to listen'}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2 md:gap-3">
+          <button 
+            onClick={() => setShowSidebar(!showSidebar)}
+            className={`p-2 rounded-full transition-all ${showSidebar ? 'bg-vox-accent/10 text-vox-accent' : 'text-vox-paper/30 hover:bg-white/5'}`}
+            title={showSidebar ? 'Hide Sidebar' : 'Show Sidebar'}
+          >
+            <Settings size={18} />
+          </button>
           {sessionActive && (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 border-r border-white/10 pr-2 md:pr-4 mr-2 md:mr-4">
               <button 
                 onClick={saveFullConversation}
-                className="px-4 py-1.5 rounded-full bg-vox-accent/10 text-vox-accent border border-vox-accent/20 text-[10px] uppercase tracking-widest font-bold hover:bg-vox-accent/20 transition-all flex items-center gap-2"
+                className="p-2 rounded-full bg-white/5 text-vox-paper/50 hover:text-vox-accent hover:bg-vox-accent/10 transition-all"
+                title="Save Session"
               >
-                <Save size={12} /> Save Session
+                <Save size={18} />
               </button>
               <button 
                 onClick={endSession}
-                className="px-4 py-1.5 rounded-full bg-red-500/10 text-red-400 border border-red-500/20 text-[10px] uppercase tracking-widest font-bold hover:bg-red-500/20 transition-all"
+                className="px-3 md:px-4 py-1.5 md:py-2 rounded-full bg-red-500/10 text-red-400 border border-red-500/20 text-[9px] md:text-[10px] uppercase tracking-widest font-bold hover:bg-red-500/20 transition-all"
               >
-                End Session
+                End
               </button>
             </div>
           )}
-          <div className="flex items-center gap-4">
+          
+          {/* Atmosphere Controls Grouped */}
+          <div className="flex items-center gap-1.5 bg-white/5 p-1 rounded-full border border-white/10">
             <button 
               onClick={() => setUseVoice(!useVoice)}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-full transition-all text-[10px] uppercase tracking-widest font-bold ${useVoice ? 'bg-vox-accent/20 text-vox-accent border border-vox-accent/30' : 'bg-white/5 text-vox-paper/30 border border-white/10'}`}
+              className={`w-7 h-7 md:w-8 md:h-8 rounded-full flex items-center justify-center transition-all ${useVoice ? 'bg-vox-accent text-vox-bg' : 'text-vox-paper/30 hover:bg-white/10'}`}
+              title={useVoice ? 'Voice On' : 'Voice Off'}
             >
-              {useVoice ? <Volume2 size={12} /> : <VolumeX size={12} />}
-              {useVoice ? 'Voice On' : 'Voice Off'}
+              {useVoice ? <Volume2 size={12} className="md:w-[14px]" /> : <VolumeX size={12} className="md:w-[14px]" />}
             </button>
-            {useVoice && (
-              <div className="flex items-center gap-2">
-                <Volume2 size={10} className="text-vox-paper/30" />
-                <input 
-                  type="range" 
-                  min="0" 
-                  max="1" 
-                  step="0.01" 
-                  value={voiceVolume} 
-                  onChange={(e) => setVoiceVolume(parseFloat(e.target.value))}
-                  className="w-16 h-1 bg-white/10 rounded-full appearance-none cursor-pointer accent-vox-accent"
-                />
-              </div>
-            )}
-          </div>
-          <div className="flex gap-2 items-center">
+            
+            <div className="w-px h-3 bg-white/10 mx-0.5" />
+            
             {soundscapes.map(s => (
               <button 
                 key={s.id}
                 onClick={() => setSoundscape(s.id as any)}
-                className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${soundscape === s.id ? 'bg-vox-accent text-vox-bg' : 'bg-white/5 text-vox-paper/40 hover:bg-white/10'}`}
+                className={`w-7 h-7 md:w-8 md:h-8 rounded-full flex items-center justify-center transition-all ${soundscape === s.id ? 'bg-vox-accent/20 text-vox-accent' : 'text-vox-paper/30 hover:bg-white/10'}`}
                 title={s.name}
               >
-                <s.icon size={14} />
+                <s.icon size={12} className="md:w-[14px]" />
               </button>
             ))}
-            {soundscape !== 'none' && (
-              <div className="flex items-center gap-2 ml-2">
-                <Volume2 size={10} className="text-vox-paper/30" />
-                <input 
-                  type="range" 
-                  min="0" 
-                  max="1" 
-                  step="0.01" 
-                  value={soundscapeVolume} 
-                  onChange={(e) => setSoundscapeVolume(parseFloat(e.target.value))}
-                  className="w-16 h-1 bg-white/10 rounded-full appearance-none cursor-pointer accent-vox-accent"
-                />
-              </div>
-            )}
-          </div>
-          <div className="flex items-center gap-3">
-            <div className={`w-2 h-2 rounded-full ${isSpeaking ? 'bg-vox-accent animate-ping' : 'bg-emerald-400 animate-pulse'}`} />
-            <span className="text-xs uppercase tracking-widest font-semibold">
-              {isSpeaking ? 'Companion Speaking...' : 'Courage Companion'}
-            </span>
           </div>
         </div>
       </header>
 
       {!sessionActive ? (
-        <div className="flex-1 flex flex-col items-center justify-center text-center">
+        <div className="flex-1 flex flex-col items-center justify-center text-center p-4">
           <motion.div 
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="max-w-md"
+            className="max-w-md w-full"
           >
-            <div className="w-24 h-24 rounded-full bg-vox-accent/10 flex items-center justify-center mx-auto mb-8 border border-vox-accent/20">
-              <Sparkles size={40} className="text-vox-accent" />
+            <div className="w-20 h-20 md:w-24 md:h-24 rounded-full bg-vox-accent/10 flex items-center justify-center mx-auto mb-6 md:mb-8 border border-vox-accent/20">
+              <Sparkles size={32} className="text-vox-accent md:w-10 md:h-10" />
             </div>
-            <h2 className="text-4xl font-light tracking-tighter mb-4">Begin Your Conversation</h2>
-            <p className="text-vox-paper/40 mb-12 font-serif italic">
+            <h2 className="text-3xl md:text-4xl font-light tracking-tighter mb-4">Begin Your Conversation</h2>
+            <p className="text-sm md:text-base text-vox-paper/40 mb-8 md:mb-12 font-serif italic">
               Your Courage Companion is ready to listen. Start a session to enter the digital sanctuary.
             </p>
             <button 
               onClick={startSession}
-              className="px-12 py-5 bg-vox-accent text-vox-bg rounded-full font-bold text-sm uppercase tracking-widest shadow-2xl shadow-vox-accent/20 hover:scale-105 transition-all"
+              className="w-full md:w-auto px-10 md:px-12 py-4 md:py-5 bg-vox-accent text-vox-bg rounded-full font-bold text-xs md:text-sm uppercase tracking-widest shadow-2xl shadow-vox-accent/20 hover:scale-105 transition-all"
             >
               Start Session
             </button>
           </motion.div>
         </div>
       ) : (
-        <div className="flex-1 flex gap-8 overflow-hidden mb-8">
-        {/* Chat Area */}
-        <div className="flex-1 flex flex-col glass-dark rounded-[3rem] p-8 relative overflow-hidden">
-          <div ref={scrollRef} className="flex-1 overflow-y-auto space-y-8 mb-4 pr-4 scrollbar-hide">
-            {messages.map((m, i) => (
-              <motion.div 
-                key={m.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}
-              >
+        <div className="flex-1 flex flex-col md:flex-row gap-4 md:gap-8 overflow-hidden mb-6 md:mb-8 relative">
+          {/* Chat Area */}
+          <div className={`flex-1 flex flex-col glass-dark rounded-[2rem] md:rounded-[3rem] p-6 md:p-10 relative overflow-hidden transition-all duration-500 ${showSidebar ? 'mr-0' : 'max-w-4xl mx-auto w-full'}`}>
+            <div ref={scrollRef} className="flex-1 overflow-y-auto space-y-6 md:space-y-10 mb-4 md:mb-6 pr-2 md:pr-6 scrollbar-hide">
+              {messages.map((m, i) => (
                 <motion.div 
-                  animate={isSpeaking && i === messages.length - 1 && m.role === 'model' ? {
-                    boxShadow: ['0 0 0px rgba(255,78,0,0)', '0 0 20px rgba(255,78,0,0.3)', '0 0 0px rgba(255,78,0,0)'],
-                    borderColor: ['rgba(255,255,255,0.05)', 'rgba(255,78,0,0.4)', 'rgba(255,255,255,0.05)']
-                  } : {}}
-                  transition={{ repeat: Infinity, duration: 1.5 }}
-                  className={`relative group max-w-[85%] p-6 rounded-3xl border ${m.role === 'user' ? 'bg-vox-accent text-vox-bg font-medium rounded-tr-none shadow-lg shadow-vox-accent/20 border-transparent' : 'bg-white/5 rounded-tl-none font-serif text-lg italic border-white/5'}`}
+                  key={m.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
-                  {m.text}
-                  {m.role === 'model' && (
-                    <button 
-                      onClick={() => saveToEcho(m.text)}
-                      className="absolute -right-12 top-0 w-10 h-10 rounded-full bg-white/5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:bg-vox-accent hover:text-vox-bg border border-white/10"
-                      title="Save to Echo Chamber"
-                    >
-                      <Heart size={16} />
-                    </button>
-                  )}
+                  <motion.div 
+                    animate={isSpeaking && i === messages.length - 1 && m.role === 'model' ? {
+                      boxShadow: ['0 0 0px rgba(45,212,191,0)', '0 0 30px rgba(45,212,191,0.2)', '0 0 0px rgba(45,212,191,0)'],
+                      borderColor: ['rgba(255,255,255,0.05)', 'rgba(45,212,191,0.4)', 'rgba(255,255,255,0.05)']
+                    } : {}}
+                    transition={{ repeat: Infinity, duration: 1.5 }}
+                    className={`relative group max-w-[90%] md:max-w-[80%] p-5 md:p-8 rounded-[1.5rem] md:rounded-[2rem] border ${m.role === 'user' ? 'bg-vox-accent text-vox-bg font-medium rounded-tr-none shadow-xl shadow-vox-accent/10 border-transparent text-sm md:text-base' : 'bg-white/5 rounded-tl-none font-serif text-lg md:text-xl italic border-white/5 leading-relaxed'}`}
+                  >
+                    {m.text}
+                    {m.role === 'model' && (
+                      <button 
+                        onClick={() => saveToEcho(m.text)}
+                        className="absolute -right-10 md:-right-14 top-0 w-8 h-8 md:w-10 md:h-10 rounded-full bg-white/5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:bg-vox-accent hover:text-vox-bg border border-white/10"
+                        title="Save to Echo Chamber"
+                      >
+                        <Heart size={14} className="md:w-4 md:h-4" />
+                      </button>
+                    )}
+                  </motion.div>
                 </motion.div>
-              </motion.div>
-            ))}
-            {isLoading && (
-              <div className="flex justify-start">
-                <div className="bg-white/5 p-6 rounded-3xl rounded-tl-none border border-white/5">
-                  <div className="flex gap-1">
-                    <div className="w-1.5 h-1.5 bg-vox-accent rounded-full animate-bounce" />
-                    <div className="w-1.5 h-1.5 bg-vox-accent rounded-full animate-bounce [animation-delay:0.2s]" />
-                    <div className="w-1.5 h-1.5 bg-vox-accent rounded-full animate-bounce [animation-delay:0.4s]" />
-                  </div>
-                </div>
-              </div>
-            )}
-            {isUserTyping && (
-              <div className="flex justify-end">
-                <div className="bg-vox-accent/10 p-4 rounded-2xl rounded-tr-none border border-vox-accent/20">
-                  <div className="flex gap-1">
-                    <div className="w-1 h-1 bg-vox-accent rounded-full animate-bounce" />
-                    <div className="w-1 h-1 bg-vox-accent rounded-full animate-bounce [animation-delay:0.2s]" />
-                    <div className="w-1 h-1 bg-vox-accent rounded-full animate-bounce [animation-delay:0.4s]" />
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div className="relative">
-            <input 
-              type="text"
-              value={input}
-              onChange={(e) => {
-                setInput(e.target.value);
-                setIsUserTyping(true);
-                if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-                typingTimeoutRef.current = setTimeout(() => setIsUserTyping(false), 1500);
-              }}
-              onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-              placeholder="Type your feelings..."
-              className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-5 pr-16 focus:outline-none focus:border-vox-accent transition-colors"
-            />
-            <button 
-              onClick={handleSend}
-              className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-vox-accent text-vox-bg rounded-xl flex items-center justify-center hover:scale-105 active:scale-95 transition-all"
-            >
-              <Send size={20} />
-            </button>
-          </div>
-        </div>
-
-        {/* Sidebar: Avatar & Settings */}
-        <div className="w-64 flex flex-col gap-6">
-          <div className="glass-dark rounded-[2.5rem] p-6 text-center border border-white/5">
-            <div className="text-[10px] uppercase tracking-widest text-vox-paper/30 mb-4 font-bold">Companion Avatar</div>
-            <div className="relative w-32 h-32 mx-auto mb-6">
-              <motion.div
-                animate={isSpeaking ? { scale: [1, 1.15, 1], opacity: [0.3, 0.6, 0.3] } : { opacity: 0 }}
-                transition={{ repeat: Infinity, duration: 1.5 }}
-                className="absolute inset-0 rounded-full bg-vox-accent blur-xl"
-              />
-              <motion.img 
-                key={avatar}
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={isSpeaking ? { 
-                  opacity: 1, 
-                  scale: [1, 1.05, 1],
-                  borderColor: ['rgba(255,78,0,0.2)', 'rgba(255,78,0,0.8)', 'rgba(255,78,0,0.2)']
-                } : { opacity: 1, scale: 1 }}
-                transition={isSpeaking ? { repeat: Infinity, duration: 1.5 } : { duration: 0.5 }}
-                src={avatars.find(a => a.id === avatar)?.img} 
-                className="relative z-10 w-full h-full rounded-full object-cover border-4 border-vox-accent/20 shadow-2xl"
-                referrerPolicy="no-referrer"
-              />
-              {isUserTyping && (
-                <motion.div 
-                  initial={{ opacity: 0, scale: 0 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  className="absolute -bottom-2 -right-2 bg-vox-accent text-vox-bg p-2 rounded-full shadow-lg z-20"
-                >
-                  <div className="flex gap-1">
-                    <div className="w-1 h-1 bg-vox-bg rounded-full animate-bounce" />
-                    <div className="w-1 h-1 bg-vox-bg rounded-full animate-bounce [animation-delay:0.2s]" />
-                    <div className="w-1 h-1 bg-vox-bg rounded-full animate-bounce [animation-delay:0.4s]" />
-                  </div>
-                </motion.div>
-              )}
-              <div className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full bg-vox-accent flex items-center justify-center border-4 border-vox-bg z-10">
-                <Sparkles size={12} className="text-vox-bg" />
-              </div>
-            </div>
-            <div className="flex justify-center gap-2">
-              {avatars.map(a => (
-                <button 
-                  key={a.id}
-                  onClick={() => setAvatar(a.id)}
-                  className={`w-10 h-10 rounded-full overflow-hidden border-2 transition-all ${avatar === a.id ? 'border-vox-accent scale-110' : 'border-transparent opacity-40 hover:opacity-100'}`}
-                >
-                  <img src={a.img} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                </button>
               ))}
+              {isLoading && (
+                <div className="flex justify-start">
+                  <div className="bg-white/5 p-5 md:p-8 rounded-[1.5rem] md:rounded-[2rem] rounded-tl-none border border-white/5">
+                    <div className="flex gap-2">
+                      <div className="w-2 h-2 bg-vox-accent rounded-full animate-bounce" />
+                      <div className="w-2 h-2 bg-vox-accent rounded-full animate-bounce [animation-delay:0.2s]" />
+                      <div className="w-2 h-2 bg-vox-accent rounded-full animate-bounce [animation-delay:0.4s]" />
+                    </div>
+                  </div>
+                </div>
+              )}
+              {isUserTyping && (
+                <div className="flex justify-end">
+                  <div className="bg-vox-accent/10 p-3 md:p-4 rounded-xl md:rounded-2xl rounded-tr-none border border-vox-accent/20">
+                    <div className="flex gap-1">
+                      <div className="w-1 h-1 bg-vox-accent rounded-full animate-bounce" />
+                      <div className="w-1 h-1 bg-vox-accent rounded-full animate-bounce [animation-delay:0.2s]" />
+                      <div className="w-1 h-1 bg-vox-accent rounded-full animate-bounce [animation-delay:0.4s]" />
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="relative mt-auto">
+              <input 
+                type="text"
+                value={input}
+                onChange={(e) => {
+                  setInput(e.target.value);
+                  setIsUserTyping(true);
+                  if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+                  typingTimeoutRef.current = setTimeout(() => setIsUserTyping(false), 1500);
+                }}
+                onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+                placeholder="Speak your heart..."
+                className="w-full bg-white/5 border border-white/10 rounded-[1.5rem] md:rounded-[2rem] px-5 md:px-8 py-4 md:py-6 pr-16 md:pr-20 focus:outline-none focus:border-vox-accent transition-all text-base md:text-lg"
+              />
+              <button 
+                onClick={handleSend}
+                className="absolute right-3 md:right-5 top-1/2 -translate-y-1/2 w-10 h-10 md:w-12 md:h-12 bg-vox-accent text-vox-bg rounded-xl md:rounded-2xl flex items-center justify-center hover:scale-105 active:scale-95 transition-all shadow-lg shadow-vox-accent/20"
+              >
+                <Send size={20} className="md:w-6 md:h-6" />
+              </button>
             </div>
           </div>
 
-          <div className="glass-dark rounded-[2.5rem] p-6 border border-white/5">
-            <div className="text-[10px] uppercase tracking-widest text-vox-paper/30 mb-4 font-bold">Sentiment Focus</div>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-vox-paper/60">Empathy Level</span>
-                <span className="text-vox-accent font-bold">High</span>
-              </div>
-              <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden">
-                <div className="w-[90%] h-full bg-vox-accent" />
-              </div>
-              <p className="text-[10px] text-vox-paper/30 leading-relaxed italic">
-                The AI is currently tailoring responses to a "Vulnerable" mood state.
-              </p>
-            </div>
-          </div>
+          {/* Sidebar: Avatar & Settings */}
+          <AnimatePresence>
+            {showSidebar && (
+              <motion.div 
+                initial={{ opacity: 0, x: 20, width: 0 }}
+                animate={{ opacity: 1, x: 0, width: window.innerWidth < 768 ? '100%' : 280 }}
+                exit={{ opacity: 0, x: 20, width: 0 }}
+                className="flex flex-col gap-4 md:gap-6 overflow-hidden md:relative absolute inset-0 z-40 md:z-auto bg-vox-bg md:bg-transparent p-4 md:p-0"
+              >
+                {/* Mobile Close Sidebar Button */}
+                <button 
+                  onClick={() => setShowSidebar(false)}
+                  className="md:hidden absolute top-4 right-4 p-2 bg-white/5 rounded-full z-50"
+                >
+                  <ChevronRight size={24} />
+                </button>
+
+                <div className="glass-dark rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-8 text-center border border-white/5">
+                  <div className="text-[10px] uppercase tracking-widest text-vox-paper/30 mb-4 md:mb-6 font-bold">Companion Presence</div>
+                  <div className="relative w-28 h-28 md:w-36 md:h-36 mx-auto mb-6 md:mb-8">
+                    <motion.div
+                      animate={isSpeaking ? { scale: [1, 1.2, 1], opacity: [0.2, 0.5, 0.2] } : { opacity: 0 }}
+                      transition={{ repeat: Infinity, duration: 2 }}
+                      className="absolute inset-0 rounded-full bg-vox-accent blur-xl md:blur-2xl"
+                    />
+                    <motion.img 
+                      key={avatar}
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={isSpeaking ? { 
+                        opacity: 1, 
+                        scale: [1, 1.05, 1],
+                        borderColor: ['rgba(45,212,191,0.2)', 'rgba(45,212,191,0.8)', 'rgba(45,212,191,0.2)']
+                      } : { opacity: 1, scale: 1 }}
+                      transition={isSpeaking ? { repeat: Infinity, duration: 2 } : { duration: 0.5 }}
+                      src={avatars.find(a => a.id === avatar)?.img} 
+                      className="relative z-10 w-full h-full rounded-full object-cover border-4 border-vox-accent/20 shadow-2xl"
+                      referrerPolicy="no-referrer"
+                    />
+                    <div className="absolute -bottom-2 -right-2 w-8 h-8 md:w-10 md:h-10 rounded-full bg-vox-accent flex items-center justify-center border-4 border-vox-bg z-10 shadow-lg">
+                      <Sparkles size={14} className="text-vox-bg md:w-4 md:h-4" />
+                    </div>
+                  </div>
+                  
+                  <div className="flex justify-center gap-2 md:gap-3">
+                    {avatars.map(a => (
+                      <button 
+                        key={a.id}
+                        onClick={() => setAvatar(a.id)}
+                        className={`w-10 h-10 md:w-12 md:h-12 rounded-full overflow-hidden border-2 transition-all ${avatar === a.id ? 'border-vox-accent scale-110 shadow-lg shadow-vox-accent/20' : 'border-transparent opacity-40 hover:opacity-100'}`}
+                      >
+                        <img src={a.img} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="glass-dark rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-8 border border-white/5 flex-1">
+                  <div className="text-[10px] uppercase tracking-widest text-vox-paper/30 mb-4 md:mb-6 font-bold">Session Insights</div>
+                  <div className="space-y-4 md:space-y-6">
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-[10px] uppercase tracking-wider">
+                        <span className="text-vox-paper/40">Empathy</span>
+                        <span className="text-vox-accent font-bold">Deep</span>
+                      </div>
+                      <div className="h-1 bg-white/5 rounded-full overflow-hidden">
+                        <motion.div initial={{ width: 0 }} animate={{ width: '85%' }} className="h-full bg-vox-accent" />
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-[10px] uppercase tracking-wider">
+                        <span className="text-vox-paper/40">Safety</span>
+                        <span className="text-emerald-400 font-bold">Secure</span>
+                      </div>
+                      <div className="h-1 bg-white/5 rounded-full overflow-hidden">
+                        <motion.div initial={{ width: 0 }} animate={{ width: '100%' }} className="h-full bg-emerald-400" />
+                      </div>
+                    </div>
+
+                    <div className="pt-4 md:pt-6 border-t border-white/5 mt-4 md:mt-6">
+                      <p className="text-[10px] text-vox-paper/30 italic leading-relaxed">
+                        "Your sanctuary is a space of non-judgment. Every word spoken is a step toward healing."
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
-      </div>
-    )}
-  </div>
-);
+      )}
+    </div>
+  );
 };
 
 const PresenceMode = ({ onBack }: { onBack: () => void }) => {
