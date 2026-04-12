@@ -1781,6 +1781,7 @@ const FutureSelfCall = ({ user, setUser, onBack, setView }: { user: User, setUse
       } catch (e) {}
       audioContextRef.current = null;
     }
+    sessionRef.current = null;
   };
 
   const processQueue = async () => {
@@ -1987,7 +1988,7 @@ const FutureSelfCall = ({ user, setUser, onBack, setView }: { user: User, setUse
 
         const workletNode = new AudioWorkletNode(inputContextRef.current, 'audio-processor');
         workletNode.port.onmessage = async (event) => {
-          if (!sessionActiveRef.current || !session) return;
+          if (!sessionActiveRef.current || !session || !sessionRef.current) return;
           try {
             const inputData = event.data;
             const pcmData = new Int16Array(inputData.length);
@@ -2000,8 +2001,10 @@ const FutureSelfCall = ({ user, setUser, onBack, setView }: { user: User, setUse
             await session.sendRealtimeInput({
               audio: { data: base64Data, mimeType: 'audio/pcm;rate=16000' }
             });
-          } catch (err) {
-            // Silently ignore if session is closed
+          } catch (err: any) {
+            if (err?.message?.includes('CLOSED') || err?.message?.includes('CLOSING')) {
+              sessionActiveRef.current = false;
+            }
           }
         };
         
@@ -2012,7 +2015,7 @@ const FutureSelfCall = ({ user, setUser, onBack, setView }: { user: User, setUse
         console.warn("AudioWorklet failed, falling back to ScriptProcessorNode:", workletErr);
         const scriptProcessor = inputContextRef.current.createScriptProcessor(4096, 1, 1);
         scriptProcessor.onaudioprocess = async (e) => {
-          if (!sessionActiveRef.current || !session) return;
+          if (!sessionActiveRef.current || !session || !sessionRef.current) return;
           try {
             const inputData = e.inputBuffer.getChannelData(0);
             const pcmData = new Int16Array(inputData.length);
@@ -2024,8 +2027,10 @@ const FutureSelfCall = ({ user, setUser, onBack, setView }: { user: User, setUse
             await session.sendRealtimeInput({
               audio: { data: base64Data, mimeType: 'audio/pcm;rate=16000' }
             });
-          } catch (err) {
-            // Silently ignore
+          } catch (err: any) {
+            if (err?.message?.includes('CLOSED') || err?.message?.includes('CLOSING')) {
+              sessionActiveRef.current = false;
+            }
           }
         };
         source.connect(scriptProcessor);
@@ -2220,8 +2225,7 @@ const LandingPage = ({ onStart, isLoggedIn }: { onStart: () => void, isLoggedIn:
         <VoxaraLogo className="w-10 h-10" />
         <div className="flex flex-col">
           <span className="text-lg font-serif tracking-tighter leading-none">VOXARA</span>
-          <span className="text-[8px] uppercase tracking-[0.4em] text-vox-accent font-bold mt-1">Aura of voice,Power of Rise
-</span>
+          <span className="text-[8px] uppercase tracking-[0.4em] text-vox-accent font-bold mt-1">Courage Companion</span>
         </div>
       </div>
       <motion.button 

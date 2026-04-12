@@ -3,8 +3,8 @@ import { GoogleGenAI, Modality, Type, GenerateContentResponse } from "@google/ge
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
 
 // Model aliases from skill guidelines
-const TEXT_MODEL = "gemini-3-flash-preview"; 
-const MULTIMODAL_MODEL = "gemini-3-flash-preview"; 
+const TEXT_MODEL = "gemini-flash-latest"; 
+const MULTIMODAL_MODEL = "gemini-flash-latest"; 
 const TTS_MODEL = "gemini-2.5-flash-preview-tts"; 
 
 // Global throttle to prevent rapid successive calls
@@ -20,8 +20,8 @@ const withRetry = async <T>(fn: () => Promise<T>, maxRetries = 5): Promise<T> =>
       // Enforce a minimum delay between requests to the same model
       const now = Date.now();
       const timeSinceLastRequest = now - lastRequestTime;
-      if (timeSinceLastRequest < 2000) {
-        await new Promise(resolve => setTimeout(resolve, 2000 - timeSinceLastRequest));
+      if (timeSinceLastRequest < 3000) {
+        await new Promise(resolve => setTimeout(resolve, 3000 - timeSinceLastRequest));
       }
       lastRequestTime = Date.now();
 
@@ -39,8 +39,8 @@ const withRetry = async <T>(fn: () => Promise<T>, maxRetries = 5): Promise<T> =>
         
       if (isQuotaError && i < maxRetries - 1) {
         // Even longer delay for quota errors with exponential backoff
-        // i=0: ~2s, i=1: ~6s, i=2: ~18s, etc.
-        const delay = Math.pow(3, i) * 2000 + Math.random() * 1000;
+        // i=0: ~3s, i=1: ~9s, i=2: ~27s, etc.
+        const delay = Math.pow(3, i) * 3000 + Math.random() * 1000;
         console.warn(`Gemini Rate Limit hit (429). Retry attempt ${i + 1}/${maxRetries}. Retrying in ${Math.round(delay)}ms...`);
         await new Promise(resolve => setTimeout(resolve, delay));
         continue;
