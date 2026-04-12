@@ -30,6 +30,19 @@
   h1, h2, h3, .serif {
     @apply font-serif font-light tracking-tight;
   }
+
+  /* Mobile optimization utilities */
+  .mobile-touch-target {
+    @apply min-h-[44px] min-w-[44px] flex items-center justify-center;
+  }
+
+  .safe-p-top {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .safe-p-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
 }
 
 .glass {

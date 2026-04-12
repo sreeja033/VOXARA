@@ -161,7 +161,7 @@ const DailyRituals = ({ user, setUser, onBack }: { user: User, setUser: React.Di
   const completedCount = rituals.filter(r => r.completed).length;
 
   return (
-    <div className="min-h-screen bg-vox-bg text-vox-paper p-6 relative overflow-hidden">
+    <div className="min-h-screen bg-vox-bg text-vox-paper p-6 relative overflow-hidden safe-p-top safe-p-bottom">
       <div className="absolute inset-0 vox-gradient opacity-20" />
       
       <header className="max-w-4xl mx-auto flex justify-between items-center mb-16 relative z-10">
@@ -314,7 +314,7 @@ const SafetyOnboarding = ({ user, setUser, onComplete }: { user: User, setUser: 
   ];
 
   return (
-    <div className="min-h-screen bg-vox-bg text-vox-paper flex items-center justify-center p-6 relative overflow-hidden">
+    <div className="min-h-screen bg-vox-bg text-vox-paper flex items-center justify-center p-6 relative overflow-hidden safe-p-top safe-p-bottom">
       <div className="absolute inset-0 vox-gradient opacity-30" />
       
       <AnimatePresence mode="wait">
@@ -700,7 +700,7 @@ const CalmCenter = ({ onBack }: { onBack: () => void }) => {
   ];
 
   return (
-    <div className="min-h-screen bg-vox-bg text-vox-paper p-6">
+    <div className="min-h-screen bg-vox-bg text-vox-paper p-6 safe-p-top safe-p-bottom">
       <header className="max-w-4xl mx-auto flex justify-between items-center mb-12">
         <button onClick={onBack} className="p-2 hover:bg-white/5 rounded-full transition-colors">
           <X size={24} />
@@ -1047,7 +1047,7 @@ const SocialEnergyMeter = ({ user, setUser, onBack }: { user: User, setUser: Rea
     }));
 
   return (
-    <div className="min-h-screen bg-vox-bg text-vox-paper p-6 relative overflow-hidden">
+    <div className="min-h-screen bg-vox-bg text-vox-paper p-6 relative overflow-hidden safe-p-top safe-p-bottom">
       <FloatingParticles />
       <div className="absolute inset-0 vox-gradient opacity-20" />
       
@@ -1267,7 +1267,7 @@ const AvoidanceLoopBreaker = ({ user, setUser, onBack }: { user: User, setUser: 
   };
 
   return (
-    <div className="min-h-screen bg-vox-bg text-vox-paper p-6 relative overflow-hidden">
+    <div className="min-h-screen bg-vox-bg text-vox-paper p-6 relative overflow-hidden safe-p-top safe-p-bottom">
       <div className="absolute inset-0 vox-gradient opacity-20" />
       
       <header className="max-w-4xl mx-auto flex justify-between items-center mb-16 relative z-10">
@@ -1406,7 +1406,7 @@ const FutureSelfDialogue = ({ user, setUser, onBack, setView }: { user: User, se
 
   if (mode === 'selection') {
     return (
-      <div className="min-h-screen bg-vox-bg text-vox-paper p-6 relative overflow-hidden flex flex-col">
+      <div className="min-h-screen bg-vox-bg text-vox-paper p-6 relative overflow-hidden flex flex-col safe-p-top safe-p-bottom">
         <div className="absolute inset-0 vox-gradient opacity-20" />
         
         <header className="max-w-4xl mx-auto w-full flex justify-between items-center mb-16 relative z-10">
@@ -1604,7 +1604,7 @@ const FutureSelfChat = ({ user, setUser, onBack, setView }: { user: User, setUse
   };
 
   return (
-    <div className="min-h-screen bg-vox-bg text-vox-paper p-6 relative overflow-hidden flex flex-col">
+    <div className="min-h-screen bg-vox-bg text-vox-paper p-6 relative overflow-hidden flex flex-col safe-p-top safe-p-bottom">
       <div className="absolute inset-0 vox-gradient opacity-20" />
       
       <header className="max-w-4xl mx-auto w-full flex justify-between items-center mb-8 relative z-10">
@@ -2043,7 +2043,7 @@ const FutureSelfCall = ({ user, setUser, onBack, setView }: { user: User, setUse
   };
 
   return (
-    <div className="min-h-screen bg-vox-bg text-vox-paper p-6 relative overflow-hidden flex flex-col">
+    <div className="min-h-screen bg-vox-bg text-vox-paper p-6 relative overflow-hidden flex flex-col safe-p-top safe-p-bottom">
       <div className="absolute inset-0 vox-gradient opacity-20" />
       
       <header className="max-w-4xl mx-auto w-full flex justify-between items-center mb-16 relative z-10">
@@ -2159,7 +2159,7 @@ const SanctuaryGuide = ({ onBack }: { onBack: () => void }) => {
   ];
 
   return (
-    <div className="min-h-screen bg-vox-bg text-vox-paper p-6 relative overflow-hidden flex flex-col">
+    <div className="min-h-screen bg-vox-bg text-vox-paper p-6 relative overflow-hidden flex flex-col safe-p-top safe-p-bottom">
       <div className="absolute inset-0 vox-gradient opacity-20" />
       
       <header className="max-w-4xl mx-auto w-full flex justify-between items-center mb-12 relative z-10">
@@ -2217,7 +2217,7 @@ const SanctuaryGuide = ({ onBack }: { onBack: () => void }) => {
 };
 
 const LandingPage = ({ onStart, isLoggedIn }: { onStart: () => void, isLoggedIn: boolean }) => (
-  <div className="min-h-screen bg-vox-bg text-vox-paper selection:bg-vox-accent/30">
+  <div className="min-h-screen bg-vox-bg text-vox-paper selection:bg-vox-accent/30 safe-p-top safe-p-bottom">
     <FloatingParticles />
     {/* Upper Title Bar */}
     <nav className="fixed top-0 left-0 right-0 z-50 px-8 py-4 flex justify-between items-center backdrop-blur-md bg-vox-bg/40 border-b border-white/5">
@@ -2460,7 +2460,7 @@ const AuthPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-6 relative">
+    <div className="min-h-screen flex items-center justify-center px-6 relative safe-p-top safe-p-bottom">
       <div className="absolute inset-0 vox-gradient opacity-20" />
       <motion.div 
         initial={{ opacity: 0, scale: 0.95 }}
@@ -2799,7 +2799,7 @@ const ExitPrompt = ({ onConfirm, onCancel }: { onConfirm: () => void, onCancel: 
 
 const ExitScreen = ({ onRestart }: { onRestart: () => void }) => {
   return (
-    <div className="min-h-screen bg-vox-bg text-vox-paper flex flex-col items-center justify-center p-12 text-center space-y-12">
+    <div className="min-h-screen bg-vox-bg text-vox-paper flex flex-col items-center justify-center p-12 text-center space-y-12 safe-p-top safe-p-bottom">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -3012,7 +3012,7 @@ const Home = ({ user, setView }: { user: User, setView: (v: AppState) => void })
 
   return (
     <div 
-      className="min-h-screen bg-vox-bg text-vox-paper overflow-hidden relative" 
+      className="min-h-screen bg-vox-bg text-vox-paper overflow-hidden relative safe-p-top safe-p-bottom" 
       onClick={() => setActiveNode(null)}
       onMouseMove={handleMouseMove}
     >
@@ -3175,7 +3175,7 @@ const Home = ({ user, setView }: { user: User, setView: (v: AppState) => void })
 
 const Dashboard = ({ user, setView, setUser }: { user: User, setView: (v: AppState) => void, setUser: React.Dispatch<React.SetStateAction<User | null>> }) => {
   return (
-    <div className="min-h-screen bg-vox-bg text-vox-paper selection:bg-vox-accent/30 overflow-x-hidden">
+    <div className="min-h-screen bg-vox-bg text-vox-paper selection:bg-vox-accent/30 overflow-x-hidden safe-p-top safe-p-bottom">
       <FloatingParticles />
       <BackgroundEffects />
       
@@ -6944,7 +6944,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-vox-bg text-vox-paper">
+    <div className="min-h-screen bg-vox-bg text-vox-paper safe-p-top safe-p-bottom">
       {/* Global Background Elements */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-vox-accent/10 blur-[120px] rounded-full" />
