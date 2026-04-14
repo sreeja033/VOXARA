@@ -1855,7 +1855,7 @@ const FutureSelfCall = ({ user, setUser, onBack, setView }: { user: User, setUse
       const growthData = `Current Courage: ${user.courageLevel}%. History: ${JSON.stringify(user.courageHistory?.slice(-5))}. Avoidance: ${user.avoidanceHistory?.map(e => e.situation).join(', ')}.`;
       
       const sessionPromise = ai.live.connect({
-        model: "gemini-3.1-flash-live-preview",
+        model: "gemini-2.0-flash",
         callbacks: {
           onopen: () => {
             setIsConnected(true);
