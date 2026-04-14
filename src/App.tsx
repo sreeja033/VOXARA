@@ -1855,7 +1855,7 @@ const FutureSelfCall = ({ user, setUser, onBack, setView }: { user: User, setUse
       const growthData = `Current Courage: ${user.courageLevel}%. History: ${JSON.stringify(user.courageHistory?.slice(-5))}. Avoidance: ${user.avoidanceHistory?.map(e => e.situation).join(', ')}.`;
       
       const sessionPromise = ai.live.connect({
-        model: "gemini-3.1-flash-live-preview",
+        model: "gemini-1.5-flash",
         callbacks: {
           onopen: () => {
             setIsConnected(true);
@@ -2225,8 +2225,7 @@ const LandingPage = ({ onStart, isLoggedIn }: { onStart: () => void, isLoggedIn:
         <VoxaraLogo className="w-10 h-10" />
         <div className="flex flex-col">
           <span className="text-lg font-serif tracking-tighter leading-none">VOXARA</span>
-          <span className="text-[8px] uppercase tracking-[0.4em] text-vox-accent font-bold mt-1">Aura of voice,Power of Rise
-</span>
+          <span className="text-[8px] uppercase tracking-[0.4em] text-vox-accent font-bold mt-1">Courage Companion</span>
         </div>
       </div>
       <motion.button 

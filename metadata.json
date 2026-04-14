@@ -1,6 +1,6 @@
 {
-  "name": "Beloved Bridge",
-  "description": "A voice-first mental health and courage-building app featuring a Social Energy Meter to manage introverted energy and an Avoidance Loop Breaker to identify and overcome behavioral patterns.",
+  "name": "VOXARA",
+  "description": "A voice-first emotional resilience platform featuring AI-driven social simulations, a Social Energy Meter, and an Avoidance Loop Breaker to help users find their voice and build courage.",
   "requestFramePermissions": [
     "microphone"
   ]
