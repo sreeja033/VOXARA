@@ -1855,7 +1855,7 @@ const FutureSelfCall = ({ user, setUser, onBack, setView }: { user: User, setUse
       const growthData = `Current Courage: ${user.courageLevel}%. History: ${JSON.stringify(user.courageHistory?.slice(-5))}. Avoidance: ${user.avoidanceHistory?.map(e => e.situation).join(', ')}.`;
       
       const sessionPromise = ai.live.connect({
-        model: "gemini-1.5-flash",
+        model: "gemini-3.1-flash-live-preview",
         callbacks: {
           onopen: () => {
             setIsConnected(true);
@@ -2225,7 +2225,8 @@ const LandingPage = ({ onStart, isLoggedIn }: { onStart: () => void, isLoggedIn:
         <VoxaraLogo className="w-10 h-10" />
         <div className="flex flex-col">
           <span className="text-lg font-serif tracking-tighter leading-none">VOXARA</span>
-          <span className="text-[8px] uppercase tracking-[0.4em] text-vox-accent font-bold mt-1">Courage Companion</span>
+          <span className="text-[8px] uppercase tracking-[0.4em] text-vox-accent font-bold mt-1">Aura of voice,Power of Rise
+</span>
         </div>
       </div>
       <motion.button 
@@ -5720,22 +5721,28 @@ const VoiceCircles = ({ onBack, user, setUser }: { onBack: () => void, user: Use
     };
   }, [user.id, alias, activeCircle?.id]);
 
+  const safeSend = (data: any) => {
+    if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
+      socketRef.current.send(JSON.stringify(data));
+    }
+  };
+
   useEffect(() => {
-    if (activeCircle && socketRef.current?.readyState === WebSocket.OPEN) {
-      socketRef.current.send(JSON.stringify({
+    if (activeCircle) {
+      safeSend({
         type: 'join_circle',
         roomId: activeCircle.id
-      }));
+      });
     }
   }, [activeCircle]);
 
   useEffect(() => {
-    if (activeCircle && socketRef.current?.readyState === WebSocket.OPEN) {
+    if (activeCircle) {
       const status = userStatus.isSpeaking ? 'speaking' : (userStatus.isTyping ? 'typing' : 'listening');
-      socketRef.current.send(JSON.stringify({
+      safeSend({
         type: 'status_change',
         status
-      }));
+      });
     }
   }, [userStatus, activeCircle]);
 
@@ -5745,13 +5752,13 @@ const VoiceCircles = ({ onBack, user, setUser }: { onBack: () => void, user: Use
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!chatMessage.trim() || !socketRef.current || socketRef.current.readyState !== WebSocket.OPEN) return;
+    if (!chatMessage.trim()) return;
     
-    socketRef.current.send(JSON.stringify({
+    safeSend({
       type: 'chat_message',
       text: chatMessage,
       alias: alias
-    }));
+    });
 
     setChatMessage("");
     setUserStatus(prev => ({ ...prev, isTyping: false }));
@@ -6355,18 +6362,22 @@ const CourageConnections = ({ onBack, user }: { onBack: () => void, user: User }
     };
   }, [user.id, user.name]);
 
+  const safeSend = (data: any) => {
+    if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
+      socketRef.current.send(JSON.stringify(data));
+    }
+  };
+
   const sendSignal = (targetId: string) => {
     if (sentSignals.includes(targetId)) return;
     setSentSignals([...sentSignals, targetId]);
     
-    if (socketRef.current?.readyState === WebSocket.OPEN) {
-      socketRef.current.send(JSON.stringify({
-        type: 'signal',
-        fromId: user.id,
-        fromName: user.name,
-        toId: targetId
-      }));
-    }
+    safeSend({
+      type: 'signal',
+      fromId: user.id,
+      fromName: user.name,
+      toId: targetId
+    });
   };
 
   return (

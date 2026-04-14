@@ -3,9 +3,11 @@ import { GoogleGenAI, Modality, Type, GenerateContentResponse } from "@google/ge
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
 
 // Model aliases from skill guidelines
-const TEXT_MODEL = "gemini-1.5-flash"; 
-const MULTIMODAL_MODEL = "gemini-1.5-flash"; 
-const TTS_MODEL = "gemini-1.5-flash"; 
+const TEXT_MODEL = "gemini-flash-latest"; 
+const MULTIMODAL_MODEL = "gemini-flash-latest"; 
+const TTS_MODEL = "gemini-2.5-flash-preview-tts"; 
+
+console.log("VOXARA Gemini Service Initialized with models:", { TEXT_MODEL, MULTIMODAL_MODEL, TTS_MODEL });
 
 // Global throttle to prevent rapid successive calls
 let lastRequestTime = 0;
